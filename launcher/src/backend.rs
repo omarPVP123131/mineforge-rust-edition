@@ -2190,7 +2190,15 @@ fn download_for_owner(
     if let Err(e) = accounts.save_renewed() {
         log(format!("Horizon: the accounts are not saved: {e}"));
     }
-    download_for(pins, dir, pass, !accounts.accounts.is_empty(), fetch, log)
+    download_for(
+        pins,
+        dir,
+        pass,
+        !accounts.accounts.is_empty(),
+        mfre_eula_accepted(),
+        fetch,
+        log,
+    )
 }
 
 /// Downloads Minecraft `id` (any version on Mojang's list, its version file's sha1 from it) into
@@ -2304,17 +2312,74 @@ pub fn java_game(
     )
 }
 
-/// What [`download_for_owner`] does with the owner gate's answer: Mojang's files only for its
-/// `owner`, an account the services said owns the game just now.
+/// MFRE (D8): the Minecraft EULA consent that lets a download run with no account that owns
+/// the game. The launcher never ships game files; Mojang's URLs are public, and accepting this
+/// is the player's statement that they own Minecraft: Java Edition. `MFRE_EULA=1|0` overrides
+/// the file (scripts, tests).
+pub const MFRE_EULA_URL: &str = "https://www.minecraft.net/en-us/eula";
+
+/// Whether this launcher may download Minecraft from Mojang with no account.
+pub fn mfre_eula_accepted() -> bool {
+    if let Ok(v) = std::env::var("MFRE_EULA") {
+        return v == "1";
+    }
+    data_dir()
+        .join("eula-consent.json")
+        .try_exists()
+        .unwrap_or(false)
+}
+
+/// Record the consent; the file is the record. Returns its path.
+pub fn mfre_accept_eula() -> Result<PathBuf, String> {
+    let dir = data_dir();
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join("eula-consent.json");
+    let seconds = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let body = serde_json::json!({
+        "eula": MFRE_EULA_URL,
+        "accepted_unix": seconds,
+        "note": "Downloads come from Mojang with no account. Every player must own Minecraft: Java Edition.",
+    });
+    std::fs::write(&path, body.to_string() + "\n").map_err(|e| e.to_string())?;
+    Ok(path)
+}
+
+/// Take the consent back.
+pub fn mfre_revoke_eula() -> Result<(), String> {
+    match std::fs::remove_file(data_dir().join("eula-consent.json")) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+/// What [`download_for_owner`] does with the owner gate's answer: Mojang's files for its
+/// `owner`, an account the services said owns the game just now — or, with `consent` (MFRE's
+/// Minecraft EULA consent, D8), for anyone: no account needed.
 fn download_for(
     pins: &sources::Pins,
     dir: &Path,
     pass: Result<account::Launch, account::NoOwner>,
     signed_in: bool,
+    consent: bool,
     fetch: sources::Fetch,
     log: &dyn Fn(String),
 ) -> Result<(), String> {
     let v = &pins.version;
+    // One call site for Mojang's downloader (a source check counts them).
+    let run = |who: String| {
+        let os = match sources::Os::current() {
+            sources::Os::Linux => "linux",
+            sources::Os::MacOs => "osx",
+            sources::Os::Windows => "windows",
+        };
+        mojang::download_http(pins, dir, os, mojang::JOBS, fetch, &mojang::CANCEL, log).map_err(
+            |e| format!("\n  • Horizon tried to download {v} from Mojang for {who}, but: {e}"),
+        )
+    };
     match pass {
         Ok(account::Launch {
             owner: Some((owner, _)),
@@ -2324,14 +2389,15 @@ fn download_for(
             log(format!(
                 "{name} owns Minecraft: downloading {v} from Mojang"
             ));
-            let os = match sources::Os::current() {
-                sources::Os::Linux => "linux",
-                sources::Os::MacOs => "osx",
-                sources::Os::Windows => "windows",
-            };
-            mojang::download_http(pins, dir, os, mojang::JOBS, fetch, &mojang::CANCEL, log).map_err(|e| {
-                format!("\n  • Horizon tried to download {v} from Mojang for {name}, but: {e}")
-            })
+            run(name)
+        }
+        // MFRE (D8): nobody owns the game here, but this launcher's Minecraft EULA consent is
+        // on record: download all the same. Every player must own their own copy.
+        _ if consent => {
+            log(format!(
+                "Downloading {v} from Mojang with no account (Minecraft EULA accepted)"
+            ));
+            run("this computer".to_owned())
         }
         // An owner by its last answer, who can't be asked now.
         Ok(pass) => Err(format!(
@@ -4962,6 +5028,7 @@ mod tests {
             &dir,
             Err(account::NoOwner::default()),
             false,
+            false,
             &fetch,
             &log,
         )
@@ -4984,7 +5051,7 @@ mod tests {
             (no_owner(), false),
             (no_owner(), true),
         ] {
-            assert!(download_for(&pins, &dir, pass, signed_in, &fetch, &log).is_err());
+            assert!(download_for(&pins, &dir, pass, signed_in, false, &fetch, &log).is_err());
         }
         assert!(asked.lock().unwrap().is_empty());
         assert!(!dir.exists());
@@ -5003,7 +5070,7 @@ mod tests {
             owner: Some((owner, secrets)),
             ..Default::default()
         });
-        assert!(download_for(&pins, &dir, pass, true, &fetch, &log).is_err());
+        assert!(download_for(&pins, &dir, pass, true, false, &fetch, &log).is_err());
         assert!(!asked.lock().unwrap().is_empty());
         let _ = fs::remove_dir_all(&dir);
 
@@ -5016,7 +5083,7 @@ mod tests {
         .unwrap();
         asked.lock().unwrap().clear();
         for (pass, signed_in) in [(Err(account::NoOwner::default()), true), (no_owner(), true)] {
-            assert!(download_for(&pins, &dir, pass, signed_in, &fetch, &log).is_err());
+            assert!(download_for(&pins, &dir, pass, signed_in, false, &fetch, &log).is_err());
         }
         assert!(asked.lock().unwrap().is_empty());
         let _ = fs::remove_dir_all(&dir);
@@ -5094,6 +5161,73 @@ pub fn {f}("
                 );
             }
         }
+    }
+
+    /// MFRE (D8): the Minecraft EULA consent — `consent` opens the download gate with no
+    /// owner at all, and the record itself (accept, read, revoke) lives in the data folder as
+    /// `eula-consent.json`. The fork never ships game files: Mojang serves them to whoever
+    /// says they own the game.
+    #[test]
+    fn mfre_eula_consent_records_and_opens_the_download() {
+        let dir = std::env::temp_dir().join(format!("horizon-eula-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        let pins = sources::Pins::read(&serde_json::json!({ "minecraft": {
+            "version": "26.3",
+            "client_sha1": "00",
+            "manifest_sha1": "00",
+        }}))
+        .unwrap();
+        let asked = std::sync::Mutex::new(Vec::<String>::new());
+        let fetch = |url: &str| -> Result<Vec<u8>, String> {
+            asked.lock().unwrap().push(url.to_string());
+            Err("no network in tests".into())
+        };
+        let log = |_: String| {};
+        // No owner, no consent: refused, Mojang never asked.
+        let refused = download_for(
+            &pins,
+            &dir,
+            Err(account::NoOwner::default()),
+            false,
+            false,
+            &fetch,
+            &log,
+        )
+        .unwrap_err();
+        assert!(refused.contains("Sign in"), "{refused}");
+        assert!(asked.lock().unwrap().is_empty());
+        // No owner, consent on record: the gate opens and Mojang is asked (the download itself
+        // fails here, without network — what matters is that it was tried).
+        assert!(download_for(
+            &pins,
+            &dir,
+            Err(account::NoOwner::default()),
+            false,
+            true,
+            &fetch,
+            &log
+        )
+        .is_err());
+        assert!(!asked.lock().unwrap().is_empty());
+        let _ = fs::remove_dir_all(&dir);
+
+        // The record: absent → accept → read → revoke, under the data folder.
+        mfre_revoke_eula().unwrap();
+        assert!(!mfre_eula_accepted());
+        let path = mfre_accept_eula().unwrap();
+        assert_eq!(path.file_name().unwrap(), "eula-consent.json");
+        assert!(path.exists());
+        assert!(mfre_eula_accepted());
+        // What it says: the EULA's address and when it was accepted.
+        let body: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(body["eula"], MFRE_EULA_URL);
+        assert!(body["accepted_unix"].as_u64().unwrap() > 0);
+        mfre_revoke_eula().unwrap();
+        assert!(!mfre_eula_accepted());
+        assert!(!path.exists());
+        // Revoking twice is not an error.
+        mfre_revoke_eula().unwrap();
     }
 
     /// A preparation that reuses the imported game files still reads the assets from the

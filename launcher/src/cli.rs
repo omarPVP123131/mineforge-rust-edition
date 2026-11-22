@@ -142,6 +142,22 @@ enum AccountCmd {
     },
     /// Play as this account
     Select { who: String },
+    /// MFRE: add an offline profile (just a name; no Microsoft sign-in) and play as it
+    AddOffline {
+        /// The player name: 3 to 16 of A-Z, a-z, 0-9 and _
+        name: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum EulaCmd {
+    /// Whether this launcher may download Minecraft from Mojang with no account
+    Status,
+    /// Accept Minecraft's EULA (https://www.minecraft.net/en-us/eula) for this launcher:
+    /// downloads run with no account, and every player must own the game
+    Accept,
+    /// Take the consent back
+    Revoke,
 }
 
 #[derive(Subcommand)]
@@ -873,10 +889,17 @@ enum Cmd {
     Notes { tag: Option<String> },
     /// Show the website, roadmap and documentation links
     Links,
-    /// Microsoft accounts: list them (the default), sign in, sign out, or pick the one that plays
+    /// Accounts and offline profiles: list them (the default), add an offline name, sign in,
+    /// sign out, or pick the one that plays
     Account {
         #[command(subcommand)]
         action: Option<AccountCmd>,
+    },
+    /// MFRE: the Minecraft EULA consent that lets downloads run with no account (status by
+    /// default). Every player must own Minecraft: Java Edition.
+    Eula {
+        #[command(subcommand)]
+        action: Option<EulaCmd>,
     },
     /// Show the launcher's settings, or set one (the Settings page): selected-version TAG
     /// (use this version for the selected Horizon instance), game-architecture auto|x64|arm64,
@@ -1641,6 +1664,7 @@ fn execute(command: Cmd, as_json: bool) -> Result<i32, String> {
             }
         }
         Cmd::Account { action } => account_command(action.unwrap_or(AccountCmd::List), as_json)?,
+        Cmd::Eula { action } => eula_command(action.unwrap_or(EulaCmd::Status), as_json)?,
         Cmd::Data { action } => data(action.unwrap_or(DataCmd::Status), as_json)?,
         Cmd::Benchmark { repeats } => {
             let path = crate::perf::benchmark(repeats.max(1))?;
@@ -1990,20 +2014,24 @@ fn account_command(action: AccountCmd, as_json: bool) -> Result<(), String> {
     };
     match action {
         AccountCmd::List => {
+            // MFRE: offline profiles share the list; their UUID is derived, no services.
+            let sel = |uuid: &str| accounts.selected.as_ref() == Some(&uuid.to_owned());
             if as_json {
                 json(serde_json::json!({
                     "accounts": accounts.accounts.iter().map(|a| serde_json::json!({
-                        "name": a.name, "uuid": a.uuid,
-                        "selected": accounts.selected.as_ref() == Some(&a.uuid),
+                        "name": a.name, "uuid": a.uuid, "offline": false,
+                        "selected": sel(&a.uuid),
                         "authentication": account::session::status(account::store(), &a.uuid),
-                    })).collect::<Vec<_>>(),
+                    })).chain(accounts.offline_profiles.iter().map(|a| serde_json::json!({
+                        "name": a.name, "uuid": a.uuid, "offline": true, "selected": sel(&a.uuid),
+                    }))).collect::<Vec<_>>(),
                     "sign_in_configured": account::client_id().is_some(),
                     "owner": accounts.has_owner(account::store()),
                 }));
-            } else if accounts.accounts.is_empty() {
+            } else if accounts.accounts.is_empty() && accounts.offline_profiles.is_empty() {
                 println!(
-                    "No Microsoft account signed in. Play needs one that owns Minecraft: Java \
-                     Edition: horizon-launcher account sign-in"
+                    "No profile yet. Play with an offline name: horizon-launcher account \
+                     add-offline NAME"
                 );
             } else {
                 for a in &accounts.accounts {
@@ -2020,7 +2048,13 @@ fn account_command(action: AccountCmd, as_json: bool) -> Result<(), String> {
                     };
                     println!("{mark} {}  {}  {}{why}", a.name, a.uuid, status.label());
                 }
-                if !accounts.has_owner(account::store()) {
+                for a in &accounts.offline_profiles {
+                    let mark = if sel(&a.uuid) { "*" } else { " " };
+                    println!("{mark} {}  {}  offline", a.name, a.uuid);
+                }
+                // MFRE: the owner hint is Microsoft-only; a roster of offline profiles (no
+                // signed-in accounts) needs none of it.
+                if !accounts.accounts.is_empty() && !accounts.has_owner(account::store()) {
                     println!(
                         "{} {}",
                         account::NoOwner::default(),
@@ -2108,9 +2142,64 @@ fn account_command(action: AccountCmd, as_json: bool) -> Result<(), String> {
             accounts.save()?;
             println!("The game plays as {}.", a.name);
         }
+        AccountCmd::AddOffline { name } => {
+            let added = accounts.add_offline(&name)?;
+            accounts.save()?;
+            if as_json {
+                json(serde_json::json!({ "name": added.name, "uuid": added.uuid }));
+            } else {
+                println!("The game plays as {name} (offline).");
+            }
+        }
     }
     Ok(())
 }
+/// MFRE: the `eula` command — the consent that lets downloads run with no account (D8).
+fn eula_command(action: EulaCmd, as_json: bool) -> Result<(), String> {
+    match action {
+        EulaCmd::Status => {
+            let accepted = backend::mfre_eula_accepted();
+            if as_json {
+                json(serde_json::json!({
+                    "accepted": accepted,
+                    "eula": backend::MFRE_EULA_URL,
+                }));
+            } else if accepted {
+                println!(
+                    "Minecraft EULA accepted: downloads from Mojang need no account here. \
+                     Every player must own Minecraft: Java Edition."
+                );
+            } else {
+                println!(
+                    "Not accepted yet. Read {} and run: horizon-launcher eula accept",
+                    backend::MFRE_EULA_URL
+                );
+            }
+        }
+        EulaCmd::Accept => {
+            let path = backend::mfre_accept_eula()?;
+            if as_json {
+                json(serde_json::json!({ "accepted": true, "file": path }));
+            } else {
+                println!(
+                    "Minecraft EULA accepted ({}). Downloads come from Mojang; every player \
+                     must own Minecraft: Java Edition.",
+                    path.display()
+                );
+            }
+        }
+        EulaCmd::Revoke => {
+            backend::mfre_revoke_eula()?;
+            if as_json {
+                json(serde_json::json!({ "accepted": false }));
+            } else {
+                println!("Consent revoked: downloads need an owner again.");
+            }
+        }
+    }
+    Ok(())
+}
+
 /// What a bug report says first when a newer launcher is out (#18631).
 fn old_launcher_note() -> Option<String> {
     use horizon_launcher::bug_report;
@@ -3973,6 +4062,36 @@ mod tests {
             Some(Cmd::Play { account, .. }) => assert_eq!(account.as_deref(), Some("Alex")),
             _ => panic!("not play"),
         }
+    }
+
+    /// MFRE: the CLI grows `account add-offline NAME` (no Microsoft sign-in) and `eula`
+    /// (the consent that lets downloads run with no owner).
+    #[test]
+    fn mfre_offline_and_eula_commands_parse() {
+        let cli =
+            Cli::try_parse_from(["horizon-launcher", "account", "add-offline", "Steve"]).unwrap();
+        match cli.command {
+            Some(Cmd::Account {
+                action: Some(AccountCmd::AddOffline { name }),
+            }) => assert_eq!(name, "Steve"),
+            _ => panic!("not account add-offline"),
+        }
+        // `add-offline` needs the name.
+        assert!(Cli::try_parse_from(["horizon-launcher", "account", "add-offline"]).is_err());
+        let eula = |args: &[&str]| {
+            let mut argv = vec!["horizon-launcher"];
+            argv.extend_from_slice(args);
+            match Cli::try_parse_from(argv).unwrap().command {
+                Some(Cmd::Eula { action }) => action,
+                _ => panic!("not eula"),
+            }
+        };
+        assert!(matches!(eula(&["eula"]), None));
+        assert!(matches!(eula(&["eula", "status"]), Some(EulaCmd::Status)));
+        assert!(matches!(eula(&["eula", "accept"]), Some(EulaCmd::Accept)));
+        assert!(matches!(eula(&["eula", "revoke"]), Some(EulaCmd::Revoke)));
+        // No unknown eula action.
+        assert!(Cli::try_parse_from(["horizon-launcher", "eula", "maybe"]).is_err());
     }
 
     #[test]

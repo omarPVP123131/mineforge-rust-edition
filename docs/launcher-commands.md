@@ -238,6 +238,40 @@ Play as this account.
 
 MCP: `account_select`.
 
+## `horizon-launcher account add-offline`
+
+MFRE: add an offline profile (just a name; no Microsoft sign-in) and play as it.
+
+    horizon-launcher account add-offline <NAME>
+
+- `NAME`: The player name: 3 to 16 of A-Z, a-z, 0-9 and _
+
+MCP: `account_add_offline`.
+
+## `horizon-launcher eula status`
+
+Whether this launcher may download Minecraft from Mojang with no account.
+
+    horizon-launcher eula status
+
+MCP: `eula_status`.
+
+## `horizon-launcher eula accept`
+
+Accept Minecraft's EULA (https://www.minecraft.net/en-us/eula) for this launcher: downloads run with no account, and every player must own the game.
+
+    horizon-launcher eula accept
+
+MCP: `eula_accept`.
+
+## `horizon-launcher eula revoke`
+
+Take the consent back.
+
+    horizon-launcher eula revoke
+
+MCP: `eula_revoke`.
+
 ## `horizon-launcher settings`
 
 Show the launcher's settings, or set one (the Settings page): selected-version TAG (use this version for the selected Horizon instance), game-architecture auto|x64|arm64, minecraft-dir PATH, server-dir PATH ("default" resets a folder), install-new-versions on|off, prune-old-versions on|off (delete old versions after an install, keeping the ones instances use and the newest few), keep-versions N (how many of the newest to keep; "default" is 2), opening-animation on|off, proxy http://host:port|socks5://host:port ("default" removes it), while-playing stay|minimize|hide (what the window does while the game runs), language system|en|fr|ru|de|zh|es|uk|pl (the window's language; system follows the computer's), accent violet|blue|teal|green|amber|red|pink|#rrggbb|DEGREES (a named accent, any colour, or any hue), background PATH (a picture behind Home; "default" shows Horizon's landscape), cache-limit-gib N (managed cache limit in GiB: 10, 25 (default), 50, 100; 0 disables automatic cleanup).
