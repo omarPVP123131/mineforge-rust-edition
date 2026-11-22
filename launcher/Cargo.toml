@@ -9,6 +9,8 @@ description = "Downloads, prepares and starts Horizon builds"
 
 [dependencies]
 horizon-addresses = { path = "../crates/horizon-addresses" }
+# MFRE: the vanilla offline UUID for offline profiles (name only, no Microsoft sign-in).
+horizon-protocol = { path = "../crates/horizon-protocol" }
 # Reads the object members out of the mods' rlibs for the API route's C link (`native_mods/api_route.rs`).
 object = { version = "0.39", default-features = false, features = ["read_core", "archive", "pe", "std"] }
 # The catalog and mod-owned trait injections share their generation rules.

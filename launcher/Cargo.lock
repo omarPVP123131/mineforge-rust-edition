@@ -3126,6 +3126,7 @@ dependencies = [
  "horizon-mod-vocab",
  "horizon-platform",
  "horizon-port-pack",
+ "horizon-protocol",
  "horizon-release-sign",
  "horizon-server-launch",
  "horizon-shader-api",

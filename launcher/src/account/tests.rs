@@ -2583,3 +2583,86 @@ fn a_launch_saving_late_keeps_sign_ins_and_outs_made_meanwhile() {
     assert_eq!(names, [std::ffi::OsString::from("accounts.json")]);
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+// MFRE: offline profiles (name + the game's offline UUID; no Microsoft, no services).
+
+#[test]
+fn offline_profile_uuid_matches_the_game() {
+    let account = Accounts::offline_account("Notch");
+    // The same UUID horizon-protocol derives for an offline player (its own test vector).
+    assert_eq!(account.uuid, "b50ad385829d3141a2167e7d7539ba7f");
+    assert_eq!(account.name, "Notch");
+    assert!(account.skin.is_none() && account.cape.is_none());
+}
+
+#[test]
+fn offline_names_are_validated() {
+    let mut accounts = Accounts::default();
+    assert!(accounts.valid_offline_name("ab").is_err());
+    assert!(accounts.valid_offline_name("seventeen_chars___x").is_err());
+    assert!(accounts.valid_offline_name("two words").is_err());
+    assert!(accounts.valid_offline_name("Ana_123").is_ok());
+    let profile = accounts.add_offline("Ana_123").unwrap();
+    assert_eq!(accounts.selected.as_deref(), Some(profile.uuid.as_str()));
+    assert_eq!(accounts.selected_offline().unwrap().name, "Ana_123");
+    // Taken, in any case: no second player with the same name.
+    assert!(accounts.valid_offline_name("ana_123").is_err());
+    assert!(accounts.add_offline("Ana_123").is_err());
+}
+
+#[test]
+fn offline_profiles_survive_the_json() {
+    let mut accounts = Accounts::default();
+    let profile = accounts.add_offline("Player1").unwrap();
+    let text = serde_json::to_string(&accounts).unwrap();
+    let back: Accounts = serde_json::from_str(&text).unwrap();
+    assert_eq!(back.selected_offline().unwrap().uuid, profile.uuid);
+    assert!(back.find("player1").is_some());
+    // The legacy `offline` key of an older launcher reads, and stays out of the profiles.
+    let legacy: Accounts =
+        serde_json::from_str(r#"{"accounts":[],"selected":null,"offline":["Old"]}"#).unwrap();
+    assert!(legacy.offline_profiles.is_empty());
+    let fresh: Accounts = serde_json::from_str(r#"{"accounts":[],"selected":null}"#).unwrap();
+    assert!(fresh.offline_profiles.is_empty());
+}
+
+#[test]
+fn offline_play_needs_no_services() {
+    let mut accounts = Accounts::default();
+    accounts.add_offline("Offline1").unwrap();
+    let store = MemoryStore::default();
+    // `offline()`'s endpoints refuse everything: an offline profile never asks them.
+    let pass = launch_for_game(&offline(), None, &store, &mut accounts).unwrap();
+    assert_eq!(
+        pass.offline_profile.as_ref().map(|p| p.name.as_str()),
+        Some("Offline1")
+    );
+    let session = session_file(&nowhere(), pass, Vec::new());
+    assert!(session.file.is_none());
+    assert_eq!(session.name.as_deref(), Some("Offline1"));
+}
+
+#[test]
+fn offline_default_selection_falls_to_the_profile() {
+    let mut accounts = Accounts::default();
+    accounts.add_offline("OnlyOne").unwrap();
+    accounts.selected = None;
+    let store = MemoryStore::default();
+    let pass = launch_for_game(&offline(), None, &store, &mut accounts).unwrap();
+    assert_eq!(pass.offline_profile.unwrap().name, "OnlyOne");
+}
+
+#[test]
+fn offline_play_as_and_remove() {
+    let mut accounts = Accounts::default();
+    let one = accounts.add_offline("Player1").unwrap();
+    let two = accounts.add_offline("Player2").unwrap();
+    assert_eq!(accounts.selected.as_deref(), Some(two.uuid.as_str()));
+    accounts.play_as(&one.uuid).unwrap();
+    assert_eq!(accounts.selected_offline().unwrap().name, "Player1");
+    let store = MemoryStore::default();
+    accounts.remove(&store, &one.uuid).unwrap();
+    assert!(accounts.selected.is_none());
+    assert_eq!(accounts.offline_profiles.len(), 1);
+    assert!(accounts.find("Player1").is_none());
+}

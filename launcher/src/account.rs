@@ -1744,6 +1744,13 @@ pub struct Accounts {
     pub accounts: Vec<Account>,
     /// The UUID of the account the game starts with; none: the first one.
     pub selected: Option<String>,
+    /// MFRE: offline profiles (name + derived UUID, no Microsoft sign-in). Their skins and
+    /// capes, when the player picks them, are local files (`skins/<name>.png`,
+    /// `skins/<name>.cape.png`). Not the legacy `offline` key of an older launcher, which
+    /// only reads so that its skins go on the next save. Absent from the file while empty:
+    /// a roster with no profiles saves exactly as it always did.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub offline_profiles: Vec<Account>,
     /// Offline names an older launcher kept (`offline`), read only so that the next save also
     /// deletes their skins and capes (`skins/<name>.png`, `skins/<name>.cape.png`). Its
     /// `offline_selected` and `looks` are dropped on read.
@@ -1818,22 +1825,31 @@ impl Accounts {
             saved.update(account.clone());
         }
         if saved.selected().is_none() {
-            saved.selected = self
-                .selected
-                .clone()
-                .filter(|u| saved.accounts.iter().any(|a| &a.uuid == u));
+            saved.selected = self.selected.clone().filter(|u| {
+                saved.accounts.iter().any(|a| &a.uuid == u)
+                    || saved.offline_profiles.iter().any(|a| &a.uuid == u)
+            });
         }
         saved.save_to(path)
     }
     pub fn selected(&self) -> Option<&Account> {
         let uuid = self.selected.as_ref()?;
-        self.accounts.iter().find(|a| &a.uuid == uuid)
+        self.accounts
+            .iter()
+            .find(|a| &a.uuid == uuid)
+            .or_else(|| self.offline_profiles.iter().find(|a| &a.uuid == uuid))
+    }
+    /// MFRE: the selected profile when it is an offline one.
+    pub fn selected_offline(&self) -> Option<&Account> {
+        let uuid = self.selected.as_ref()?;
+        self.offline_profiles.iter().find(|a| &a.uuid == uuid)
     }
     /// Find an account by name (any case) or UUID (with or without dashes).
     pub fn find(&self, who: &str) -> Option<&Account> {
         let undashed = who.replace('-', "").to_lowercase();
         self.accounts
             .iter()
+            .chain(self.offline_profiles.iter())
             .find(|a| a.name.eq_ignore_ascii_case(who) || a.uuid == undashed)
     }
     /// Keep a new or renewed account, its secrets in the store, and select it.
@@ -1877,7 +1893,12 @@ impl Accounts {
 
     /// Plays as the signed-in account `uuid`.
     pub fn play_as(&mut self, uuid: &str) -> Result<(), String> {
-        if !self.accounts.iter().any(|a| a.uuid == uuid) {
+        if !self
+            .accounts
+            .iter()
+            .chain(self.offline_profiles.iter())
+            .any(|a| a.uuid == uuid)
+        {
             return Err("That account isn't signed in.".into());
         }
         self.selected = Some(uuid.to_string());
@@ -1891,8 +1912,21 @@ impl Accounts {
         }
     }
 
-    /// Sign out: the secrets leave the keychain, the account the list.
+    /// Sign out: the secrets leave the keychain, the account the list. An offline profile
+    /// (MFRE) keeps no secrets: it leaves the list, and its local skin files go too.
     pub fn remove(&mut self, store: &dyn SecretStore, uuid: &str) -> Result<(), String> {
+        if let Some(index) = self.offline_profiles.iter().position(|a| a.uuid == uuid) {
+            let profile = self.offline_profiles.remove(index);
+            let skins = crate::backend::data_dir().join("skins");
+            let key = profile.name.to_ascii_lowercase();
+            for file in [format!("{key}.png"), format!("{key}.cape.png")] {
+                let _ = std::fs::remove_file(skins.join(file));
+            }
+            if self.selected.as_deref() == Some(uuid) {
+                self.selected = None;
+            }
+            return Ok(());
+        }
         let _operation = session::lock(store)?;
         store.delete(uuid)?;
         self.accounts.retain(|a| a.uuid != uuid);
@@ -1900,6 +1934,42 @@ impl Accounts {
             self.selected = None;
         }
         Ok(())
+    }
+
+    /// MFRE: the offline profile for `name`: the same UUID the game derives for an offline
+    /// player (`horizon-protocol`), no skin yet.
+    pub fn offline_account(name: &str) -> Account {
+        let uuid =
+            horizon_protocol::crypto::uuid_string(horizon_protocol::crypto::offline_uuid(name));
+        Account {
+            uuid: uuid.replace('-', "").to_lowercase(),
+            name: name.to_owned(),
+            skin: None,
+            cape: None,
+        }
+    }
+
+    /// MFRE: whether `name` can be an offline profile's: 3 to 16 of A-Z, a-z, 0-9 and _, and
+    /// no account or profile has it yet (any case).
+    pub fn valid_offline_name(&self, name: &str) -> Result<(), String> {
+        let ok = (3..=16).contains(&name.chars().count())
+            && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
+        if !ok {
+            return Err("A name, 3 to 16 letters: A-Z, a-z, 0-9 and _.".to_owned());
+        }
+        if self.find(name).is_some() {
+            return Err(format!("There is already a player called {name}."));
+        }
+        Ok(())
+    }
+
+    /// MFRE: keep a new offline profile and select it. The caller saves.
+    pub fn add_offline(&mut self, name: &str) -> Result<Account, String> {
+        self.valid_offline_name(name)?;
+        let account = Self::offline_account(name);
+        self.selected = Some(account.uuid.clone());
+        self.offline_profiles.push(account.clone());
+        Ok(account)
     }
 }
 
@@ -1946,6 +2016,9 @@ pub struct Launch {
     /// An account the services said owns the game just now, the selected one first: who the
     /// launcher may download the game for.
     pub owner: Option<(Account, Secrets)>,
+    /// MFRE: the selected offline profile: it plays with no session and no services, and the
+    /// game starts with its name (`--name`).
+    pub offline_profile: Option<Account>,
     /// A renewed sign-in the keychain refused to keep: it plays now, and may have to sign in
     /// again next time.
     pub unsaved: Option<String>,
@@ -2066,7 +2139,18 @@ pub fn launch_for_game(
     accounts: &mut Accounts,
 ) -> Result<Launch, NoOwner> {
     if accounts.selected().is_none() {
-        accounts.selected = accounts.accounts.first().map(|a| a.uuid.clone());
+        accounts.selected = accounts
+            .accounts
+            .first()
+            .or_else(|| accounts.offline_profiles.first())
+            .map(|a| a.uuid.clone());
+    }
+    // MFRE: an offline profile plays without the services: no session, no ownership ask.
+    if let Some(profile) = accounts.selected_offline() {
+        return Ok(Launch {
+            offline_profile: Some(profile.clone()),
+            ..Launch::default()
+        });
     }
     let pass = launch(ep, client_id, store, accounts)?;
     let owns = accounts
@@ -2309,6 +2393,9 @@ impl SignIn {
 pub struct GameSession {
     /// The playing account's session (`--session-file`); none: offline.
     pub file: Option<PathBuf>,
+    /// MFRE: an offline profile's name for the game to start with (`--name`); none: the
+    /// session's name or the game's kept one.
+    pub name: Option<String>,
     /// Why the account plays offline this time, if it does.
     pub offline: Option<String>,
     /// The other accounts' sessions, for splitscreen players (`account_sessions`).
@@ -2385,6 +2472,7 @@ fn session_file(game_home: &Path, pass: Launch, env: Vec<(&'static str, String)>
     let mut out = GameSession {
         env,
         offline: pass.offline,
+        name: pass.offline_profile.map(|profile| profile.name),
         ..GameSession::default()
     };
     if let Some((account, secrets)) = pass.session {
