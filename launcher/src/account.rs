@@ -480,6 +480,18 @@ pub struct Account {
     pub cape: Option<String>,
 }
 
+impl Account {
+    /// MFRE: whether this is an offline profile — its UUID is the one derived from its name
+    /// (`offline_account`). Such a profile has no services behind it: its look comes from its
+    /// local skin files (`crate::skins`), never from Mojang's session server.
+    pub fn is_offline(&self) -> bool {
+        let derived = horizon_protocol::crypto::uuid_string(
+            horizon_protocol::crypto::offline_uuid(&self.name),
+        );
+        self.uuid.eq_ignore_ascii_case(&derived.replace('-', ""))
+    }
+}
+
 /// The profile; none when the account has none (it doesn't own the game, or never made one).
 fn profile(ep: &Endpoints, token: &str) -> Result<Option<Account>, String> {
     let (status, v) = send(

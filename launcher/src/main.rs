@@ -115,6 +115,7 @@ use horizon_launcher::i18n::{self, tr, trf};
 use horizon_launcher::instances;
 use horizon_launcher::native_mods;
 use horizon_launcher::native_status;
+use horizon_launcher::skins;
 use horizon_launcher::storage;
 use horizon_launcher::telemetry;
 use native_consent::PendingConsent;
@@ -436,6 +437,11 @@ struct Launcher {
     restyle: bool,
     /// Why the last picture for Home's background was refused.
     background_error: Option<String>,
+    /// MFRE: what the last skin or cape picked for an offline profile did (kept, or why it was
+    /// refused), shown under Settings' offline rows.
+    skin_note: Option<String>,
+    /// MFRE: the offline profile a skin/cape file dialog is picking for: (uuid, is the cape).
+    skin_pick: Option<(String, bool)>,
     /// Settings' data relocation confirmation and the worker's last result.
     location_target: Option<std::path::PathBuf>,
     /// A linked data target discovered at startup, reused while the Settings page redraws.

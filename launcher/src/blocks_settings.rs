@@ -746,8 +746,9 @@ impl Launcher {
                 &t,
             ));
         }
-        // MFRE: the offline profiles — a head from the derived UUID, the name, and Play as /
-        // Remove (which also deletes the profile's local skin files).
+        // MFRE: the offline profiles — a head from the derived UUID (or the profile's local
+        // skin), the name, and Play as / Skin / Remove (which also deletes the profile's local
+        // skin files).
         for (i, a) in self
             .accounts
             .offline_profiles
@@ -757,6 +758,9 @@ impl Launcher {
         {
             let plays = selected.as_ref() == Some(&a.uuid);
             let (select_uuid, remove_uuid) = (a.uuid.clone(), a.uuid.clone());
+            let (skin_uuid, cape_uuid) = (a.uuid.clone(), a.uuid.clone());
+            let (skin_clear, cape_clear) = (a.name.clone(), a.name.clone());
+            let (has_skin, has_cape) = skins::has(&backend::data_dir(), &a.name);
             let mut actions = div().flex().gap(px(4.));
             if !plays {
                 actions = actions.child(
@@ -774,6 +778,21 @@ impl Launcher {
                     )),
                 );
             }
+            actions = actions
+                .child(
+                    button(format!("offline-skin-{i}"), "Skin", Kind::Ghost, &t).on_click(
+                        cx.listener(move |this, _: &ClickEvent, _, cx| {
+                            this.pick_skin(&skin_uuid, false, cx);
+                        }),
+                    ),
+                )
+                .child(
+                    button(format!("offline-cape-{i}"), "Cape", Kind::Ghost, &t).on_click(
+                        cx.listener(move |this, _: &ClickEvent, _, cx| {
+                            this.pick_skin(&cape_uuid, true, cx);
+                        }),
+                    ),
+                );
             actions = actions.child(
                 button(format!("offline-remove-{i}"), "Remove", Kind::Ghost, &t).on_click(
                     cx.listener(move |this, _: &ClickEvent, _, cx| {
@@ -782,19 +801,61 @@ impl Launcher {
                     }),
                 ),
             );
+            // What the profile wears, and taking a kept file off again.
+            let mut detail = div().flex().flex_col().gap(px(2.)).child(tr(if plays {
+                "Offline profile · plays"
+            } else {
+                "Offline profile"
+            }));
+            if has_skin || has_cape {
+                let mut worn = div().flex().items_center().gap(px(8.));
+                worn = worn.child(text(theme::CAPTION).text_color(t.muted).child(tr(
+                    match (has_skin, has_cape) {
+                        (true, true) => "Skin and cape kept here",
+                        (true, false) => "Skin kept here",
+                        (false, true) => "Cape kept here",
+                        (false, false) => unreachable!(),
+                    },
+                )));
+                if has_skin {
+                    worn = worn.child(
+                        button(
+                            format!("offline-skin-clear-{i}"),
+                            "Remove skin",
+                            Kind::Ghost,
+                            &t,
+                        )
+                        .on_click(cx.listener(
+                            move |this, _: &ClickEvent, _, cx| {
+                                this.remove_skin(&skin_clear, false);
+                                cx.notify();
+                            },
+                        )),
+                    );
+                }
+                if has_cape {
+                    worn = worn.child(
+                        button(
+                            format!("offline-cape-clear-{i}"),
+                            "Remove cape",
+                            Kind::Ghost,
+                            &t,
+                        )
+                        .on_click(cx.listener(
+                            move |this, _: &ClickEvent, _, cx| {
+                                this.remove_skin(&cape_clear, true);
+                                cx.notify();
+                            },
+                        )),
+                    );
+                }
+                detail = detail.child(worn);
+            }
             n += 1;
             rows = rows.child(account_row(
                 Some(self.profile_heads.draw(Some(&a.uuid), 32., self.scale, &t)),
                 a.name.clone(),
-                Some(
-                    div()
-                        .child(tr(if plays {
-                            "Offline profile · plays"
-                        } else {
-                            "Offline profile"
-                        }))
-                        .into_any_element(),
-                ),
+                Some(detail.into_any_element()),
                 actions,
                 &t,
             ));
@@ -834,7 +895,102 @@ impl Launcher {
                 ),
                 &t,
             ));
+        // MFRE: what the last skin/cape pick did, under the rows it belongs to.
+        if let Some(note) = self.skin_note.clone() {
+            rows = rows.child(
+                div()
+                    .px(px(16.))
+                    .py(px(4.))
+                    .child(text(theme::CAPTION).text_color(t.muted).child(note)),
+            );
+        }
         (rows, n)
+    }
+
+    /// MFRE (D4): ask for a skin (or cape) PNG for one offline profile; `keep_skin` takes it in.
+    pub(crate) fn pick_skin(&mut self, uuid: &str, cape: bool, cx: &mut Context<Self>) {
+        if self.skin_pick.is_some() {
+            return;
+        }
+        self.skin_pick = Some((uuid.to_owned(), cape));
+        let paths = cx.prompt_for_paths(PathPromptOptions {
+            files: true,
+            directories: false,
+            multiple: false,
+            prompt: Some(tr("Choose").to_string().into()),
+        });
+        cx.spawn(async move |this, cx| {
+            let picked = paths.await;
+            let _ = this.update(cx, |this, cx| {
+                let Some((uuid, cape)) = this.skin_pick.take() else {
+                    return;
+                };
+                let Ok(Ok(Some(mut chosen))) = picked else {
+                    return;
+                };
+                let Some(path) = chosen.pop() else {
+                    return;
+                };
+                this.keep_skin(&uuid, cape, &path);
+                // The head cache keys on the skin URL, which an offline profile doesn't
+                // have: drop it so the new local file is read again.
+                this.profile_heads.forget(&uuid);
+                this.load_profile_heads();
+                cx.notify();
+            });
+        })
+        .detach();
+    }
+
+    /// MFRE: validate and keep the picked PNG as the profile's skin or cape, and say what
+    /// happened under the rows.
+    fn keep_skin(&mut self, uuid: &str, cape: bool, file: &std::path::Path) {
+        let Some(name) = self
+            .accounts
+            .offline_profiles
+            .iter()
+            .find(|a| a.uuid == uuid)
+            .map(|a| a.name.clone())
+        else {
+            return;
+        };
+        self.skin_note = match skins::keep(&backend::data_dir(), &name, cape, file) {
+            Ok(_) => Some(trf(
+                if cape {
+                    "{name}'s cape is kept here."
+                } else {
+                    "{name}'s skin is kept here."
+                },
+                &[("name", &name)],
+            )),
+            Err(e) => Some(e),
+        };
+    }
+
+    /// MFRE: take the profile's kept skin or cape file off; the head falls back to the UUID's
+    /// default skin.
+    pub(crate) fn remove_skin(&mut self, name: &str, cape: bool) {
+        self.skin_note = match skins::clear(&backend::data_dir(), name, cape) {
+            Ok(()) => Some(trf(
+                if cape {
+                    "{name}'s cape was removed."
+                } else {
+                    "{name}'s skin was removed."
+                },
+                &[("name", name)],
+            )),
+            Err(e) => Some(e),
+        };
+        if let Some(a) = self
+            .accounts
+            .offline_profiles
+            .iter()
+            .find(|a| a.name == name)
+            .map(|a| a.uuid.clone())
+        {
+            self.profile_heads.forget(&a);
+        }
+        self.load_profile_heads();
     }
 
     /// Adding a Microsoft account, or signing one in again: what the row is called, what is

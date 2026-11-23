@@ -42,6 +42,17 @@ SPANSISH = {
         "\n  • Acepta el EULA de Minecraft para descargar {version} de Mojang sin cuenta: "
         "horizon-launcher eula accept. Cada jugador debe poseer el juego.",
     "A name, 3 to 16 letters": "Un nombre, de 3 a 16 letras",
+    "Cape": "Capa",
+    "Skin": "Skin",
+    "Remove cape": "Quitar capa",
+    "Remove skin": "Quitar skin",
+    "Skin and cape kept here": "Skin y capa guardados aquí",
+    "Skin kept here": "Skin guardado aquí",
+    "Cape kept here": "Capa guardada aquí",
+    "{name}'s cape is kept here.": "La capa de {name} está guardada aquí.",
+    "{name}'s cape was removed.": "La capa de {name} se quitó.",
+    "{name}'s skin is kept here.": "El skin de {name} está guardado aquí.",
+    "{name}'s skin was removed.": "El skin de {name} se quitó.",
     "Minecraft downloads come from Mojang; every player must own Minecraft: Java Edition.":
         "Las descargas de Minecraft vienen de Mojang; cada jugador debe poseer "
         "Minecraft: Java Edition.",

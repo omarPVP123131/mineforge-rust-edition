@@ -96,7 +96,8 @@ pub fn profile_face(
     resources: &Path,
 ) -> (Option<Vec<[u8; 4]>>, bool) {
     let failed = std::cell::Cell::new(false);
-    let face = profile_face_with(account, cache, resources, &|url| {
+    let data = crate::backend::data_dir();
+    let face = profile_face_with(account, &data, cache, resources, &|url| {
         use std::io::Read;
         failed.set(true);
         let response = crate::proxy::agent(
@@ -172,11 +173,19 @@ fn session_skin(
 
 fn profile_face_with(
     account: &crate::account::Account,
+    data: &Path,
     cache: &Path,
     resources: &Path,
     fetch: &dyn Fn(&str) -> Option<Vec<u8>>,
 ) -> Option<Vec<[u8; 4]>> {
     use sha1::{Digest, Sha1};
+    // MFRE (D4): an offline profile's look is local — its skin file when it has one, the
+    // UUID's default skin when it hasn't. No session server is asked for it: there is no
+    // Microsoft profile behind the name, and the fork promises zero service calls for it.
+    if account.is_offline() {
+        return crate::skins::face(data, &account.name)
+            .or_else(|| default_face(resources, &account.uuid));
+    }
     // An account saved without its skin (signed in before skins were kept, or its profile
     // answered without one) asks Mojang's session server, which needs no token.
     let url = account
@@ -273,16 +282,16 @@ mod tests {
             calls.set(calls.get() + 1);
             Some(png.clone())
         };
-        let head = profile_face_with(&account, &dir, &dir, &fetch).unwrap();
+        let head = profile_face_with(&account, &dir, &dir, &dir, &fetch).unwrap();
         assert_eq!(head[0], [12, 34, 56, 255]);
         assert_eq!(
-            profile_face_with(&account, &dir, &dir, &|_| panic!(
+            profile_face_with(&account, &dir, &dir, &dir, &|_| panic!(
                 "cached head must not need the network"
             )),
             Some(head)
         );
         account.skin.as_mut().unwrap().0 = "https://textures.minecraft.net/texture/def".into();
-        assert!(profile_face_with(&account, &dir, &dir, &fetch).is_some());
+        assert!(profile_face_with(&account, &dir, &dir, &dir, &fetch).is_some());
         assert_eq!(calls.get(), 2, "skin changes must not reuse an old image");
         assert!(profile_pixels(&png).is_some());
         let mut oversized = Vec::new();
@@ -338,7 +347,7 @@ mod tests {
         };
         // No default skins in `resources`: the face can only be the session's skin.
         let none = dir.join("no-resources");
-        let head = profile_face_with(&account, &dir, &none, &fetch).unwrap();
+        let head = profile_face_with(&account, &dir, &dir, &none, &fetch).unwrap();
         assert_eq!(head[0], [90, 80, 70, 255]);
         assert_eq!(
             asked.borrow()[0],
@@ -346,11 +355,14 @@ mod tests {
         );
         // Asked once: the URL and the skin are kept.
         asked.borrow_mut().clear();
-        assert_eq!(profile_face_with(&account, &dir, &none, &fetch), Some(head));
+        assert_eq!(
+            profile_face_with(&account, &dir, &dir, &none, &fetch),
+            Some(head)
+        );
         assert!(asked.borrow().is_empty(), "{:?}", asked.borrow());
         // Offline, with nothing kept: no face, so the launcher draws its user icon.
         let fresh = dir.join("fresh");
-        assert!(profile_face_with(&account, &fresh, &none, &|_| None).is_none());
+        assert!(profile_face_with(&account, &dir, &fresh, &none, &|_| None).is_none());
         std::fs::remove_dir_all(dir).unwrap();
     }
 
@@ -371,16 +383,59 @@ mod tests {
             )),
             cape: None,
         };
-        let head = profile_face_with(&account, &dir.join("cache"), &dir, &|_| None).unwrap();
+        let head = profile_face_with(&account, &dir, &dir.join("cache"), &dir, &|_| None).unwrap();
         assert_eq!(head[0], [3, 5, 7, 255]);
         let mut blocked = account;
         blocked.skin.as_mut().unwrap().0 = "https://example.com/not-a-minecraft-skin".into();
         assert!(
-            profile_face_with(&blocked, &dir.join("cache"), &dir, &|_| panic!(
+            profile_face_with(&blocked, &dir, &dir.join("cache"), &dir, &|_| panic!(
                 "must not fetch an arbitrary profile URL"
             ))
             .is_some()
         );
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    /// MFRE (D4): an offline profile's face comes from its local skin file — no session
+    /// server, no texture host, nothing to fetch — and without a file there is simply no face
+    /// here (the caller falls back to the UUID's default skin).
+    #[test]
+    fn an_offline_profile_wears_its_local_skin_and_asks_no_server() {
+        let dir = std::env::temp_dir().join(format!(
+            "hz-mfre-offline-skin-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let account = crate::account::Accounts::offline_account("Ana_123");
+        assert!(account.is_offline());
+        // No skin file yet: no face, and nothing was fetched.
+        let none = dir.join("no-resources");
+        assert!(
+            profile_face_with(&account, &dir, &dir.join("cache"), &none, &|_| panic!(
+                "an offline profile must never reach the network"
+            ))
+            .is_none()
+        );
+        // Its skin file: the face is the file's.
+        let mut skin = image::RgbaImage::new(64, 64);
+        skin.put_pixel(8, 8, image::Rgba([11, 22, 33, 255]));
+        let mut png = Vec::new();
+        skin.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+            .unwrap();
+        std::fs::create_dir_all(crate::skins::dir(&dir)).unwrap();
+        std::fs::write(crate::skins::path(&dir, "ana_123", false), &png).unwrap();
+        let head = profile_face_with(&account, &dir, &dir.join("cache"), &none, &|_| {
+            panic!("offline")
+        })
+        .unwrap();
+        assert_eq!(head[0], [11, 22, 33, 255]);
+        // A Microsoft account is not offline: the branch doesn't touch it.
+        let mut signed = account.clone();
+        signed.uuid = "069a79f444e94726a5befca90e38aaf5".into();
+        assert!(!signed.is_offline());
         std::fs::remove_dir_all(dir).unwrap();
     }
 }

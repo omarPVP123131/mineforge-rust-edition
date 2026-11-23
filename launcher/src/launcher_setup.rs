@@ -183,6 +183,8 @@ impl Launcher {
             // The first draw takes the launcher theme from Settings.
             restyle: true,
             background_error: None,
+            skin_note: None,
+            skin_pick: None,
             location_target: None,
             location_real_target: horizon_launcher::data_location::linked_data_folder_target(),
             location_error: location_page::startup_error(),

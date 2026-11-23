@@ -1284,5 +1284,16 @@
   "\n  • Accept Minecraft's EULA to download {version} from Mojang with no account: horizon-launcher eula accept. Every player must own the game.": "\n  • Acepta el EULA de Minecraft para descargar {version} de Mojang sin cuenta: horizon-launcher eula accept. Cada jugador debe poseer el juego.",
   "Minecraft downloads come from Mojang; every player must own Minecraft: Java Edition.": "Las descargas de Minecraft vienen de Mojang; cada jugador debe poseer Minecraft: Java Edition.",
   "Not prepared. Play downloads Minecraft {version} from Mojang and prepares it.": "Sin preparar. Jugar descarga Minecraft {version} de Mojang y lo prepara.",
-  "Type a name and play: single player and LAN need no account and no sign-in.": "Escribe un nombre y juega: un jugador y LAN no necesitan cuenta ni inicio de sesión."
+  "Type a name and play: single player and LAN need no account and no sign-in.": "Escribe un nombre y juega: un jugador y LAN no necesitan cuenta ni inicio de sesión.",
+  "Cape": "Capa",
+  "Skin": "Skin",
+  "Remove cape": "Quitar capa",
+  "Remove skin": "Quitar skin",
+  "Skin and cape kept here": "Skin y capa guardados aquí",
+  "Skin kept here": "Skin guardado aquí",
+  "Cape kept here": "Capa guardada aquí",
+  "{name}'s cape is kept here.": "La capa de {name} está guardada aquí.",
+  "{name}'s cape was removed.": "La capa de {name} se quitó.",
+  "{name}'s skin is kept here.": "El skin de {name} está guardado aquí.",
+  "{name}'s skin was removed.": "El skin de {name} se quitó."
 }

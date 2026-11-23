@@ -551,8 +551,16 @@ impl Launcher {
 
     pub(crate) fn load_profile_heads(&mut self) {
         let resources = self.game_resources();
-        self.profile_heads
-            .request(&self.accounts.accounts, resources, &self.tx);
+        // MFRE (D4): the offline profiles' heads too — their faces come from their local skin
+        // files (`skins`), no service is asked for them.
+        let accounts: Vec<_> = self
+            .accounts
+            .accounts
+            .iter()
+            .chain(self.accounts.offline_profiles.iter())
+            .cloned()
+            .collect();
+        self.profile_heads.request(&accounts, resources, &self.tx);
     }
 
     pub(crate) fn begin_auth_job(&mut self, uuid: &str) -> Option<u64> {

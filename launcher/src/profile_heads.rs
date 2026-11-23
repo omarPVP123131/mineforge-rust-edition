@@ -24,6 +24,12 @@ struct Head {
 }
 
 impl Heads {
+    /// MFRE (D4): drop one profile's kept head, so the next `request` reads its local skin
+    /// file again (a skin picked or removed in Settings changes no URL to notice).
+    pub fn forget(&mut self, uuid: &str) {
+        self.0.remove(uuid);
+    }
+
     /// Asks for the heads of `accounts`; forgets the others.
     pub fn request(&mut self, accounts: &[account::Account], resources: PathBuf, tx: &Sender<Msg>) {
         self.0
