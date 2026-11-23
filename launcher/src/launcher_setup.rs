@@ -508,7 +508,7 @@ impl Launcher {
     pub(crate) fn launcher_ready_note(&self, version: &str) -> String {
         if horizon_launcher::update_handoff::installs_on_close() {
             trf(
-                "Launcher {version} installs when you close Horizon",
+                "Launcher {version} installs when you close MineForge",
                 &[("version", version)],
             )
         } else {

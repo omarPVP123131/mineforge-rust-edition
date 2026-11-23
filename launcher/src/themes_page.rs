@@ -678,7 +678,7 @@ impl Launcher {
             Some(
                 div()
                     .child(tr(
-                        "Theme, accent colour, glass, blur and Home's background go back to how Horizon ships.",
+                        "Theme, accent colour, glass, blur and Home's background go back to how MineForge ships.",
                     ))
                     .into_any_element(),
             ),
@@ -700,7 +700,7 @@ impl Launcher {
                     // A failed write keeps the save notice and its retry; the toast must not
                     // claim the old look is gone for good.
                     crate::glass_toast::say(if saved {
-                        tr("The launcher's look is back to how Horizon ships")
+                        tr("The launcher's look is back to how MineForge ships")
                     } else {
                         tr("The launcher's look is reset for now, but it could not be saved")
                     });

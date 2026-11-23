@@ -109,7 +109,7 @@ impl Launcher {
                                 Ok(true) => this.location_target = Some(path),
                                 Ok(false) => {
                                     this.location_error = Some(
-                                        tr("Choose an empty folder for Horizon's data.").into(),
+                                        tr("Choose an empty folder for MineForge's data.").into(),
                                     );
                                 }
                                 Err(error) => this.location_picker_error(error.to_string()),

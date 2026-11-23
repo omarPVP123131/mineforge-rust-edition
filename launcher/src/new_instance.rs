@@ -126,7 +126,7 @@ impl Launcher {
             _ => None,
         };
         let base = match j.kind {
-            NewKind::Horizon => tr("My Horizon").to_string(),
+            NewKind::Horizon => tr("My MineForge").to_string(),
             _ => j.default_name(&j.minecraft(versions)?),
         };
         let taken: Vec<&str> = self
@@ -242,7 +242,7 @@ impl Launcher {
         let now = self.instances.dialog.as_ref().map(|d| d.java.kind);
         div().flex().gap(px(4.)).children(
             [
-                (NewKind::Horizon, "Horizon"),
+                (NewKind::Horizon, "MineForge"),
                 (NewKind::Vanilla, "Vanilla"),
                 (NewKind::Modded, "Modded"),
             ]

@@ -1,9 +1,12 @@
 # Horizon's mark and icons
 
-**The mark.** An H whose crossbar is the horizon: the line runs edge to edge in Horizon's violet,
-the stems above it in full strength and their reflection below at a third. It is drawn on whole
-units of a 16-unit grid, so it is sharp at 16 px and holds at 1024 px. `docs/design-system.md`
-places it in the design system; `candidates/` keeps the two alternatives that were shown with it.
+**The mark.** MineForge's: a pixel M on whole units of a 16-unit grid — outer stems full
+height, the diagonals stepping in one row — whose middle vertex hangs a row lower in molten
+orange: the forge spark. Sharp at 16 px, holds at 1024 px, zero Mojang assets (TRAYECTORIA's
+brand notice). Upstream's H-and-horizon mark is gone from every master; binaries and file
+names stay `horizon-*` inside (D1: UI-only rebrand). `tools/mfre_brand_icons.py` writes these
+masters and rasterises every icon without librsvg; on hardware with `rsvg-convert`,
+`cargo run -p xtask -- icons` renders the same masters.
 
 ## Masters (edit these)
 

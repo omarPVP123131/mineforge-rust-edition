@@ -32,7 +32,7 @@ const INDEX: [&[&str]; 10] = [
     &[
         "Language",
         "While playing",
-        "Show the Horizon logo at startup",
+        "Show the MineForge logo at startup",
     ],
     &[
         "Theme",
@@ -596,7 +596,7 @@ impl Launcher {
             .gap(px(8.))
             .child(tile(
                 self.horizon_mark(42.),
-                "Horizon".into(),
+                "MineForge".into(),
                 installed.unwrap_or_else(|| tr("Nightly").to_string()),
                 div()
                     .flex()
@@ -659,7 +659,7 @@ impl Launcher {
             .child(self.while_playing_row(n, cx))
             .child(index_row(
                 0,
-                tr("Show the Horizon logo at startup"),
+                tr("Show the MineForge logo at startup"),
                 note("Shown for a moment while the version list loads."),
                 Some(b.opening.into_any_element()),
                 &t,
@@ -706,7 +706,7 @@ impl Launcher {
                     0,
                     tr("Applications menu"),
                     note(if self.settings.desktop_entry() {
-                        "Horizon and its icon are in your desktop's menu."
+                        "MineForge and its icon are in your desktop's menu."
                     } else {
                         "Not in your desktop's menu."
                     }),

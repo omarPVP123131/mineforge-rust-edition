@@ -454,8 +454,8 @@ impl Launcher {
         );
         let mut summary = match kind {
             NewKind::Horizon => match self.draft_horizon() {
-                Some(tag) => format!("Horizon · {}", self.version_label(&tag)),
-                None => "Horizon".into(),
+                Some(tag) => format!("MineForge · {}", self.version_label(&tag)),
+                None => "MineForge".into(),
             },
             NewKind::Vanilla => format!("{} · {minecraft}", tr("Vanilla")),
             NewKind::Modded => format!("{} · {minecraft}", loader.name()),
@@ -489,8 +489,8 @@ impl Launcher {
             let (id, title, note) = match k {
                 NewKind::Horizon => (
                     "horizon",
-                    tr("Horizon"),
-                    tr("Minecraft rebuilt in Rust, with Horizon mods").to_string(),
+                    tr("MineForge"),
+                    tr("Minecraft rebuilt in Rust, with MineForge mods").to_string(),
                 ),
                 NewKind::Vanilla => (
                     "vanilla",
@@ -809,7 +809,7 @@ impl Launcher {
         let (busy, copy, error) = (d.busy, d.copy, d.error.clone());
         let title = match (editing, kind) {
             (Some(i), _) => trf("Edit {name}", &[("name", &i.name)]),
-            (None, NewKind::Horizon) => tr("A new Horizon instance").into(),
+            (None, NewKind::Horizon) => tr("A new MineForge instance").into(),
             (None, NewKind::Vanilla) => tr("A new vanilla instance").into(),
             (None, NewKind::Modded) => tr("A new modded instance").into(),
         };
@@ -1214,7 +1214,7 @@ impl Launcher {
         let selected = self.selected_instance().cloned();
         let from = selected
             .as_ref()
-            .map_or_else(|| "Horizon".into(), |i| i.name.clone());
+            .map_or_else(|| "MineForge".into(), |i| i.name.clone());
         let icon = match &selected {
             Some(i) => self.glass_instance_icon(i, 36.),
             None => self.horizon_mark(36.),

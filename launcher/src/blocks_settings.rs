@@ -76,7 +76,7 @@ impl Launcher {
                 backend::VERSION,
                 if horizon_launcher::update_handoff::installs_on_close() {
                     trf(
-                        "{version} installs when you close Horizon",
+                        "{version} installs when you close MineForge",
                         &[("version", v)],
                     )
                 } else {
@@ -215,7 +215,7 @@ impl Launcher {
                     .child(group("Account", "user").mt_0())
                     .child(accounts)
                     .child(group("Updates", "reload"))
-                    .child(index_row(n + 1, "Horizon", Some(plain(&horizon)), horizon_action, &t))
+                    .child(index_row(n + 1, "MineForge", Some(plain(&horizon)), horizon_action, &t))
                     .child(index_row(
                         n + 1,
                         tr("Launcher"),
@@ -254,7 +254,7 @@ impl Launcher {
                     .child(self.while_playing_row(n + 3, cx))
                     .child(index_row(
                         n + 3,
-                        tr("Show the Horizon logo at startup"),
+                        tr("Show the MineForge logo at startup"),
                         Some(plain("Shown for a moment while the version list loads.")),
                         Some(opening.into_any_element()),
                         &t,
@@ -292,7 +292,7 @@ impl Launcher {
                             n + 11,
                             tr("Applications menu"),
                             Some(plain(if self.settings.desktop_entry() {
-                                "Horizon and its icon are in your desktop's menu."
+                                "MineForge and its icon are in your desktop's menu."
                             } else {
                                 "Not in your desktop's menu."
                             })),

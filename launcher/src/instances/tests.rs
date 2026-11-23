@@ -136,7 +136,7 @@ fn existing_worlds_stay_where_they_are_and_every_folder_becomes_an_instance() {
     let all = list_in(&home, &data);
     let ids: Vec<&str> = all.iter().map(|i| i.id.as_str()).collect();
     assert_eq!(ids, [DEFAULT, "pack:cozy", "port:small-pack"]);
-    assert_eq!(all[0].name, "Horizon");
+    assert_eq!(all[0].name, "MineForge");
     assert_eq!(all[0].home, home);
     assert_eq!(all[1].home, home.join("horizon-packs/cozy/home"));
     assert_eq!(all[2].name, "Small Pack");
@@ -378,7 +378,7 @@ fn use_version_pins_only_the_selected_horizon_instance_and_newest_clears_it() {
     assert_eq!(selected().resolve_version(None).unwrap(), NOV_22);
     assert!(backend::remove_version(NOV_22)
         .unwrap_err()
-        .contains("Horizon"));
+        .contains("MineForge"));
     assert!(backend::version_dir(NOV_22)
         .join(backend::COMPLETE)
         .is_file());

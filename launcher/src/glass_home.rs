@@ -164,7 +164,7 @@ impl Launcher {
             .border_color(white(ui::edge::REST))
             .child(ui::pill_origin(&origin));
         for (i, (label, mark)) in [
-            ("Horizon: your Horizon instances", horizon),
+            ("MineForge: your MineForge instances", horizon),
             ("Java Edition: your Java instances", grass),
         ]
         .into_iter()

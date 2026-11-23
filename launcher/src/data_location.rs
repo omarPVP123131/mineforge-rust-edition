@@ -702,7 +702,7 @@ pub fn kept_note(dir: &Path, ours: Option<&Path>) -> Option<String> {
             .collect::<Vec<_>>()
             .join(", ");
         crate::i18n::trf(
-            "Horizon left these folders in {target} as they were: {folders}",
+            "MineForge left these folders in {target} as they were: {folders}",
             &[
                 ("target", &dir.display().to_string()),
                 ("folders", &folders),

@@ -347,7 +347,7 @@ fn storage_protects_a_held_selection_and_a_native_build_pinned_after_inventory()
     assert!(matches!(listed().clear(), Err(Error::InstanceVersion(_))));
     assert!(backend::remove_version(native)
         .unwrap_err()
-        .contains("Horizon"));
+        .contains("MineForge"));
     assert!(native_dir.join(backend::COMPLETE).is_file());
 
     settings.instance_versions_migrated = true;
@@ -364,7 +364,10 @@ fn storage_protects_a_held_selection_and_a_native_build_pinned_after_inventory()
         .into_iter()
         .find(|row| row.category == Category::SpareGameBuilds)
         .unwrap();
-    assert!(row.kept.iter().any(|kept| kept.reason.contains("Horizon")));
+    assert!(row
+        .kept
+        .iter()
+        .any(|kept| kept.reason.contains("MineForge")));
     assert!(native_dir.join(backend::COMPLETE).is_file());
 
     instances::use_version_for(instances::DEFAULT, latest).unwrap();

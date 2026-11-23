@@ -18,12 +18,12 @@ impl Launcher {
             let failed = match (&self.installing, &self.install_error, &self.releases) {
                 (Some(_), _, _) => None,
                 (None, Some((tag, e)), _) => Some((
-                    tr("Couldn't download Horizon.").to_string(),
+                    tr("Couldn't download MineForge.").to_string(),
                     e.clone(),
                     Some(tag.clone()),
                 )),
                 (None, None, Load::Failed(e)) => Some((
-                    tr("Couldn't get the list of Horizon versions.").to_string(),
+                    tr("Couldn't get the list of MineForge versions.").to_string(),
                     e.clone(),
                     None,
                 )),
@@ -132,7 +132,7 @@ impl Launcher {
                 &[("version", &version)],
             ),
             Some(true) => trf(
-                "Not prepared. Horizon can download Minecraft {version} from Mojang for your account, or use your own install.",
+                "Not prepared. MineForge can download Minecraft {version} from Mojang for your account, or use your own install.",
                 &[("version", &version)],
             ),
             // MFRE: with no owning account this launcher can still download from Mojang once
@@ -217,7 +217,7 @@ impl Launcher {
             || {
                 div()
                     .child(if owner {
-                        tr("None needed: Horizon downloads Minecraft from Mojang for your account.")
+                        tr("None needed: MineForge downloads Minecraft from Mojang for your account.")
                     } else {
                         tr("Not found. Choose the folder where your launcher keeps Minecraft.")
                     })
@@ -433,7 +433,7 @@ impl Launcher {
         });
         if let Some((_, e)) = stable_failed {
             page = page.child(notice(
-                format!("{} {e}", tr("Couldn't download Horizon.")),
+                format!("{} {e}", tr("Couldn't download MineForge.")),
                 &t,
             ));
         }
@@ -499,7 +499,7 @@ impl Launcher {
         Some(notice(error, &t).children(action.map(|a| a.bg(t.plate))))
     }
 
-    /// "Horizon crashed": the report and the logs, and where to report it.
+    /// "MineForge crashed": the report and the logs, and where to report it.
     pub(crate) fn crash_notice(&self, crash: Crash, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let mut actions = div().flex().flex_wrap().gap(px(8.)).mt(px(8.));
@@ -575,7 +575,7 @@ impl Launcher {
             .child(
                 text(theme::HEADING)
                     .text_color(t.ink)
-                    .child(tr("Horizon crashed")),
+                    .child(tr("MineForge crashed")),
             );
         if !crash.summary.is_empty() {
             body = body.child(div().text_color(t.ink_soft).child(crash.summary));

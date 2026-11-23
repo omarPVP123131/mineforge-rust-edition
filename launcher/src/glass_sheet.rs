@@ -262,7 +262,7 @@ impl Launcher {
             cx.notify();
         });
         let what = match kind {
-            NewKind::Horizon => tr("Horizon"),
+            NewKind::Horizon => tr("MineForge"),
             NewKind::Vanilla => tr("Vanilla"),
             NewKind::Modded => tr("Modded"),
         };

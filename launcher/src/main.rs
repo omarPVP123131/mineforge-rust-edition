@@ -687,8 +687,8 @@ fn page_after_startup(page: Page, data_folder_failed: bool) -> Page {
 fn menus() -> Vec<Menu> {
     vec![
         Menu {
-            name: "Horizon Launcher".into(),
-            items: vec![MenuItem::action(tr("Quit Horizon Launcher"), Quit)],
+            name: "MineForge Launcher".into(),
+            items: vec![MenuItem::action(tr("Quit MineForge Launcher"), Quit)],
             disabled: false,
         },
         Menu {
@@ -926,10 +926,10 @@ mod tests {
     #[test]
     fn the_app_menu_has_quit() {
         let menus = super::menus();
-        assert_eq!(menus[0].name, "Horizon Launcher");
+        assert_eq!(menus[0].name, "MineForge Launcher");
         assert!(matches!(
             &menus[0].items[0],
-            gpui::MenuItem::Action { name, .. } if name == "Quit Horizon Launcher"
+            gpui::MenuItem::Action { name, .. } if name == "Quit MineForge Launcher"
         ));
     }
 

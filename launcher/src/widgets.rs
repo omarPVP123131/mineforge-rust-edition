@@ -179,35 +179,28 @@ pub(crate) fn version_tag(tag: &str) -> Div {
         )
 }
 
-/// Horizon's mark: two stems, their reflection below, and the horizon across in the accent.
+/// MineForge's mark: a pixel M whose middle vertex — the forge spark — hangs a row
+/// lower in the accent. Same geometry as docs/media/brand/icon.svg, on the 16 grid.
 pub(crate) fn mark(size: f32, t: &Theme) -> Div {
     let u = size / 16.;
-    let stem = |x: f32, y: f32, color: Hsla| {
+    let bar = |x: f32, y: f32, w: f32, h: f32, color: Hsla| {
         div()
             .absolute()
             .left(px(x * u))
             .top(px(y * u))
-            .w(px(2. * u))
-            .h(px(4. * u))
+            .w(px(w * u))
+            .h(px(h * u))
             .bg(color)
     };
     div()
         .relative()
         .flex_none()
         .size(px(size))
-        .child(stem(4., 3., t.ink))
-        .child(stem(10., 3., t.ink))
-        .child(stem(4., 8., t.ink.opacity(0.36)))
-        .child(stem(10., 8., t.ink.opacity(0.36)))
-        .child(
-            div()
-                .absolute()
-                .left(px(u))
-                .top(px(7. * u))
-                .w(px(14. * u))
-                .h(px(u))
-                .bg(t.accent),
-        )
+        .child(bar(3., 2., 2., 12., t.ink))
+        .child(bar(11., 2., 2., 12., t.ink))
+        .child(bar(5., 4., 2., 2., t.ink))
+        .child(bar(9., 4., 2., 2., t.ink))
+        .child(bar(7., 6., 2., 3., t.accent))
 }
 
 /// The last thing the player did was press Tab: focused controls show a ring (a click focuses them
@@ -808,7 +801,7 @@ pub(crate) fn short(path: &std::path::Path) -> String {
 /// address and the system's error code; any other error stays as it is.
 pub(crate) fn download_error(error: &str) -> String {
     if error.starts_with("No connection") {
-        tr("Horizon couldn't reach the internet. Check your connection, then try again.")
+        tr("MineForge couldn't reach the internet. Check your connection, then try again.")
             .to_string()
     } else {
         error.to_string()

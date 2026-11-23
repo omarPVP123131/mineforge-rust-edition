@@ -419,7 +419,7 @@ impl Launcher {
                 Some(
                     div()
                         .child(tr(
-                            "Not allowed: Horizon asks before it builds the first one.",
+                            "Not allowed: MineForge asks before it builds the first one.",
                         ))
                         .children(
                             self.storage_revoke_error

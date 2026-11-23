@@ -346,8 +346,8 @@ impl Setup {
             }
             Stage::Done { left } => {
                 let said = match self.mode {
-                    Mode::Install => tr("Horizon Launcher is installed.").to_string(),
-                    Mode::Uninstall => tr("Horizon Launcher was removed.").to_string(),
+                    Mode::Install => tr("MineForge Launcher is installed.").to_string(),
+                    Mode::Uninstall => tr("MineForge Launcher was removed.").to_string(),
                 };
                 body = body.child(text(night::TITLE, c(n.ink)).child(said));
                 if !left.is_empty() {
@@ -368,7 +368,7 @@ impl Setup {
                 if self.mode == Mode::Install {
                     body = body.child(
                         div().flex().items_center().justify_end().child(
-                            crate::button("launch", tr("Launch Horizon"), Kind::Primary, &t)
+                            crate::button("launch", tr("Launch MineForge"), Kind::Primary, &t)
                                 .on_click(
                                     cx.listener(|this, _: &ClickEvent, _, cx| this.launch(cx)),
                                 ),
@@ -396,7 +396,7 @@ impl Setup {
             .flex()
             .flex_col()
             .gap(px(18.))
-            .child(text(night::DISPLAY, c(n.ink)).child(tr("Horizon Launcher")))
+            .child(text(night::DISPLAY, c(n.ink)).child(tr("MineForge Launcher")))
             .child(body)
     }
 }

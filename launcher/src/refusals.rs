@@ -62,7 +62,7 @@ pub fn exit_error(direct: bool, status: std::process::ExitStatus) -> ExitError {
 fn exit_text(direct: bool, code: Option<i32>, status: &str) -> ExitError {
     let leases_refused = direct && code == Some(LEASES_REFUSED);
     let text = match leases_refused {
-        true => tr("Horizon stopped before starting because its folders weren't marked as in use. Press Play again.").into(),
+        true => tr("MineForge stopped before starting because its folders weren't marked as in use. Press Play again.").into(),
         false => format!("Exited with {status}"),
     };
     ExitError {
@@ -119,18 +119,18 @@ pub(crate) fn unsupported_filesystem(folder: Option<&Path>, data: &Path) -> Stri
 fn unsupported_text(folder: Option<&Path>, data: &Path, environment: bool) -> String {
     match folder {
         Some(folder) if folder == data && environment => trf(
-            "Horizon can't use {folder}: its file system isn't supported. Set HORIZON_LAUNCHER_HOME to a folder on a local drive.",
+            "MineForge can't use {folder}: its file system isn't supported. Set HORIZON_LAUNCHER_HOME to a folder on a local drive.",
             &[("folder", &shown(folder))],
         ),
         Some(folder) if folder == data => trf(
-            "Horizon can't use {folder}: its file system isn't supported. Move the launcher's data to a local drive in Settings > About > Data folder.",
+            "MineForge can't use {folder}: its file system isn't supported. Move the launcher's data to a local drive in Settings > About > Data folder.",
             &[("folder", &shown(folder))],
         ),
         Some(folder) => trf(
-            "Horizon can't use {folder}: its file system isn't supported. It must be on a local drive.",
+            "MineForge can't use {folder}: its file system isn't supported. It must be on a local drive.",
             &[("folder", &shown(folder))],
         ),
-        None => tr("A folder Horizon uses is on a file system it doesn't support. Keep the launcher's data and game folders on a local drive.").into(),
+        None => tr("A folder MineForge uses is on a file system it doesn't support. Keep the launcher's data and game folders on a local drive.").into(),
     }
 }
 
@@ -339,7 +339,7 @@ mod tests {
         assert_eq!(
             exit_text(true, Some(78), "exit code: 78"),
             ExitError {
-                text: "Horizon stopped before starting because its folders weren't marked as in use. Press Play again.".into(),
+                text: "MineForge stopped before starting because its folders weren't marked as in use. Press Play again.".into(),
                 leases_refused: true,
             }
         );
@@ -375,20 +375,20 @@ mod tests {
         let game = Path::new("/mnt/nfs/survival");
         assert_eq!(
             unsupported_text(Some(data), data, false),
-            "Horizon can't use /home/player/.local/share/horizon-launcher: its file system isn't supported. Move the launcher's data to a local drive in Settings > About > Data folder."
+            "MineForge can't use /home/player/.local/share/horizon-launcher: its file system isn't supported. Move the launcher's data to a local drive in Settings > About > Data folder."
         );
         assert_eq!(
             unsupported_text(Some(data), data, true),
-            "Horizon can't use /home/player/.local/share/horizon-launcher: its file system isn't supported. Set HORIZON_LAUNCHER_HOME to a folder on a local drive."
+            "MineForge can't use /home/player/.local/share/horizon-launcher: its file system isn't supported. Set HORIZON_LAUNCHER_HOME to a folder on a local drive."
         );
         // An instance on NFS, with the data folder local: the instance is named, not the data.
         assert_eq!(
             unsupported_text(Some(game), data, false),
-            "Horizon can't use /mnt/nfs/survival: its file system isn't supported. It must be on a local drive."
+            "MineForge can't use /mnt/nfs/survival: its file system isn't supported. It must be on a local drive."
         );
         assert_eq!(
             unsupported_text(None, data, false),
-            "A folder Horizon uses is on a file system it doesn't support. Keep the launcher's data and game folders on a local drive."
+            "A folder MineForge uses is on a file system it doesn't support. Keep the launcher's data and game folders on a local drive."
         );
 
         // Without an environment override, point the player to the in-place Settings action.

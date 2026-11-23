@@ -74,7 +74,7 @@ pub fn file_name(name: &str, system: System) -> String {
         .collect();
     let clean = clean.trim().trim_matches('.');
     let clean = if clean.is_empty() { "Instance" } else { clean };
-    format!("{clean} (Horizon).{}", system.extension())
+    format!("{clean} (MineForge).{}", system.extension())
 }
 
 /// The id as a file name or bundle id part: letters, digits and `-`.
@@ -148,7 +148,7 @@ pub fn mac_app(exe: &Path, id: &str, name: &str) -> Vec<(&'static str, Vec<u8>, 
         xml(id),
     );
     let script = format!(
-        "#!/bin/sh\n# Plays the Horizon instance {}.\nexec {} play --instance {}\n",
+        "#!/bin/sh\n# Plays the MineForge instance {}.\nexec {} play --instance {}\n",
         name.replace('\n', " "),
         sh_quote(&exe.to_string_lossy()),
         sh_quote(id),
@@ -370,7 +370,7 @@ pub fn make_in(
         }
         System::Windows => {
             let args = windows_args(id);
-            let comment = format!("Play {name} in Horizon");
+            let comment = format!("Play {name} in MineForge");
             // On Windows the shell writes the shortcut (`write_windows_link`); elsewhere, and in
             // tests for the other systems, it is laid out from the format.
             #[cfg(windows)]

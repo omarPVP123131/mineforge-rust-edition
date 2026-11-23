@@ -169,7 +169,7 @@ impl Render for MoveWindow {
             .flex()
             .flex_col()
             .gap(px(12.))
-            .child(text(night::TITLE, c(n.ink)).child(tr("Moving Horizon's data").to_string()))
+            .child(text(night::TITLE, c(n.ink)).child(tr("Moving MineForge's data").to_string()))
             .children(self.target.as_ref().map(|target| {
                 text(theme::MICRO, c(n.muted))
                     .font_family(theme::MONO)

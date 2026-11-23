@@ -7,7 +7,7 @@
 //! launcher's data folder only when asked, the game's folder never.
 //!
 //! Nothing here deletes a folder it didn't make: the install folder is always called
-//! "Horizon Launcher" ([`folder_for`]) and is removed with `remove_dir`, which only takes an empty one.
+//! "MineForge Launcher" ([`folder_for`]) and is removed with `remove_dir`, which only takes an empty one.
 //!
 //! Command lines (handled in `main` before the CLI parser, so MCP never sees them):
 //! `horizon-launcher-setup.exe` (window), `... setup --quiet [--dir <folder>] [--desktop-shortcut]`,
@@ -21,9 +21,9 @@ use std::path::{Path, PathBuf};
 use winreg::enums::{HKEY_CURRENT_USER, KEY_READ, KEY_WRITE};
 use winreg::RegKey;
 
-pub const APP_NAME: &str = "Horizon Launcher";
+pub const APP_NAME: &str = "MineForge Launcher";
 const BINARY: &str = "horizon-launcher.exe";
-const PUBLISHER: &str = "Horizon";
+const PUBLISHER: &str = "MineForge";
 const ABOUT_URL: &str = horizon_addresses::LAUNCHER_ABOUT;
 const UNINSTALL_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\HorizonLauncher";
 const OWN_KEY: &str = r"Software\Horizon\Launcher";
@@ -46,7 +46,7 @@ pub enum Step {
 
 #[derive(Clone, Debug)]
 pub struct Options {
-    /// Where the launcher goes (always a folder called "Horizon Launcher").
+    /// Where the launcher goes (always a folder called "MineForge Launcher").
     pub dir: PathBuf,
     pub desktop: bool,
     /// Uninstall only: also delete the launcher's data folder.

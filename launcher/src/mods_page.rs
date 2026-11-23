@@ -1065,7 +1065,7 @@ impl Launcher {
         let java = self.mods.java.clone();
         let instance = self
             .selected_instance()
-            .map_or_else(|| tr("Horizon").to_owned(), |i| i.name.clone());
+            .map_or_else(|| tr("MineForge").to_owned(), |i| i.name.clone());
         std::thread::spawn(move || {
             let count = todo.len();
             let (mut done, mut failed) = (Vec::new(), Vec::new());
@@ -1251,7 +1251,7 @@ impl Launcher {
         let java = self.mods.java.clone();
         let instance = self
             .selected_instance()
-            .map_or_else(|| "Horizon".to_string(), |i| i.name.clone());
+            .map_or_else(|| "MineForge".to_string(), |i| i.name.clone());
         let world = self.mods.world.clone().and_then(|path| {
             let (_, name) = self.mods.worlds.iter().find(|(p, _)| *p == path)?;
             Some((path, name.clone()))

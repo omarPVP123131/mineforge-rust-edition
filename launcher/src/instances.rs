@@ -1,7 +1,7 @@
 //! Instances: separate game folders, each with its own worlds, options and packs.
 //!
 //! Nothing that exists moves. The game's home (`backend::game_home`) stays the default instance,
-//! "Horizon", with its saves and options where they are. Imported modpacks (`ports/<pack>/home/`)
+//! "MineForge", with its saves and options where they are. Imported modpacks (`ports/<pack>/home/`)
 //! and registry modpacks (`horizon-packs/<id>/home/`) are instances too, played from their own
 //! folders as before. New instances get `instances/<slug>/` in the game's home. What the player
 //! chooses about an instance (its name, icon, group) is kept in `instances.json` in the
@@ -474,7 +474,7 @@ fn list_with_packs(
     let mut out = vec![instance_at(
         store,
         DEFAULT.into(),
-        "Horizon".into(),
+        "MineForge".into(),
         Kind::Default,
         game_home.to_path_buf(),
         game_home.to_path_buf(),
@@ -842,7 +842,7 @@ fn used_versions(
     // A launcher's old selection can still be the only record of which build a world used.
     if !settings.instance_versions_migrated {
         if let Some(tag) = &settings.selected {
-            used.push((tag.clone(), crate::i18n::tr("Horizon").into()));
+            used.push((tag.clone(), crate::i18n::tr("MineForge").into()));
         }
     }
     Ok(used.into_iter())
