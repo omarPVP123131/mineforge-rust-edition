@@ -1952,7 +1952,6 @@ impl Accounts {
             cape: None,
         }
     }
-
     /// MFRE: whether `name` can be an offline profile's: 3 to 16 of A-Z, a-z, 0-9 and _, and
     /// no account or profile has it yet (any case).
     pub fn valid_offline_name(&self, name: &str) -> Result<(), String> {
@@ -2630,9 +2629,10 @@ fn account_sessions_until(
 }
 
 /// Who plays the real Minecraft: Java Edition (a Java instance), past the owner gate itself
-/// ([`launch`]): the selected account when it owns the game, else one that does. With no answer
-/// from the services, an account that owned it plays with its last token. Mojang's game takes the
-/// token on its command line, as Mojang's launcher gives it; that command is never logged.
+/// ([`launch`]): MFRE an offline profile in the lead plays at once with a dummy token; else the
+/// selected account when it owns the game, else one that does. With no answer from the services,
+/// an account that owned it plays with its last token. Mojang's game takes the token on its
+/// command line, as Mojang's launcher gives it; that command is never logged.
 pub fn java_player() -> Result<crate::java_launch::Player, String> {
     let mut accounts = Accounts::load();
     let player = java_player_with(
@@ -2647,12 +2647,41 @@ pub fn java_player() -> Result<crate::java_launch::Player, String> {
     player
 }
 
+/// MFRE: an undashed offline UUID as the game's command line takes it — the official
+/// launcher's form, and the one `UUID.fromString` parses. Anything already dashed (or of
+/// another length) goes through as it is.
+fn dashed_uuid(uuid: &str) -> String {
+    match uuid.len() {
+        32 => format!(
+            "{}-{}-{}-{}-{}",
+            &uuid[0..8],
+            &uuid[8..12],
+            &uuid[12..16],
+            &uuid[16..20],
+            &uuid[20..32]
+        ),
+        _ => uuid.to_owned(),
+    }
+}
+
 fn java_player_with(
     ep: &Endpoints,
     client_id: Option<&str>,
     store: &dyn SecretStore,
     accounts: &mut Accounts,
 ) -> Result<crate::java_launch::Player, String> {
+    // MFRE (0004): an offline profile plays a Java instance with no service ask — the game
+    // gets the same UUID an offline server derives from the name, so its player data persists,
+    // and a dummy token that single player and LAN never send anywhere. Online servers still
+    // need a signed-in account that owns the game: the owner path below.
+    if let Some(a) = accounts.selected_offline() {
+        return Ok(crate::java_launch::Player {
+            name: a.name.clone(),
+            uuid: dashed_uuid(&a.uuid),
+            token: "0".to_owned(),
+            xuid: "0".to_owned(),
+        });
+    }
     let pass = launch(ep, client_id, store, accounts).map_err(|e| e.to_string())?;
     let kept = || {
         let order = accounts.selected().into_iter().chain(&accounts.accounts);

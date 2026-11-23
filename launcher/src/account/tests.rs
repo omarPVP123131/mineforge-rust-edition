@@ -1207,6 +1207,35 @@ fn the_java_edition_plays_as_an_owner_even_offline() {
     );
 }
 
+#[test]
+fn the_java_edition_plays_as_an_offline_profile_with_a_dummy_token() {
+    // MFRE (0004): a Java instance of an offline profile asks no service (every `offline()`
+    // endpoint fails) and reads no secret: the UUID the game itself derives from the name,
+    // dashed as the official launcher passes it, and a dummy token single player and LAN
+    // never send anywhere.
+    let store = MemoryStore::default();
+    let mut accounts = Accounts::default();
+    accounts.add_offline("Notch").unwrap();
+    let reading = Reading(&store, Mutex::default());
+    let player =
+        java_player_with(&offline(), Some("test-client"), &reading, &mut accounts).unwrap();
+    assert_eq!(player.name, "Notch");
+    assert_eq!(player.uuid, "b50ad385-829d-3141-a216-7e7d7539ba7f");
+    assert_eq!(player.token, "0");
+    assert_eq!(player.xuid, "0");
+    assert!(reading.1.lock().unwrap().is_empty());
+    // A signed-in account in the lead keeps the owner path.
+    let mut accounts = signed_in(&store, &secrets("mc-token", true));
+    accounts.add_offline("LanPlayer").unwrap();
+    accounts.play_as(UUID).unwrap();
+    let (_, ep) = mock(|_| {});
+    let player = java_player_with(&ep, Some("test-client"), &store, &mut accounts).unwrap();
+    assert_eq!(
+        (player.name.as_str(), player.token.as_str()),
+        ("Notch", "mc-token")
+    );
+}
+
 /// A secrets file of the test's own, gone first.
 fn secrets_file(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("horizon-secrets-{name}-{}", std::process::id()));
