@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "El renderitzador {crashed} de Horizon ha fallat en iniciar-se amb aquesta targeta gràfica, així que el joc ara utilitza {api}. Prem Jugar per tornar-lo a iniciar. Opcions de vídeo > API de gràfics ho torna a canviar.",
   "Horizon's cosmetics service had a problem. Try again later.": "El servei de cosmètica d'Horizon va tenir un problema. Torna-ho a provar més tard.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "El paisatge d'Horizon. Tria una imatge PNG, JPEG o WebP pròpia.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "Per defecte, el violeta d'Horizon. Cada color manté el text igual de fàcil de llegir.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "Per defecte, el violeta d'MineForge. Cada color manté el text igual de fàcil de llegir.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "Allotja un món per als teus amics en aquest ordinador. Creeu-ne un, premeu Inici i doneu-los l'adreça.",
   "How far from players crops grow and mobs move, in chunks.": "A quina distància dels jugadors creixen les collites i les turbes es mouen, en trossos.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "Fins a on veuen els jugadors, en trossos (2 a 32). La part inferior és més lleugera.",

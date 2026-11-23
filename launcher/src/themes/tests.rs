@@ -167,7 +167,9 @@ fn a_picked_hue_is_any_degree_and_survives_settings_json() {
     assert_eq!(Accent::parse("217"), Some(Accent::custom(217.)));
     assert_eq!(Accent::custom(370.).name(), "10");
     assert_eq!(Accent::custom(212.).name(), "blue");
-    assert_eq!(Accent::VIOLET.name(), "violet");
+    assert_eq!(Accent::VIOLET.name(), "ember");
+    // The upstream name still parses, as an alias of the fork's default.
+    assert_eq!(Accent::parse("violet"), Some(Accent::VIOLET));
     let saved = serde_json::to_string(&Accent::custom(217.5)).unwrap();
     assert_eq!(saved, "\"217.5\"");
     assert_eq!(
@@ -181,7 +183,7 @@ fn a_typed_colour_is_worn_as_is_and_survives_settings_json() {
     // The mockup's swatches are the named accents.
     assert_eq!(Accent::parse("#2563EB"), Some(Accent::BLUE));
     assert_eq!(Accent::BLUE.hex(), "#2563eb");
-    assert_eq!(Accent::VIOLET.hex(), "#6b4bff");
+    assert_eq!(Accent::VIOLET.hex(), "#f97316");
     // Any other colour keeps its exact value for the glass look, and its hue for the light one.
     let typed = Accent::parse("#ff8800").unwrap();
     assert_eq!(typed.rgb(), 0xff8800);
@@ -193,9 +195,9 @@ fn a_typed_colour_is_worn_as_is_and_survives_settings_json() {
     for wrong in ["#ff88", "#ff88001", "#gg8800", "#"] {
         assert_eq!(Accent::parse(wrong), None, "{wrong}");
     }
-    // A picked hue wears the violet's saturation and lightness.
+    // A picked hue wears the ember's saturation and lightness.
     let (h, s, l) = hsl(Accent::custom(120.).rgb());
-    let (_, vs, vl) = hsl(0x6b4bff);
+    let (_, vs, vl) = hsl(SWATCHES[0]);
     assert!((h - 120.).abs() < 1. && (s - vs).abs() < 0.02 && (l - vl).abs() < 0.02);
 }
 

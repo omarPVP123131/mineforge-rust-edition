@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "Horizon 的 {crashed} 渲染器在此显卡上启动时崩溃，因此游戏现在改用 {api}。按“开始游戏”重新启动。在“视频设置 > 图形 API”中可以切换回去。",
   "Horizon's cosmetics service had a problem. Try again later.": "Horizon 的装饰服务出现问题。请稍后再试。",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "Horizon 的风景图。可以选择你自己的 PNG、JPEG 或 WebP 图片。",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "默认为 Horizon 紫。每种颜色都能让文字保持同样易读。",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "默认为 MineForge 紫。每种颜色都能让文字保持同样易读。",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "在此计算机上为好友托管世界。创建一个服务器，点击“启动”，然后将地址发给他们。",
   "How far from players crops grow and mobs move, in chunks.": "作物生长和生物移动的距离（区块）。",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "玩家视距（区块：2 到 32）。数值越小性能开销越低。",

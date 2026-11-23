@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "このグラフィックスカードでHorizonの{crashed}レンダラーが起動中にクラッシュしたため、ゲームは{api}を使用します。「プレイ」を押すと再起動します。ビデオ設定 > グラフィックスAPIで戻せます。",
   "Horizon's cosmetics service had a problem. Try again later.": "Horizon のコスメティックサービスで問題が発生しました。後でもう一度お試しください。",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "Horizonの背景画像。PNG、JPEG、WebP形式の好きな画像を選べます。",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "デフォルトはHorizonのバイオレット。どの色でもテキストの読みやすさを維持します。",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "デフォルトはMineForgeのバイオレット。どの色でもテキストの読みやすさを維持します。",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "このコンピューターでフレンド向けのワールドをホストします。サーバーを作成し、開始ボタンを押して、アドレスを教えてあげてください。",
   "How far from players crops grow and mobs move, in chunks.": "作物が育ちモブが動く距離 (チャンク単位)。",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "プレイヤーの視界の広さ (2〜32チャンク)。小さいほど軽くなります。",

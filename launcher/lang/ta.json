@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "இந்த கிராபிக்ஸ் கார்டில் தொடங்கும் போது Horizon இன் {crashed} ரெண்டரர் செயலிழந்தது, எனவே கேம் இப்போது {api} ஐப் பயன்படுத்துகிறது. மீண்டும் தொடங்க விளையாடு என்பதை அழுத்தவும். வீடியோ அமைப்புகள் > கிராபிக்ஸ் API மூலம் திரும்ப மாற்றலாம்.",
   "Horizon's cosmetics service had a problem. Try again later.": "Horizon இன் அழகுசாதன சேவையில் சிக்கல் ஏற்பட்டது. பிறகு முயற்சிக்கவும்.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "Horizon இன் நிலப்பரப்பு. உங்கள் சொந்த PNG, JPEG அல்லது WebP படத்தைத் தேர்ந்தெடுக்கவும்.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "இயல்புநிலையாக Horizon இன் வயலட். ஒவ்வொரு வண்ணமும் உரையை எளிதாக படிக்க வைக்கிறது.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "இயல்புநிலையாக MineForge இன் வயலட். ஒவ்வொரு வண்ணமும் உரையை எளிதாக படிக்க வைக்கிறது.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "இந்தக் கணினியில் உங்கள் நண்பர்களுக்காக ஒரு உலகத்தை வழங்குங்கள். ஒன்றை உருவாக்கி, தொடக்கத்தை அழுத்தி, அவர்களுக்கு முகவரியைக் கொடுங்கள்.",
   "How far from players crops grow and mobs move, in chunks.": "வீரர்களிடமிருந்து எவ்வளவு தூரம் பயிர்கள் வளரும் மற்றும் கும்பல் துகள்களாக நகர்கிறது.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "வீரர்கள் எவ்வளவு தூரம் பார்க்கிறார்கள், துண்டுகளாக (2 முதல் 32 வரை). தாழ்வானது இலகுவானது.",

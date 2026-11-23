@@ -7,7 +7,7 @@
 //! player's own accent comes out as it does on the website.
 
 /// The mockup's defaults: accent, how much white the plates take, and their blur in px.
-pub const ACCENT: u32 = 0x6b4bff;
+pub const ACCENT: u32 = 0xf97316;
 pub const TINT: f32 = 0.06;
 pub const BLUR: f32 = 24.;
 /// Behind the scene before it is drawn.
@@ -248,11 +248,15 @@ mod tests {
 
     /// Chrome's own results for the mockup's `color-mix` sums (getComputedStyle, then a 1 px
     /// canvas for the sRGB bytes): an independent check of the OKLab maths and the plate's mix.
+    /// The snapshot is Chrome's for the violet the mockup shipped with, so the glass under test
+    /// is built with it; the fork's own default (the MFRE ember) is asserted beside it.
     #[test]
     fn mixes_match_the_browser() {
-        let g = Glass::default_look();
+        let g = Glass::new(0x6b4bff, TINT, BLUR);
+        assert_eq!(ACCENT, 0xf97316);
+        assert_eq!(Glass::default_look().plate_alpha, g.plate_alpha);
         let soft = oklab(g.accent_soft);
-        let mixed = [0, 1, 2].map(|i| oklab(ACCENT)[i] * 0.52 + oklab(0xffffff)[i] * 0.48);
+        let mixed = [0, 1, 2].map(|i| oklab(0x6b4bff)[i] * 0.52 + oklab(0xffffff)[i] * 0.48);
         for (i, want) in [0.772018, 0.0291158, -0.12693].into_iter().enumerate() {
             assert!(
                 (mixed[i] - want).abs() < 1e-3,
@@ -274,7 +278,8 @@ mod tests {
     #[test]
     fn a_light_accent_takes_dark_labels() {
         assert_eq!(Glass::new(0xf2c46b, TINT, BLUR).on_accent, ON_LIGHT);
-        assert_eq!(Glass::default_look().on_accent, 0xffffff);
+        // The fork's ember is light enough to take dark labels, as 0xf2c46b does.
+        assert_eq!(Glass::default_look().on_accent, ON_LIGHT);
     }
 
     /// Mid-luminance accents took white labels below 4.5:1 under the old 0.4 cut-off.

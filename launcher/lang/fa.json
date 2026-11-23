@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "رندر {crashed} هورایزن هنگام شروع روی این کارت گرافیک از کار افتاد، بنابراین بازی اکنون از {api} استفاده می‌کند. برای شروع دوباره Play را بزنید. Video Settings > Graphics API آن را برمی‌گرداند.",
   "Horizon's cosmetics service had a problem. Try again later.": "سرویس آیتم‌های تزئینی Horizon مشکل داشت. بعداً دوباره امتحان کنید.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "منظرهٔ Horizon. یک عکس PNG، JPEG یا WebP از خودتان انتخاب کنید.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "بنفش Horizon به طور پیش فرض. هر رنگی خواندن متن را آسان نگه می دارد.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "بنفش MineForge به طور پیش فرض. هر رنگی خواندن متن را آسان نگه می دارد.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "در این کامپیوتر دنیایی را برای دوستان خود میزبانی کنید. یکی ایجاد کنید، Start را فشار دهید و آدرس را به آنها بدهید.",
   "How far from players crops grow and mobs move, in chunks.": "چقدر دور از بازیکنان، محصولات رشد می کنند و اوباش حرکت می کنند، تکه تکه.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "فاصله بازیکنان را به صورت تکه تکه می بینند (2 تا 32). پایین تر سبک تر است.",

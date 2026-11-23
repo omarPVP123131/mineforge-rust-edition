@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "Horizon-ის {crashed} რენდერერი ავარიულად დაიხურა ამ ვიდეობარათზე გაშვებისას, ამიტომ თამაში ახლა იყენებს {api}-ს. დააჭირეთ ითამაშეთ-ს, რომ ხელახლა გაუშვათ. ვიდეო პარამეტრები > გრაფიკული API აბრუნებს უკან.",
   "Horizon's cosmetics service had a problem. Try again later.": "Horizon-ის კოსმეტიკის სამსახურს ჰქონდა პრობლემა. სცადეთ მოგვიანებით.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "Horizon-ის პეიზაჟი. შეარჩიეთ თქვენი PNG, JPEG ან WebP სურათი.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "Horizon-ის იისფერი ნაგულისხმევად. ყველა ფერი ინარჩუნებს ტექსტს ადვილად წასაკითხად.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "MineForge-ის იისფერი ნაგულისხმევად. ყველა ფერი ინარჩუნებს ტექსტს ადვილად წასაკითხად.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "უმასპინძლეთ სამყაროს თქვენი მეგობრებისთვის ამ კომპიუტერზე. შექმენით ერთი, დააჭირეთ დაწყებას და მიეცით მისამართი.",
   "How far from players crops grow and mobs move, in chunks.": "რამდენად შორს მოთამაშეები იზრდება მოსავალი და ბრბო გადადის, ნაწილებად.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "რამდენად შორს ხედავენ მოთამაშეები, ნაწილებად (2-დან 32-მდე). ქვედა უფრო მსუბუქია.",

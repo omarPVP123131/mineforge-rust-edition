@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "Horizonдун {crashed} рендери бул графикалык картада башталып жатканда кыйрады, ошондуктан оюн азыр {api} колдонот. Кайра баштоо үчүн Ойноо баскычын басыңыз. Видео орнотуулар > Графикалык API артка которот.",
   "Horizon's cosmetics service had a problem. Try again later.": "Horizon косметика кызматында көйгөй келип чыкты. Кийинчерээк кайра аракет кылыңыз.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "Horizon пейзажы. Өзүңүздүн PNG, JPEG же WebP сүрөтүңүздү тандаңыз.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "демейки боюнча Horizon кызгылт көк. Ар бир түс текстти окууга жеңилдейт.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "демейки боюнча MineForge кызгылт көк. Ар бир түс текстти окууга жеңилдейт.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "Бул компьютерде досторуңуз үчүн дүйнөнү жайгаштырыңыз. Бирди түзүп, \"Старт\" баскычын басып, аларга даректи бериңиз.",
   "How far from players crops grow and mobs move, in chunks.": "Оюнчулардан канчалык алыстыкта эгин өсөт жана сүрмө топ бөлүктөргө бөлүнөт.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "Оюнчулар канча аралыкты көрүшөт, бөлүктөрдө (2ден 32ге чейин). Төмөнкү жеңилирээк.",

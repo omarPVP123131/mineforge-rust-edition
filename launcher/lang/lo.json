@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "ໂຕເຣນເດີ {crashed} ຂອງ Horizon ຂັດຂ້ອງຂະນະເລີ່ມຕົ້ນເທິງກາດສະແດງຜົນນີ້, ດັ່ງນັ້ນເກມຈຶ່ງໃຊ້ {api} ດຽວນີ້. ກົດ Play ເພື່ອເລີ່ມມັນອີກຄັ້ງ. Video Settings > Graphics API ຈະສະຫຼັບກັບຄືນ.",
   "Horizon's cosmetics service had a problem. Try again later.": "ບໍລິການເຄື່ອງສຳອາງຂອງHorizonມີບັນຫາ. ລອງໃໝ່ໃນພາຍຫຼັງ.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "ພູມສັນຖານຂອງ Horizon. ເລືອກຮູບ PNG, JPEG ຫຼື WebP ຂອງທ່ານເອງ.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "Horizon's violet ຕາມຄ່າເລີ່ມຕົ້ນ. ທຸກໆສີເຮັດໃຫ້ຂໍ້ຄວາມອ່ານງ່າຍ.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "MineForge's violet ຕາມຄ່າເລີ່ມຕົ້ນ. ທຸກໆສີເຮັດໃຫ້ຂໍ້ຄວາມອ່ານງ່າຍ.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "ເປັນເຈົ້າພາບໂລກສໍາລັບຫມູ່ເພື່ອນຂອງທ່ານໃນຄອມພິວເຕີນີ້. ສ້າງອັນຫນຶ່ງ, ກົດ Start, ແລະໃຫ້ພວກເຂົາທີ່ຢູ່.",
   "How far from players crops grow and mobs move, in chunks.": "ໄກຈາກຜູ້ຫຼິ້ນການປູກພືດ ແລະຝູງສັດເຄື່ອນຍ້າຍອອກເປັນຕ່ອນໆ.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "ຜູ້ນເບິ່ງໄກປານໃດ, ໃນ chunks (2 ຫາ 32). ຕ່ໍາກວ່າແມ່ນເບົາກວ່າ.",

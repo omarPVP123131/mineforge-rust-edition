@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "Horizons {crashed}-Renderer ist beim Start auf dieser Grafikkarte abgestürzt, daher verwendet das Spiel jetzt {api}. Drücke Spielen, um es erneut zu starten. Video Settings > Graphics API schaltet zurück.",
   "Horizon's cosmetics service had a problem. Try again later.": "Horizons Kosmetikdienst hatte ein Problem. Versuche es später erneut.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "Horizons Landschaft. Wähle ein eigenes PNG-, JPEG- oder WebP-Bild aus.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "Standardmäßig Horizons Violett. Jede Farbe sorgt dafür, dass Text gut lesbar bleibt.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "Standardmäßig MineForges Violett. Jede Farbe sorgt dafür, dass Text gut lesbar bleibt.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "Hoste eine Welt für deine Freunde auf diesem Computer. Erstelle einen Server, drücke Start und gib ihnen die Adresse.",
   "How far from players crops grow and mobs move, in chunks.": "Distanz in Chunks, in der Pflanzen wachsen und Mobs sich bewegen.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "Sichtweite der Spieler in Chunks (2 bis 32). Niedriger ist ressourcenschonender.",

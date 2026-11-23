@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "Horizon'ӑн {crashed} рендерерӗ ку видеокартӑ ҫинче пуҫланӑ чухне арканчӗ, ҫавӑнпа вӑйӑ халӗ {api} усӑ курать. Тепӗр хут пуҫлама «Выля» тӗсӗр. «Видео настройкисем» > Graphics API каялла куҫарма пултарать.",
   "Horizon's cosmetics service had a problem. Try again later.": "Horizon косметика службинче йывӑрлӑх сиксе тухнӑ. Кайран тепӗр хут тытӑнса пӑхӑр.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "Horizon пейзажӗ. Хӑвӑрӑн PNG, JPEG е WebP ӳкерчӗке суйласа илӗр.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "Horizon-ӑн фиолетовӑйӗ стандартлӑ. Кашни тӗс текста вулама ҫӑмӑллатать.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "MineForge-ӑн фиолетовӑйӗ стандартлӑ. Кашни тӗс текста вулама ҫӑмӑллатать.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "Ҫак компьютерта тусӑрсем валли тӗнче вырнаҫтарӑр. Пӗрне йӗркелӗр, «Пуск» ҫине пусӑр та вӗсене адреса парӑр.",
   "How far from players crops grow and mobs move, in chunks.": "Вылякансенчен мӗн чухлӗ инҫетре тырпул ӳсет тата ушкӑнсем куҫаҫҫӗ, татӑкӑн-татӑкӑн.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "Вылякансем мӗн чухлӗ кураҫҫӗ, пайӑн-пайӑн (2-32 таран). Аялти — ҫӑмӑлтарах.",

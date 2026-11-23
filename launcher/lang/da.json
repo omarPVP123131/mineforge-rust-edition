@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "Horizons {crashed}-renderer gik ned under opstart på dette grafikkort, så spillet bruger nu {api}. Tryk på Spil for at starte det igen. Videoindstillinger > Grafisk API skifter tilbage.",
   "Horizon's cosmetics service had a problem. Try again later.": "Horizons kosmetikservice havde et problem. Prøv igen senere.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "Horizons landskab. Vælg dit eget billede i PNG, JPEG eller WebP.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "Horizon er violet som standard. Hver farve gør teksten så let at læse.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "MineForge er violet som standard. Hver farve gør teksten så let at læse.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "Vær vært for en verden for dine venner på denne computer. Opret en, tryk på Start, og giv dem adressen.",
   "How far from players crops grow and mobs move, in chunks.": "Hvor langt fra spillerne vokser afgrøder og mobs bevæger sig, i bidder.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "Hvor langt spillere ser i bidder (2 til 32). Lavere er lettere.",

@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "Horizon'ın {crashed} işleyicisi bu ekran kartında başlarken çöktü, bu yüzden oyun artık {api} kullanıyor. Tekrar başlatmak için Oyna'ya basın. Video Ayarları > Grafik API'si geri döndürür.",
   "Horizon's cosmetics service had a problem. Try again later.": "Horizon'un kozmetik hizmetinde bir sorun oluştu. Daha sonra tekrar dene.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "Horizon'ın manzarası. Kendi PNG, JPEG veya WebP resminizi seçin.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "Varsayılan olarak Horizon moru. Her renk, metnin kolayca okunabilmesini sağlar.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "Varsayılan olarak MineForge moru. Her renk, metnin kolayca okunabilmesini sağlar.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "Bu bilgisayarda arkadaşlarınız için bir dünya barındırın. Bir tane oluşturun, Başlat'a basın ve onlara adresi verin.",
   "How far from players crops grow and mobs move, in chunks.": "Ekinlerin büyüdüğü ve yaratıkların hareket ettiği mesafe, chunk cinsinden.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "Oyuncuların görüş mesafesi, chunk cinsinden (2 ila 32). Düşük olması daha hafiftir.",

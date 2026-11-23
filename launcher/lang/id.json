@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "Renderer {crashed} Horizon mengalami crash saat mulai di kartu grafis ini, sehingga game sekarang menggunakan {api}. Tekan Main untuk memulainya lagi. Pengaturan Video > API Grafis mengembalikannya.",
   "Horizon's cosmetics service had a problem. Try again later.": "Layanan kosmetik Horizon mengalami masalah. Coba lagi nanti.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "Lanskap Horizon. Pilih gambar PNG, JPEG, atau WebP Anda sendiri.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "Horizon berwarna ungu secara default. Setiap warna menjaga teks agar tetap mudah dibaca.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "MineForge berwarna ungu secara default. Setiap warna menjaga teks agar tetap mudah dibaca.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "Host dunia untuk teman Anda di komputer ini. Buat satu, tekan Mulai, lalu berikan alamatnya kepada mereka.",
   "How far from players crops grow and mobs move, in chunks.": "Jarak dari pemain tempat tanaman tumbuh dan mob bergerak, dalam chunk.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "Sejauh mana pemain dapat melihat, dalam satuan chunk (2 hingga 32). Semakin rendah semakin ringan.",

@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "تعطّل عارض {crashed} في هورايزون أثناء البدء على بطاقة الرسوميات هذه، لذا تستخدم اللعبة الآن {api}. اضغط \"تشغيل\" لبدءها مجددًا. تعود من إعدادات الفيديو > واجهة برمجة الرسوميات (Graphics API).",
   "Horizon's cosmetics service had a problem. Try again later.": "حدثت مشكلة في خدمة المظاهر في هورايزون. أعد المحاولة لاحقًا.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "خلفية هورايزون الأفقية. اختر صورة بصيغة PNG أو JPEG أو WebP خاصة بك.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "لون هورايزون الافتراضي هو البنفسجي. يحافظ كل لون على سهولة قراءة النص.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "لون هورايزون الافتراضي هو البنفسجي. يحافظ كل لون على سهولة قراءة النص.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "استضف عالماً لأصدقائك على هذا الكمبيوتر. أنشئ عالماً، واضغط على بدء، وأعطهم العنوان.",
   "How far from players crops grow and mobs move, in chunks.": "المسافة عن اللاعبين التي تنمو فيها المحاصيل وتتحرك فيها الكائنات، بالكتل.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "مسافة رؤية اللاعبين بالكتل (Chunks) (من 2 إلى 32). القيم الأقل تخفف العبء.",

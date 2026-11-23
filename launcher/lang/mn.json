@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "Horizon-ийн {crashed} рендэр энэ график карт дээр эхлэх үедээ сүйдсэн тул тоглоом одоо {api}-г ашиглаж байна. Дахин эхлүүлэхийн тулд Play дарна уу. Video Settings > Graphics API буцааж сэлгэнэ.",
   "Horizon's cosmetics service had a problem. Try again later.": "Horizon гоо сайхны үйлчилгээнд асуудал гарсан. Дараа дахин оролдоно уу.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "Horizon-ийн ландшафт. Өөрийнхөө PNG, JPEG эсвэл WebP зургийг сонгоно уу.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "Анхдагчаар Horizon-ийн ягаан. Өнгө бүр нь текстийг уншихад хялбар болгодог.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "Анхдагчаар MineForge-ийн ягаан. Өнгө бүр нь текстийг уншихад хялбар болгодог.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "Энэ компьютер дээр найзууддаа зориулсан ертөнцийг зохион байгуул. Нэгийг үүсгээд, \"Эхлүүлэх\" товчийг дараад хаягийг нь өгнө үү.",
   "How far from players crops grow and mobs move, in chunks.": "Тоглогчдоос хэр хол газар тариалан ургаж, бүлэглэлүүд хэсэг хэсгээрээ хөдөлдөг.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "Тоглогчид хэр холыг харахыг хэсэг хэсгээр нь (2-оос 32 хүртэл). Доод тал нь хөнгөн.",

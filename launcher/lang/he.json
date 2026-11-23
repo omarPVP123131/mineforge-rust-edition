@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "המרנדר {crashed} של Horizon קרס בזמן ההפעלה בכרטיס הגרפי הזה, ולכן המשחק משתמש כעת ב-{api}. לחץ על Play כדי להפעיל אותו שוב. הגדרות וידאו > Graphics API מחזיר אותו בחזרה.",
   "Horizon's cosmetics service had a problem. Try again later.": "הייתה בעיה בשירות הקוסמטיקה של Horizon. נסה שוב מאוחר יותר.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "הנוף של Horizon. בחר תמונת PNG, JPEG או WebP משלך.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "סגול של Horizon כברירת מחדל. כל צבע שומר על טקסט קריא.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "סגול של MineForge כברירת מחדל. כל צבע שומר על טקסט קריא.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "ארח עולם עבור חבריך במחשב זה. צור אחד, הקש על התחל ותן להם את הכתובת.",
   "How far from players crops grow and mobs move, in chunks.": "כמה רחוק מהשחקנים יבול גדל והמון זז, בחתיכות.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "כמה רחוק רואים שחקנים, בנתחים (2 עד 32). תחתון הוא קל יותר.",

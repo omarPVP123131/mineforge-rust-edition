@@ -121,6 +121,8 @@ EXTRA_KEY_RENAMES = {
         "MineForge never turns on Funnel: the server isn't put on the public internet, only shared with the people you invite.",
     "Tailscale is installed. Sign in with your own account in Tailscale (Horizon never sees it), then come back here.":
         "Tailscale is installed. Sign in with your own account in Tailscale (MineForge never sees it), then come back here.",
+    "Horizon's violet by default. Every colour keeps text as easy to read.":
+        "MineForge's ember by default. Every colour keeps text as easy to read.",
 }
 
 

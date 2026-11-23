@@ -513,7 +513,7 @@ pub const TAIGA: Theme = Theme {
 };
 
 /// Horizon's own theme's line in Settings.
-pub const HORIZON_DESCRIPTION: &str = "The pixel sunset";
+pub const HORIZON_DESCRIPTION: &str = "The forge ember";
 
 /// The launcher themes past Horizon's own sky: the featured families first, then the older ones.
 pub const THEMES: [Theme; 10] = [
@@ -537,8 +537,8 @@ pub fn accent_key(id: Option<&str>) -> &str {
     theme(id).map_or(HORIZON, |t| t.id)
 }
 
-/// The accent a theme starts with: the one last picked under it, else its own (violet for
-/// Horizon's).
+/// The accent a theme starts with: the one last picked under it, else its own (ember for
+/// MineForge's).
 pub fn starting_accent(
     id: Option<&str>,
     kept: &std::collections::BTreeMap<String, Accent>,
@@ -556,11 +556,11 @@ pub fn theme(id: Option<&str>) -> Option<&'static Theme> {
 
 /// The glass look's colour for each of [`Accent::ALL`]: the mockup's swatches.
 pub const SWATCHES: [u32; 7] = [
-    0x6b4bff, 0x2563eb, 0x0f766e, 0x15803d, 0xc2410c, 0xdc2626, 0xbe185d,
+    0xf97316, 0x2563eb, 0x0f766e, 0x15803d, 0xc2410c, 0xdc2626, 0xbe185d,
 ];
 
 /// [`Accent::ALL`]'s names, in its order.
-const NAMES: [&str; 7] = ["violet", "blue", "teal", "green", "amber", "red", "pink"];
+const NAMES: [&str; 7] = ["ember", "blue", "teal", "green", "amber", "red", "pink"];
 
 impl Accent {
     pub const VIOLET: Accent = Accent {
@@ -623,7 +623,7 @@ impl Accent {
     }
 
     /// The colour the glass look wears: the one typed, a named accent's swatch, else the hue at
-    /// the violet's saturation and lightness.
+    /// the ember's saturation and lightness.
     pub fn rgb(self) -> u32 {
         if let Some(rgb) = self.rgb {
             return rgb;
@@ -654,7 +654,7 @@ impl Accent {
             .position(|a| *a == self)
             .map(|i| NAMES[i].to_owned());
         named.unwrap_or_else(|| match self.hue {
-            None => "violet".to_owned(),
+            None => "ember".to_owned(),
             Some(hue) => format!("{hue}"),
         })
     }
@@ -668,8 +668,8 @@ impl Accent {
                 .flatten()
                 .map(Self::from_rgb);
         }
-        let name = if name == "purple" || name == "default" {
-            "violet"
+        let name = if name == "purple" || name == "default" || name == "violet" {
+            "ember"
         } else {
             &name
         };

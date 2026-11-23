@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "Ο renderer {crashed} του Horizon κατέρρευσε κατά την εκκίνηση σε αυτή την κάρτα γραφικών, οπότε το παιχνίδι χρησιμοποιεί τώρα {api}. Πατήστε Play για να το ξεκινήσετε ξανά. Video Settings > Graphics API το επαναφέρει.",
   "Horizon's cosmetics service had a problem. Try again later.": "Η υπηρεσία καλλυντικών της Horizon είχε πρόβλημα. Δοκιμάστε ξανά αργότερα.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "Τοπίο του Horizon. Επιλέξτε μια δική σας εικόνα PNG, JPEG ή WebP.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "Το βιολετί του Horizon από προεπιλογή. Κάθε χρώμα διατηρεί το κείμενο τόσο εύκολο στην ανάγνωση.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "Το βιολετί του MineForge από προεπιλογή. Κάθε χρώμα διατηρεί το κείμενο τόσο εύκολο στην ανάγνωση.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "Φιλοξενήστε έναν κόσμο για τους φίλους σας σε αυτόν τον υπολογιστή. Δημιουργήστε ένα, πατήστε Έναρξη και δώστε τους τη διεύθυνση.",
   "How far from players crops grow and mobs move, in chunks.": "Πόσο μακριά από τους παίκτες μεγαλώνουν οι καλλιέργειες και οι όχλοι μετακινούνται, σε κομμάτια.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "Πόσο μακριά βλέπουν οι παίκτες, σε κομμάτια (2 έως 32). Το χαμηλότερο είναι ελαφρύτερο.",

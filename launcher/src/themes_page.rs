@@ -106,7 +106,7 @@ impl Launcher {
         let current = themes::theme(self.settings.theme.as_deref()).map(|th| th.id);
         let mut options: Vec<(Option<&'static str>, &'static str, &'static str, Night)> = vec![(
             None,
-            "Horizon",
+            "MineForge",
             themes::HORIZON_DESCRIPTION,
             theme::night::NIGHT,
         )];
@@ -328,7 +328,7 @@ impl Launcher {
             Some(
                 div()
                     .child(tr(
-                        "Horizon's violet by default. Every colour keeps text as easy to read.",
+                        "MineForge's ember by default. Every colour keeps text as easy to read.",
                     ))
                     .into_any_element(),
             ),

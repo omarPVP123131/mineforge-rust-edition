@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "Рендерерот {crashed} на Horizon падна при стартување на оваа графичка карта, па играта сега го користи {api}. Притиснете Играј за да ја стартувате повторно. Видео поставки > Graphics API ве враќа назад.",
   "Horizon's cosmetics service had a problem. Try again later.": "Козметичката служба на Horizon имаше проблем. Обидете се повторно подоцна.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "пејзажот на Horizon. Изберете своја PNG, JPEG или WebP слика.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "стандардно виолетова е Horizon. Секоја боја го одржува текстот лесно за читање.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "стандардно виолетова е MineForge. Секоја боја го одржува текстот лесно за читање.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "Домаќин на свет за вашите пријатели на овој компјутер. Направете еден, притиснете Start и дајте им ја адресата.",
   "How far from players crops grow and mobs move, in chunks.": "Колку далеку од играчите растат културите и толпите се движат, на парчиња.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "Колку далеку гледаат играчите, во парчиња (2 до 32). Долниот е полесен.",

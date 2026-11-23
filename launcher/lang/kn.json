@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "ಈ ಗ್ರಾಫಿಕ್ಸ್ ಕಾರ್ಡ್‌ನಲ್ಲಿ ಪ್ರಾರಂಭವಾಗುವಾಗ Horizon ನ {crashed} ರೆಂಡರರ್ ಕ್ರ್ಯಾಶ್ ಆಯಿತು, ಆದ್ದರಿಂದ ಆಟ ಈಗ {api} ಬಳಸುತ್ತದೆ. ಅದನ್ನು ಮತ್ತೆ ಪ್ರಾರಂಭಿಸಲು ಪ್ಲೇ ಒತ್ತಿ. ವೀಡಿಯೊ ಸೆಟ್ಟಿಂಗ್‌ಗಳು > ಗ್ರಾಫಿಕ್ಸ್ API ಮತ್ತೆ ಬದಲಾಯಿಸುತ್ತದೆ.",
   "Horizon's cosmetics service had a problem. Try again later.": "Horizon ನ ಸೌಂದರ್ಯವರ್ಧಕ ಸೇವೆಯು ಸಮಸ್ಯೆಯನ್ನು ಹೊಂದಿದೆ. ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "Horizon ನ ಭೂದೃಶ್ಯ. ನಿಮ್ಮದೇ ಆದ PNG, JPEG ಅಥವಾ WebP ಚಿತ್ರವನ್ನು ಆರಿಸಿ.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "ಪೂರ್ವನಿಯೋಜಿತವಾಗಿ Horizon ನ ನೇರಳೆ. ಪ್ರತಿಯೊಂದು ಬಣ್ಣವು ಪಠ್ಯವನ್ನು ಓದಲು ಸುಲಭವಾಗಿರುತ್ತದೆ.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "ಪೂರ್ವನಿಯೋಜಿತವಾಗಿ MineForge ನ ನೇರಳೆ. ಪ್ರತಿಯೊಂದು ಬಣ್ಣವು ಪಠ್ಯವನ್ನು ಓದಲು ಸುಲಭವಾಗಿರುತ್ತದೆ.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "ಈ ಕಂಪ್ಯೂಟರ್‌ನಲ್ಲಿ ನಿಮ್ಮ ಸ್ನೇಹಿತರಿಗಾಗಿ ಜಗತ್ತನ್ನು ಹೋಸ್ಟ್ ಮಾಡಿ. ಒಂದನ್ನು ರಚಿಸಿ, ಪ್ರಾರಂಭವನ್ನು ಒತ್ತಿ ಮತ್ತು ಅವರಿಗೆ ವಿಳಾಸವನ್ನು ನೀಡಿ.",
   "How far from players crops grow and mobs move, in chunks.": "ಆಟಗಾರರಿಂದ ಎಷ್ಟು ದೂರದಲ್ಲಿ ಬೆಳೆಗಳು ಬೆಳೆಯುತ್ತವೆ ಮತ್ತು ಜನಸಮೂಹವು ತುಂಡುಗಳಾಗಿ ಚಲಿಸುತ್ತದೆ.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "ಆಟಗಾರರು ಎಷ್ಟು ದೂರ ನೋಡುತ್ತಾರೆ, ಭಾಗಗಳಲ್ಲಿ (2 ರಿಂದ 32). ಕೆಳಭಾಗವು ಹಗುರವಾಗಿರುತ್ತದೆ.",

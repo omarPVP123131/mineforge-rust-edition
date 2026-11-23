@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "Рендерер {crashed} у Horizon зазнав збою під час запуску на цій відеокарті, тому гра тепер використовує {api}. Натисніть «Грати», щоб запустити її знову. «Налаштування відео» > «Графічний API» повертає попередній варіант.",
   "Horizon's cosmetics service had a problem. Try again later.": "У сервісі косметики Horizon сталася помилка. Спробуйте пізніше.",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "Краєвид Horizon. Виберіть власне зображення PNG, JPEG або WebP.",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "Типово фіолетовий Horizon. З кожним кольором текст читається так само легко.",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "Типово фіолетовий MineForge. З кожним кольором текст читається так само легко.",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "Запустіть світ для друзів на цьому комп'ютері. Створіть сервер, натисніть «Запустити» і дайте їм адресу.",
   "How far from players crops grow and mobs move, in chunks.": "Відстань у чанках, на якій ростуть культури та рухаються моби.",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "Дальність бачення гравців, у чанках (від 2 до 32). Менше — легше.",

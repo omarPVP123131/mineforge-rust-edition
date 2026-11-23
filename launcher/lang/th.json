@@ -380,7 +380,7 @@
   "Horizon's {crashed} renderer crashed while starting on this graphics card, so the game now uses {api}. Press Play to start it again. Video Settings > Graphics API switches back.": "ตัวเรนเดอร์ {crashed} ของ Horizon แครชตอนเริ่มบนการ์ดจอนี้ เกมจึงเปลี่ยนไปใช้ {api} แล้ว กดเล่นเพื่อเปิดอีกครั้ง สลับกลับได้ที่ การตั้งค่าวิดีโอ > Graphics API",
   "Horizon's cosmetics service had a problem. Try again later.": "บริการคอสเมติกของ Horizon มีปัญหา ลองใหม่ภายหลัง",
   "Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.": "ภาพทิวทัศน์ของ Horizon เลือกรูป PNG, JPEG หรือ WebP ของตัวเองได้",
-  "Horizon's violet by default. Every colour keeps text as easy to read.": "สีม่วงของ Horizon เป็นค่าเริ่มต้น ทุกสียังทำให้ข้อความอ่านง่ายเท่าเดิม",
+  "MineForge's ember by default. Every colour keeps text as easy to read.": "สีม่วงของ MineForge เป็นค่าเริ่มต้น ทุกสียังทำให้ข้อความอ่านง่ายเท่าเดิม",
   "Host a world for your friends on this computer. Create one, press Start, and give them the address.": "เปิดโลกให้เพื่อนเล่นบนคอมพิวเตอร์เครื่องนี้ สร้างเซิร์ฟเวอร์ กด เริ่ม แล้วส่งที่อยู่ให้เพื่อน",
   "How far from players crops grow and mobs move, in chunks.": "ระยะจากผู้เล่นที่พืชยังโตและม็อบยังขยับ หน่วยเป็นชังก์",
   "How far players see, in chunks (2 to 32). Lower is lighter.": "ผู้เล่นมองเห็นได้ไกลแค่ไหน หน่วยเป็นชังก์ (2 ถึง 32) ยิ่งน้อยยิ่งเบาเครื่อง",
