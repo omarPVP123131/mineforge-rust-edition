@@ -1,13 +1,18 @@
 //! Who plays: the top bar's quick switch (a menu under the account chip) between the signed-in
-//! Microsoft accounts.
+//! Microsoft accounts and, MFRE, the offline profiles.
+use super::servers_page::Field;
 use super::*;
 
 impl Launcher {
     /// The chip's two lines: the name that plays, and how.
     pub(super) fn who_plays(&self) -> (String, &'static str) {
+        if let Some(a) = self.accounts.selected_offline() {
+            return (a.name.clone(), tr("Offline profile"));
+        }
         match self.accounts.selected() {
             Some(a) => (a.name.clone(), tr("Microsoft account")),
-            None => (String::new(), tr("Sign in with Microsoft")),
+            // MFRE: nothing picked yet — an offline name is the way in, no sign-in needed.
+            None => (String::new(), tr("Play offline")),
         }
     }
 
@@ -21,12 +26,56 @@ impl Launcher {
         self.account_menu = false;
     }
 
+    /// MFRE: add an offline profile with the typed name and play as it (Enter in the name
+    /// field, or the button beside it). A problem shows where a sign-in problem would; success
+    /// closes the owner screen — Play needs no services for the profile.
+    pub(super) fn add_offline_name(&mut self) {
+        let name = self.servers.value(Field::OfflineName).trim().to_string();
+        let mut accounts = Accounts::load();
+        let done = accounts
+            .add_offline(&name)
+            .map(|_| ())
+            .and_then(|()| accounts.save());
+        match done {
+            Ok(()) => {
+                self.accounts = accounts;
+                self.owner = Some(true);
+                self.sign_in_state = None;
+                self.servers.text(Field::OfflineName).set(String::new());
+                self.close_owner_screen();
+            }
+            Err(e) => self.sign_in_state = Some(SignInState::Done(Err(e))),
+        }
+    }
+
+    /// MFRE: drop an offline profile (and its local skin files); the roster moves on.
+    pub(super) fn remove_offline(&mut self, uuid: &str) {
+        let mut accounts = Accounts::load();
+        let done = accounts
+            .remove(account::store(), uuid)
+            .and_then(|()| accounts.save());
+        match done {
+            Ok(()) => {
+                self.accounts = accounts;
+                self.owner = Some(self.accounts.has_owner(account::store()));
+            }
+            Err(e) => self.sign_in_state = Some(SignInState::Done(Err(e))),
+        }
+    }
+
     /// Everyone the player can play as (each account's UUID and name), with how each signs in.
+    /// MFRE: the offline profiles join the list.
     pub(super) fn players(&self) -> Vec<(String, String, &'static str)> {
         self.accounts
             .accounts
             .iter()
             .map(|a| (a.uuid.clone(), a.name.clone(), tr("Microsoft")))
+            .chain(
+                self.accounts
+                    .offline_profiles
+                    .iter()
+                    .map(|a| (a.uuid.clone(), a.name.clone(), tr("Offline"))),
+            )
             .collect()
     }
 

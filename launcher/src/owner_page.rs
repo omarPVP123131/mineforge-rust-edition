@@ -2,6 +2,7 @@
 //! Microsoft account that owns Minecraft: Java Edition. It covers the launcher once for players
 //! without one (those who played offline before the gate), and again whenever Play is refused.
 //! The sign-in runs on it, code and all.
+use super::servers_page::Field;
 use super::*;
 
 impl Launcher {
@@ -27,7 +28,7 @@ impl Launcher {
     }
 
     /// Closes it; it comes back with the next refused Play.
-    fn close_owner_screen(&mut self) {
+    pub(super) fn close_owner_screen(&mut self) {
         self.cancel_sign_in();
         self.owner_screen_open = false;
         if !self.settings.owner_notice_seen {
@@ -41,13 +42,18 @@ impl Launcher {
         let n = t.night;
         let configured = account::client_id().is_some();
         // The screenshot preview shows a code without asking Microsoft for one.
-        let state = match &self.sign_in_state {
+        // MFRE: a clone, so the state below borrows no field — the offline name field needs
+        // `&mut self` while the state lives.
+        let sign_in = self.sign_in_state.clone();
+        let state = match &sign_in {
             _ if sign_in_preview() => Shown::Code("https://www.microsoft.com/link", "K7Q-4MXR"),
-            _ if !configured => Shown::Error(tr(account::NOT_CONFIGURED)),
+            // MFRE: an offline-name failure shows before everything else, and no Microsoft
+            // client ID is no longer an error here — offline is the normal first run.
+            Some(SignInState::Done(Err(e))) => Shown::Error(e),
+            _ if !configured => Shown::Idle,
             Some(SignInState::Starting) => Shown::Starting("Asking Microsoft…"),
             Some(SignInState::Working(phase)) => Shown::Starting(phase.label()),
             Some(SignInState::Code(code)) => Shown::Code(&code.verification_uri, &code.user_code),
-            Some(SignInState::Done(Err(e))) => Shown::Error(e),
             Some(SignInState::Done(Ok(_))) | None => Shown::Idle,
         };
         if crate::glass_ui::on() {
@@ -66,19 +72,20 @@ impl Launcher {
             .child(
                 shell::text(theme::night::CAPTION, shell::c(n.muted))
                     .font_weight(FontWeight::SEMIBOLD)
-                    .child(tr("Microsoft account").to_string()),
+                    // MFRE: the way in is an offline name, not a sign-in.
+                    .child(tr("Offline name").to_string()),
             )
             .child(
                 shell::text(theme::night::TITLE, shell::c(n.ink))
                     .mb(px(4.))
-                    .child(tr("Sign in to play").to_string()),
+                    .child(tr("Play offline").to_string()),
             )
             .child(line(
-                "Horizon needs a Microsoft account that owns Minecraft: Java Edition, like other launchers.",
+                "Type a name and play: single player and LAN need no account and no sign-in.",
                 n.ink_soft,
             ))
             .child(line(
-                "No Minecraft install needed: Horizon downloads it from Mojang for your account.",
+                "Minecraft downloads come from Mojang; every player must own Minecraft: Java Edition.",
                 n.ink_soft,
             ));
         let raised = || {
@@ -91,6 +98,19 @@ impl Launcher {
                 .border_1()
                 .border_color(plate::alpha(n.stroke, n.stroke_alpha))
         };
+        // MFRE: the offline name to play under — Enter here, or Play offline below, adds the
+        // profile and selects it. No service is asked for it.
+        body = body.child(
+            raised()
+                .flex()
+                .flex_col()
+                .gap(px(8.))
+                .child(self.field(Field::OfflineName, tr("Offline name"), 420., cx))
+                .child(
+                    shell::text(theme::night::CAPTION, shell::c(n.muted))
+                        .child(tr("A name, 3 to 16 letters").to_string()),
+                ),
+        );
         body = match state {
             Shown::Code(uri, user_code) => {
                 let copy = user_code.to_string();
@@ -202,7 +222,21 @@ impl Launcher {
                 )
             }
             Shown::Starting(_) => None,
-            Shown::Error(_) if !configured => None,
+            // MFRE: the offline way stays open even when a sign-in errored or none is
+            // configured — the typed name needs no service.
+            _ => Some(
+                shell::action("owner-play-offline", shell::Action::Main, &t)
+                    .child(shell::label(tr("Play offline").to_string()))
+                    .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                        this.add_offline_name();
+                        cx.notify();
+                    })),
+            ),
+        };
+        // The Microsoft sign-in stays reachable beside it until the fork gates it off.
+        let ms_secondary = match state {
+            Shown::Code(..) | Shown::Starting(_) => None,
+            _ if !configured => None,
             _ => Some(
                 microsoft::sign_in_button("owner-sign-in", &t).on_click(cx.listener(
                     |this, _: &ClickEvent, _, cx| {
@@ -224,6 +258,7 @@ impl Launcher {
             .gap(px(10.))
             .mt(px(14.))
             .children(main)
+            .children(ms_secondary)
             .child(
                 shell::action("owner-later", shell::Action::Quiet, &t)
                     .child(shell::label(tr("Not now").to_string()))
@@ -272,7 +307,7 @@ impl Launcher {
     /// mockup's modals), its Sign in the Account card's white Microsoft button, its code in the
     /// card's inner panel.
     fn glass_owner_screen(
-        &self,
+        &mut self,
         state: Shown,
         configured: bool,
         cx: &mut Context<Self>,
@@ -296,7 +331,8 @@ impl Launcher {
             .w(px(520.))
             .max_w_full()
             .p(px(32.))
-            .child(ui::text(13., FontWeight::MEDIUM, ink::QUIET).child(tr("Microsoft account")))
+            // MFRE: the way in is an offline name, not a sign-in.
+            .child(ui::text(13., FontWeight::MEDIUM, ink::QUIET).child(tr("Offline name")))
             .child(
                 div()
                     .mt(px(8.))
@@ -305,7 +341,7 @@ impl Launcher {
                     .text_size(px(28.))
                     .line_height(px(35.))
                     .text_color(white(ink::FULL))
-                    .child(tr("Sign in to play")),
+                    .child(tr("Play offline")),
             )
             .child(
                 div()
@@ -314,12 +350,25 @@ impl Launcher {
                     .flex_col()
                     .gap(px(8.))
                     .child(ui::text(14., FontWeight::NORMAL, ink::BODY).child(tr(
-                        "Horizon needs a Microsoft account that owns Minecraft: Java Edition, like other launchers.",
+                        "Type a name and play: single player and LAN need no account and no sign-in.",
                     )))
                     .child(ui::text(14., FontWeight::NORMAL, ink::BODY).child(tr(
-                        "No Minecraft install needed: Horizon downloads it from Mojang for your account.",
-))),
+                        "Minecraft downloads come from Mojang; every player must own Minecraft: Java Edition.",
+                    ))),
             );
+        // MFRE: the offline name to play under — Enter here, or Play offline below, adds the
+        // profile and selects it.
+        card = card.child(
+            panel()
+                .flex()
+                .flex_col()
+                .gap(px(8.))
+                .child(self.field(Field::OfflineName, tr("Offline name"), 416., cx))
+                .child(
+                    ui::text(13., FontWeight::NORMAL, ink::QUIET)
+                        .child(tr("A name, 3 to 16 letters")),
+                ),
+        );
         card = match state {
             Shown::Code(uri, user_code) => {
                 let copy = user_code.to_string();
@@ -438,7 +487,28 @@ impl Launcher {
                 )
             }
             Shown::Starting(_) => None,
-            Shown::Error(_) if !configured => None,
+            // MFRE: the offline way stays open even when a sign-in errored or none is
+            // configured — the typed name needs no service.
+            _ => Some(
+                ui::button(
+                    "owner-play-offline".into(),
+                    tr("Play offline").into(),
+                    Kind::Primary,
+                    &t,
+                )
+                .h(px(44.))
+                .px(px(24.))
+                .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                    this.add_offline_name();
+                    cx.notify();
+                }))
+                .into_any_element(),
+            ),
+        };
+        // The Microsoft sign-in stays reachable beside it until the fork gates it off.
+        let ms_secondary: Option<AnyElement> = match state {
+            Shown::Code(..) | Shown::Starting(_) => None,
+            _ if !configured => None,
             _ => Some(
                 keyboard(
                     div()
@@ -482,6 +552,7 @@ impl Launcher {
                 .gap(px(8.))
                 .mt(px(24.))
                 .children(main)
+                .children(ms_secondary)
                 .child(later),
         );
         if matches!(state, Shown::Code(..)) {

@@ -227,7 +227,8 @@ impl Session {
                     // where it refused them (`secrets_file`: the file holds a sign-in).
                     "keychain": account::store().persistent(),
                     "secrets_file": account::in_secrets_file(),
-                    // Play needs an account that owns the game (the owner gate).
+                    // Play needs an account that owns the game, or an offline profile (the
+                    // owner gate — MFRE: offline counts).
                     "owner": accounts.has_owner(account::store()),
                     "sign_in": sign_in,
                 }))

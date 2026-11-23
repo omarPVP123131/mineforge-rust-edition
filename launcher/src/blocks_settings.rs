@@ -1,4 +1,5 @@
 //! The blocky look's Settings page, the native build consent and the settings rows.
+use super::servers_page::Field;
 use super::*;
 
 impl Launcher {
@@ -729,6 +730,94 @@ impl Launcher {
                 &t,
             ));
         }
+        // MFRE: the offline profiles — a head from the derived UUID, the name, and Play as /
+        // Remove (which also deletes the profile's local skin files).
+        for (i, a) in self
+            .accounts
+            .offline_profiles
+            .clone()
+            .into_iter()
+            .enumerate()
+        {
+            let plays = selected.as_ref() == Some(&a.uuid);
+            let (select_uuid, remove_uuid) = (a.uuid.clone(), a.uuid.clone());
+            let mut actions = div().flex().gap(px(4.));
+            if !plays {
+                actions = actions.child(
+                    button(
+                        format!("offline-select-{i}"),
+                        "Play as",
+                        Kind::Secondary,
+                        &t,
+                    )
+                    .on_click(cx.listener(
+                        move |this, _: &ClickEvent, _, cx| {
+                            this.play_as(&select_uuid);
+                            cx.notify();
+                        },
+                    )),
+                );
+            }
+            actions = actions.child(
+                button(format!("offline-remove-{i}"), "Remove", Kind::Ghost, &t).on_click(
+                    cx.listener(move |this, _: &ClickEvent, _, cx| {
+                        this.remove_offline(&remove_uuid);
+                        cx.notify();
+                    }),
+                ),
+            );
+            n += 1;
+            rows = rows.child(account_row(
+                Some(self.profile_heads.draw(Some(&a.uuid), 32., self.scale, &t)),
+                a.name.clone(),
+                Some(
+                    div()
+                        .child(tr(if plays {
+                            "Offline profile · plays"
+                        } else {
+                            "Offline profile"
+                        }))
+                        .into_any_element(),
+                ),
+                actions,
+                &t,
+            ));
+        }
+        // MFRE: typing another offline name — Enter in the field or Add does the same.
+        let invalid_note = self
+            .servers
+            .field_error(Field::OfflineName)
+            .map(|e| text(theme::CAPTION).text_color(t.danger).child(tr(e)));
+        n += 1;
+        rows =
+            rows.child(index_row(
+                n,
+                tr("Offline name"),
+                Some(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .gap(px(4.))
+                        .child(tr("A name, 3 to 16 letters"))
+                        .children(invalid_note)
+                        .into_any_element(),
+                ),
+                Some(
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap(px(8.))
+                        .child(self.field(Field::OfflineName, tr("Offline name"), 200., cx))
+                        .child(button("offline-add", "Add", Kind::Secondary, &t).on_click(
+                            cx.listener(|this, _: &ClickEvent, _, cx| {
+                                this.add_offline_name();
+                                cx.notify();
+                            }),
+                        ))
+                        .into_any_element(),
+                ),
+                &t,
+            ));
         (rows, n)
     }
 

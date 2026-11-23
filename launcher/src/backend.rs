@@ -2405,13 +2405,16 @@ fn download_for(
              checked: {}",
             pass.offline.unwrap_or_default()
         )),
+        // MFRE (D8): no owner is not a dead end — the Minecraft EULA consent opens the
+        // download with no account at all.
         Err(_) if signed_in => Err(
-            "\n  • No signed-in account owns Minecraft: Java Edition, so Horizon can't download it."
+            "\n  • No signed-in account owns Minecraft: Java Edition. Accept Minecraft's EULA \
+             (horizon-launcher eula accept) to download it with no account."
                 .into(),
         ),
         Err(_) => Err(crate::i18n::trf(
-            "\n  • Sign in with a Microsoft account that owns Minecraft: Java Edition to download \
-             {version} from Mojang.",
+            "\n  • Accept Minecraft's EULA to download {version} from Mojang with no account: \
+             horizon-launcher eula accept. Every player must own the game.",
             &[("version", v)],
         )),
     }
@@ -5042,8 +5045,8 @@ mod tests {
              MultiMC, the Modrinth App, ATLauncher, GDLauncher or Dawn Client, then prepare again.\
              \n  • Or choose the folder where your launcher keeps Minecraft 26.3 (Minecraft \
              folder › Choose… in the launcher, --minecraft on the command line).\
-             \n  • Sign in with a Microsoft account that owns Minecraft: Java Edition to download \
-             26.3 from Mojang."
+             \n  • Accept Minecraft's EULA to download 26.3 from Mojang with no account: \
+             horizon-launcher eula accept. Every player must own the game."
         );
         let no_owner = || Ok(account::Launch::default());
         for (pass, signed_in) in [
@@ -5194,7 +5197,7 @@ pub fn {f}("
             &log,
         )
         .unwrap_err();
-        assert!(refused.contains("Sign in"), "{refused}");
+        assert!(refused.contains("eula accept"), "{refused}");
         assert!(asked.lock().unwrap().is_empty());
         // No owner, consent on record: the gate opens and Mojang is asked (the download itself
         // fails here, without network — what matters is that it was tried).

@@ -546,12 +546,12 @@ pub(crate) fn play_press(prepared: bool, owner: Option<bool>, busy: bool) -> Pla
 }
 
 /// What Play's button says for `press`, so its label is what a click does: "Prepare & play"
-/// when it prepares first, "Sign in to play" when no account here owns the game (it does
-/// nothing then), "Play" otherwise (dimmed while the keychain is still being read).
+/// when it prepares first, MFRE "Play offline" when nothing here can play yet (the click opens
+/// the offline-name screen), "Play" otherwise (dimmed while the keychain is still being read).
 pub(crate) fn play_label(press: PlayPress, owner: Option<bool>) -> &'static str {
     match (press, owner) {
         (PlayPress::PrepareThenPlay, _) => "Prepare & play",
-        (PlayPress::Nothing, Some(false)) => "Sign in to play",
+        (PlayPress::Nothing, Some(false)) => "Play offline",
         _ => "Play",
     }
 }

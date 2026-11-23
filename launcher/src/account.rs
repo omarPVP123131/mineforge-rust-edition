@@ -1881,8 +1881,12 @@ impl Accounts {
         Ok(())
     }
     /// Whether an account here owned the game at its last check (the keychain's answer, no
-    /// request): what Play needs.
+    /// request): what Play needs. MFRE: an offline profile in the lead is owner enough — Play
+    /// asks no service for it (see `launch_for_game`).
     pub fn has_owner(&self, store: &dyn SecretStore) -> bool {
+        if self.selected_offline().is_some() {
+            return true;
+        }
         // The selected account first: it owning the game ends the search after one account's
         // item — every account's item read can ask for the keychain (macOS, #4912).
         self.selected()

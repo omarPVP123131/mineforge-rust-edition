@@ -842,7 +842,7 @@ mod tests {
         let say = |prepared, owner| play_label(play_press(prepared, owner, false), owner);
         assert_eq!(say(true, Some(true)), "Play");
         assert_eq!(say(false, Some(true)), "Prepare & play");
-        assert_eq!(say(false, Some(false)), "Sign in to play");
+        assert_eq!(say(false, Some(false)), "Play offline");
         assert_eq!(say(false, None), "Play");
     }
 

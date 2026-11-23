@@ -2666,3 +2666,19 @@ fn offline_play_as_and_remove() {
     assert_eq!(accounts.offline_profiles.len(), 1);
     assert!(accounts.find("Player1").is_none());
 }
+
+#[test]
+fn a_selected_offline_profile_is_an_owner_without_services() {
+    // MFRE (0003): with an offline profile in the lead, Play passes the owner gate — and the
+    // store is never asked, because the profile reads no secrets.
+    let mut accounts = Accounts::default();
+    accounts.add_offline("LanPlayer").unwrap();
+    let store = MemoryStore::default();
+    let reading = Reading(&store, Mutex::default());
+    assert!(accounts.has_owner(&reading));
+    assert!(reading.1.lock().unwrap().is_empty());
+    // Nothing selected means no owner: the profile alone does not answer the gate.
+    accounts.selected = None;
+    assert!(!accounts.has_owner(&reading));
+    assert!(reading.1.lock().unwrap().is_empty());
+}

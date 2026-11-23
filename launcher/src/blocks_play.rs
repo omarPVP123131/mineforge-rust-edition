@@ -135,8 +135,10 @@ impl Launcher {
                 "Not prepared. Horizon can download Minecraft {version} from Mojang for your account, or use your own install.",
                 &[("version", &version)],
             ),
+            // MFRE: with no owning account this launcher can still download from Mojang once
+            // its Minecraft EULA consent is on record (the backend gate checks it).
             Some(false) => trf(
-                "Not prepared. Sign in with the Microsoft account that owns Minecraft {version} first.",
+                "Not prepared. Play downloads Minecraft {version} from Mojang and prepares it.",
                 &[("version", &version)],
             ),
             None => backend::resources_summary(prepared, !silent, &version),
@@ -195,12 +197,19 @@ impl Launcher {
                         cx.notify();
                     })),
                 ),
-            Some(false) => div().child(microsoft::sign_in_button("prepare-sign-in", &t).on_click(
-                cx.listener(|this, _: &ClickEvent, _, cx| {
-                    this.sign_in_to_play();
+            // MFRE: no owner is no reason to stop — the EULA consent (backend) is the gate.
+            Some(false) => div().child(
+                button(
+                    "prepare-download-offline",
+                    "Download and prepare",
+                    Kind::Secondary,
+                    &t,
+                )
+                .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                    this.prepare(backend::MinecraftFrom::Mojang);
                     cx.notify();
-                }),
-            )),
+                })),
+            ),
             None => div().child(prepare),
         };
         let owner = self.owner == Some(true);
@@ -274,18 +283,22 @@ impl Launcher {
         // Sign in with Microsoft and says Offline itself.
         if !t.glass {
             if self.owner == Some(false) {
+                // MFRE: the way to play is an offline name — the owner screen takes it, no
+                // Microsoft sign-in needed.
                 rows = rows.child(index_row(
                     5,
-                    tr("Microsoft account"),
+                    tr("Offline name"),
                     Some(
                         div()
-                            .child(format!("{}.", tr(account::NEEDS_OWNER)))
+                            .child(tr(
+                                "Type a name and play: single player and LAN need no account.",
+                            ))
                             .into_any_element(),
                     ),
                     Some(
-                        microsoft::sign_in_button("gate-sign-in", &t)
+                        button("gate-offline", "Play offline", Kind::Secondary, &t)
                             .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
-                                this.sign_in_to_play();
+                                this.owner_screen_open = true;
                                 cx.notify();
                             }))
                             .into_any_element(),

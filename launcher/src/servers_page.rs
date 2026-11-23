@@ -85,6 +85,8 @@ pub(super) enum Field {
     JavaArgs,
     WindowWidth,
     WindowHeight,
+    /// MFRE: the offline player name (the owner screen and Settings' accounts).
+    OfflineName,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -323,6 +325,13 @@ impl Servers {
         } else if self.invalid.is_some_and(|(current, _)| current == field) {
             self.invalid = None;
         }
+    }
+
+    /// MFRE: the message on a field's error, if the field has one — Settings shows the offline
+    /// name field's error too, and it lives here.
+    pub(super) fn field_error(&self, field: Field) -> Option<&'static str> {
+        self.invalid
+            .and_then(|(f, e)| (f == field && !e.is_empty()).then_some(e))
     }
 
     /// Whether this field has the keyboard, as of this frame.
@@ -1256,6 +1265,7 @@ impl Launcher {
             Field::MemoryLimit => self.memory_enter(),
             Field::ShopGift => self.shop.find_soon = true,
             Field::ServerName | Field::ServerAddress => self.add_server(),
+            Field::OfflineName => self.add_offline_name(),
         }
     }
 

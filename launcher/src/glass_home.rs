@@ -312,11 +312,11 @@ impl Launcher {
                         ("when", &last_played(when)),
                     ],
                 ),
-                // Signed out, the button says "Sign in to play": the line says the same.
+                // Signed out, the button says "Play offline": the line says the same (MFRE).
                 None if self.owner == Some(false)
                     && !horizon_launcher::developer_offline::selected() =>
                 {
-                    tr("You haven't played this one yet. Sign in to start.").into()
+                    tr("You haven't played this one yet. Play offline to start.").into()
                 }
                 None => tr("You haven't played this one yet. Press Play to start.").into(),
             },
@@ -561,7 +561,7 @@ impl Launcher {
             .items_center()
             .flex_none()
             // At least the mockup's width, wider when the label needs it ("Prepare & play",
-            // "Sign in to play", a long translation).
+            // "Play offline", a long translation).
             .min_w(px(if self.window_width >= WIDE {
                 200.
             } else {
@@ -705,12 +705,12 @@ impl Launcher {
                             cx.notify();
                         }))
                     }
-                    // No account here owns the game: the button says "Sign in to play", so a
-                    // press signs in, as the top bar's Sign in with Microsoft does.
+                    // MFRE: nothing here can play yet — the button says "Play offline", so a
+                    // press opens the offline-name screen (no sign-in starts by itself).
                     (None, PlayPress::Nothing) if owner == Some(false) => {
                         main.on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
                             this.picker.open = false;
-                            this.sign_in_to_play();
+                            this.owner_screen_open = true;
                             cx.notify();
                         }))
                     }

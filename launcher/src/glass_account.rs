@@ -37,17 +37,29 @@ impl Launcher {
     /// The player now.
     fn glass_who_plays(&self) -> Div {
         let t = self.theme;
-        let (uuid, name, status) = match self.accounts.selected() {
-            Some(a) => (
+        // MFRE: an offline profile leads — no Microsoft, no services, its own two lines.
+        let (uuid, name, status) = if let Some(a) = self.accounts.selected_offline() {
+            (
                 Some(a.uuid.clone()),
                 a.name.clone(),
-                (Tone::Live, tr("Microsoft account · online servers too")),
-            ),
-            None => (
-                None,
-                tr("Sign in with Microsoft").to_string(),
-                (Tone::Off, tr(account::NEEDS_OWNER)),
-            ),
+                (Tone::Live, tr("Offline profile · single player and LAN")),
+            )
+        } else {
+            match self.accounts.selected() {
+                Some(a) => (
+                    Some(a.uuid.clone()),
+                    a.name.clone(),
+                    (Tone::Live, tr("Microsoft account · online servers too")),
+                ),
+                None => (
+                    None,
+                    tr("Play offline").to_string(),
+                    (
+                        Tone::Off,
+                        tr("Type a name and play: single player and LAN need no account."),
+                    ),
+                ),
+            }
         };
         let head = div()
             .flex_none()
@@ -96,9 +108,11 @@ impl Launcher {
     }
 
     /// The Microsoft card: the accounts signed in here, then adding one (the mockup's card).
+    /// MFRE: the offline profiles and the name field share it (they come in `microsoft_rows`).
     fn glass_microsoft_card(&mut self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
-        let has_accounts = !self.accounts.accounts.is_empty();
+        let has_accounts =
+            !self.accounts.accounts.is_empty() || !self.accounts.offline_profiles.is_empty();
         let (rows, _) = if has_accounts {
             ui::flat_rows(|| self.microsoft_rows(cx))
         } else {
