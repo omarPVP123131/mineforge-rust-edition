@@ -258,6 +258,10 @@ fn main() -> ExitCode {
             },
         ),
     };
+    // MFRE (F12): whatever was prepared, the title background ends up the fork's own.
+    if let Ok(dir) = &result {
+        horizon_prepare::write_panorama(dir, &log);
+    }
     match result {
         Ok(_) => {
             // A plain preparation reported its 1 already.

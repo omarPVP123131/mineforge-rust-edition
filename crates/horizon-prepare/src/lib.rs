@@ -17,6 +17,7 @@ mod files;
 mod inventory;
 pub mod java;
 pub mod launch_api;
+mod mfre;
 mod pool;
 pub mod pyjson;
 mod sounds;
@@ -25,6 +26,7 @@ mod worker;
 
 pub use check::{check, missing_extras, STAMP};
 pub use files::clone_or_copy;
+pub use mfre::write_panorama;
 pub use sounds::{add_assets, fonts, languages, packs, panorama, sounds, BUILT_IN_PACKS};
 
 use pyjson::Value;
