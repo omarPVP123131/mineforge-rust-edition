@@ -14,7 +14,8 @@
   <b>MineForge Rust Edition</b> — <code>MFRE 2026-11-23 (base Horizon 0949a05)</code><br>
   A community fork of Horizon, by the Horizon contributors. Thanks for the foundation.<br>
   Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.<br>
-  Unaffiliated with the Minecraft Forge project.
+  Unaffiliated with the Minecraft Forge project.<br>
+  Licenses and notices: <a href="NOTICE-MFRE.md"><code>NOTICE-MFRE.md</code></a>.
 </p>
 
 <p align="center">

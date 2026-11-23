@@ -41,6 +41,39 @@ mod tests {
         assert_eq!(BASE_REVISION.len(), 7);
     }
 
+    /// F14: the upstream license notices ship unchanged, beside the fork's own notice.
+    #[test]
+    fn the_license_notices_ship() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        let license = std::fs::read_to_string(root.join("LICENSE")).expect("LICENSE ships");
+        assert!(license.contains("GNU LESSER GENERAL PUBLIC LICENSE"));
+        for name in ["LICENSES/GPL-3.0.txt", "LICENSES/MIT.txt", "NOTICE-MFRE.md"] {
+            assert!(root.join(name).is_file(), "{name} ships");
+        }
+    }
+
+    /// F14 (D2): no Azure client ID is compiled into the fork's binaries; sign-in is
+    /// configuration the fork never sets, and its flow is offline profiles.
+    #[test]
+    fn no_azure_client_id_ships() {
+        assert_eq!(option_env!("HORIZON_MSA_CLIENT_ID"), None);
+    }
+
+    /// F14 (D6): a fork binary never replaces itself, so Horizon's signed self-update never
+    /// runs; the engine-release signatures verify only upstream's own artifacts.
+    #[test]
+    fn the_fork_never_self_updates() {
+        assert!(!crate::backend::self_update_allowed());
+    }
+
+    /// F14: no Minecraft asset ships in the tree; preparation copies the player's own copy and
+    /// the fork's title background is its own art.
+    #[test]
+    fn no_mojang_assets_ship() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        assert!(!root.join("assets/minecraft").exists());
+    }
+
     #[test]
     fn the_version_string_is_its_two_parts() {
         assert_eq!(
