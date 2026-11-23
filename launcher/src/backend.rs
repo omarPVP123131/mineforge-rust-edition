@@ -928,12 +928,12 @@ fn min_launcher_in(value: Option<&serde_json::Value>) -> Option<String> {
 }
 
 /// The links from main, or the built-in ones when offline.
+/// MFRE (D5/D6): the built-in ones, full stop — this fork asks no upstream service for
+/// them. `launcher/links.json` is empty, so the community buttons (Discord, sponsor,
+/// website, roadmap, docs) and the official server are absent; `HORIZON_LINKS_JSON` is
+/// not a thing here — a build that wants them edits the file.
 pub fn links() -> Links {
-    let url = format!("https://raw.githubusercontent.com/{REPO}/main/launcher/links.json");
-    get(&url)
-        .ok()
-        .and_then(|r| r.into_string().ok())
-        .map_or_else(Links::default, |text| Links::parse(&text))
+    Links::default()
 }
 
 /// The launcher's data folder; `HORIZON_LAUNCHER_HOME` overrides it (for tests and scripts).
@@ -3201,7 +3201,11 @@ pub fn client_command(tag: &str) -> Command {
     }
     crate::run_leases::mark(&mut cmd, &version_dir(tag));
     strip_launcher_render_env(&mut cmd);
-    crate::telemetry::ping_only_if_allowed(&mut cmd, !Settings::load().ping_off);
+    // MFRE (D6): with no endpoint of its own, this fork starts the game with the heartbeat off —
+    // the player never asked for a ping to someone else's server. `HORIZON_TELEMETRY_URL` puts it
+    // back for development against a local collector.
+    let heartbeat_off = horizon_telemetry::endpoint().is_none();
+    crate::telemetry::ping_only_if_allowed(&mut cmd, !Settings::load().ping_off && !heartbeat_off);
     cmd.current_dir(&home)
         .env("HORIZON_HOME", &home)
         .env_remove("HORIZON_ACCOUNT_SESSIONS")
@@ -3867,8 +3871,12 @@ fn launcher_asset_running_from(appimage: bool) -> Option<&'static str> {
 }
 
 /// Development builds and `HORIZON_LAUNCHER_NO_SELF_UPDATE` never replace themselves.
+///
+/// MFRE (D6): this fork never replaces itself — the release it would fetch is upstream's, so a
+/// self-update would silently swap the fork out for official Horizon. `HORIZON_SELF_UPDATE=1`
+/// stays for development against a release channel of our own.
 pub fn self_update_allowed() -> bool {
-    !cfg!(debug_assertions) && std::env::var_os("HORIZON_LAUNCHER_NO_SELF_UPDATE").is_none()
+    cfg!(debug_assertions) && std::env::var_os("HORIZON_SELF_UPDATE").is_some()
 }
 
 /// The version in `horizon-launcher --version`'s output (`horizon-launcher 0.1.5`).
@@ -7241,9 +7249,15 @@ pub fn {f}("
     #[test]
     fn links_fall_back_to_the_built_in_ones() {
         let defaults = Links::default();
-        assert_eq!(defaults.discord, "https://discord.gg/playhorizon");
-        assert_eq!(defaults.sponsor, "https://github.com/sponsors/ludovic111");
-        assert_eq!(defaults.website, "https://playhorizon.dev");
+        // MFRE (D5/D6): the built-in file hides every community link and the official
+        // server — no Discord, no sponsor, no website, no official server in this fork.
+        assert_eq!(defaults.discord, "");
+        assert_eq!(defaults.sponsor, "");
+        assert_eq!(defaults.website, "");
+        assert_eq!(defaults.official_server, "");
+        assert_eq!(defaults.official_server_previous, Vec::<String>::new());
+        assert_eq!(defaults.roadmap, "");
+        assert_eq!(defaults.docs, "");
         assert_eq!(
             Links::parse(r#"{"roadmap":"https://example.org/tasks","docs":" "}"#),
             Links {

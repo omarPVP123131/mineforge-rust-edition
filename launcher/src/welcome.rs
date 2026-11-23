@@ -84,8 +84,14 @@ impl Launcher {
                     .text_color(white(ink::FULL))
                     .child(tr("Make Horizon yours")),
             )
+            // MFRE (D6): the ping is off in this fork — it is only mentioned where an
+            // endpoint exists (development).
             .child(ui::text(14., FontWeight::NORMAL, ink::BODY).child(tr(
-                "Pick a look to start with. The \"I'm playing\" ping is already on; you can turn it off below. You can change all of this later in Settings.",
+                if horizon_telemetry::endpoint().is_some() {
+                    "Pick a look to start with. The \"I'm playing\" ping is already on; you can turn it off below. You can change all of this later in Settings."
+                } else {
+                    "Pick a look to start with. You can change all of this later in Settings."
+                },
             )));
         let body = div()
             .id("welcome-body")
@@ -119,17 +125,20 @@ impl Launcher {
             .min_h_0()
             .child(fade);
         // Pinned between the scrolling list and the buttons, so it is seen before Continue.
-        let ping = div()
-            .flex()
-            .flex_col()
-            .flex_none()
-            .max_h(px(280.))
-            .overflow_hidden()
-            .px(px(16.))
-            .py(px(8.))
-            .border_t_1()
-            .border_color(white(0.1))
-            .child(ping);
+        // MFRE (D6): no ping, no row — unless an endpoint was asked for.
+        let ping = (horizon_telemetry::endpoint().is_some()).then(|| {
+            div()
+                .flex()
+                .flex_col()
+                .flex_none()
+                .max_h(px(280.))
+                .overflow_hidden()
+                .px(px(16.))
+                .py(px(8.))
+                .border_t_1()
+                .border_color(white(0.1))
+                .child(ping)
+        });
         let foot = div()
             .flex()
             .flex_none()
@@ -190,7 +199,7 @@ impl Launcher {
             .max_h(px(700.))
             .child(head)
             .child(body)
-            .child(ping)
+            .children(ping)
             .child(foot);
         div()
             .id("welcome")

@@ -145,12 +145,10 @@ fn a_server_without_a_name_gets_the_games_default() {
 
 /// The official server as the launcher knows it before links.json is read.
 fn add_official_default(home: &Path) -> Result<(), String> {
-    let links = Links::default();
-    add_official(
-        home,
-        &links.official_server,
-        &links.official_server_previous,
-    )
+    // MFRE (D6): this fork's links.json names no official server, so the offer mechanics are
+    // tested with the address it would name — the built-in one.
+    let links = Links::parse(r#"{"official_server_previous": ["horizon.bunchy7s.dev"]}"#);
+    add_official(home, OFFICIAL_ADDRESS, &links.official_server_previous)
 }
 
 fn ips(home: &Path) -> Vec<String> {
@@ -325,14 +323,15 @@ fn a_moved_official_server_moves_the_players_entry_once() {
 
 #[test]
 fn the_official_address_comes_from_links_json() {
-    // The defaults: the new host, and the old one to move from.
+    // MFRE (D6): the defaults name no official server — nothing is ever offered.
     let defaults = Links::default();
-    assert_eq!(defaults.official_server, "play.playhorizon.dev");
-    assert_eq!(defaults.official_server_previous, ["horizon.bunchy7s.dev"]);
-    // The file on main says the same.
+    assert_eq!(defaults.official_server, "");
+    assert_eq!(defaults.official_server_previous, Vec::<String>::new());
+    // The file in this fork says the same.
     let file = Links::parse(include_str!("../../links.json"));
     assert_eq!(file, defaults);
-    // A later move is a links.json edit: the list follows it, from either earlier address.
+    // The offer mechanics run on the address a links.json would name, and on the old one to
+    // move from.
     let links = Links::parse(
         r#"{"official_server": " next.example ",
             "official_server_previous": ["play.playhorizon.dev", "horizon.bunchy7s.dev", ""]}"#,

@@ -249,9 +249,8 @@ pub fn delete_my_data() -> Result<String, String> {
     outbox::clear(&home).map_err(|e| e.to_string())?;
     let remote = match horizon_telemetry::endpoint() {
         _ if consent.install_id.is_empty() => "Nothing was ever sent from here.",
-        None => {
-            "Sending is turned off here (HORIZON_TELEMETRY_URL=off), so the server was not asked."
-        }
+        // MFRE (D6): off by default here; `HORIZON_TELEMETRY_URL` points it at a local server.
+        None => "Sending is turned off in this build, so no server was asked.",
         Some(url) => {
             upload::delete_remote(&url, &consent.install_id)
                 .map_err(|e| format!("The server could not be reached ({e}). Try again later."))?;
@@ -330,7 +329,7 @@ pub fn submit(item: &Item) -> Result<String, String> {
     Ok(match send() {
         Flush::Sent { .. } => "Sent. Thank you.".into(),
         Flush::Nothing if horizon_telemetry::endpoint().is_none() => {
-            "Kept; sending is turned off here (HORIZON_TELEMETRY_URL=off).".into()
+            "Kept; sending is turned off in this build.".into()
         }
         _ => "Kept; it will be sent the next time the launcher starts.".into(),
     })

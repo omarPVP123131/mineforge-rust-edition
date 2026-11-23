@@ -40,9 +40,11 @@ pub const SCHEMA: u32 = 1;
 /// (cores, clocks, VRAM, drive, screen, power, form), 2026-10-23.
 pub const CONSENT_VERSION: u32 = 2;
 
-/// The ingest server (`crates/horizon-telemetry-server`). `HORIZON_TELEMETRY_URL`
-/// overrides it (a local server); `HORIZON_TELEMETRY_URL=off` sends nothing at all, no ping
-/// either (tests and automated runs). What is sent still depends on the player's switches.
+/// The upstream ingest server (`crates/horizon-telemetry-server`). MFRE (D6): this fork
+/// sends nothing by default — the constant stays for reference and for
+/// `HORIZON_TELEMETRY_URL` to override (a self-hosted server, development);
+/// `HORIZON_TELEMETRY_URL=off` says the same as the default. What would be sent still
+/// depends on the player's switches.
 pub const DEFAULT_ENDPOINT: &str = horizon_addresses::TELEMETRY;
 
 /// Where items are sent, if anywhere.
@@ -54,7 +56,10 @@ fn resolve(var: Option<&str>) -> Option<String> {
     match var.map(str::trim) {
         Some("off" | "none" | "0") => None,
         Some(url) if !url.is_empty() => Some(url.trim_end_matches('/').to_owned()),
-        _ => Some(DEFAULT_ENDPOINT.to_owned()),
+        // MFRE (D6): telemetry is out of this fork — no endpoint unless one is asked for
+        // explicitly. The game's "I'm playing" ping, the live counts and every upload read
+        // this, so one gate turns them all off.
+        _ => None,
     }
 }
 
@@ -118,14 +123,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_endpoint_defaults_to_the_server_and_can_be_moved_or_turned_off() {
-        assert_eq!(resolve(None).as_deref(), Some(DEFAULT_ENDPOINT));
-        assert_eq!(resolve(Some(" ")).as_deref(), Some(DEFAULT_ENDPOINT));
+    fn the_endpoint_is_off_by_default_and_can_be_moved() {
+        // MFRE (D6): nothing is sent unless HORIZON_TELEMETRY_URL names a server.
+        assert_eq!(resolve(None), None);
+        assert_eq!(resolve(Some(" ")), None);
+        assert_eq!(resolve(Some("off")), None);
         assert_eq!(
             resolve(Some("http://127.0.0.1:8080/")).as_deref(),
             Some("http://127.0.0.1:8080")
         );
-        assert_eq!(resolve(Some("off")), None);
         assert!(DEFAULT_ENDPOINT.starts_with("https://") && !DEFAULT_ENDPOINT.ends_with('/'));
     }
 }

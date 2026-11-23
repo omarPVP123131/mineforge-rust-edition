@@ -134,9 +134,12 @@ impl Launcher {
     }
 
     /// Whether the question covers the window: not answered for this consent version, and the
-    /// opening is over.
+    /// opening is over. MFRE (D6): never while telemetry has no endpoint — there is nothing
+    /// to collect, so nothing to ask.
     pub(crate) fn asking_consent(&self) -> bool {
-        self.opening.is_none() && self.collection.consent.needs_asking()
+        horizon_telemetry::endpoint().is_some()
+            && self.opening.is_none()
+            && self.collection.consent.needs_asking()
     }
 
     fn answer_consent(&mut self, choices: Choices) {
@@ -323,7 +326,12 @@ impl Launcher {
     }
 
     /// Settings' data collection: a switch per kind, then the player's data.
+    /// MFRE (D6): hidden while telemetry has no endpoint (this fork's default) — switches
+    /// over nothing. `HORIZON_TELEMETRY_URL` brings the section back for development.
     pub(crate) fn collection_section(&mut self, cx: &mut Context<Self>) -> Div {
+        if horizon_telemetry::endpoint().is_none() {
+            return div();
+        }
         let t = self.theme;
         let consent = self.collection.consent.clone();
         let mut list = div().flex().flex_col().border_t_1().border_color(t.rule);
@@ -378,7 +386,8 @@ impl Launcher {
                 &[("count", &waiting.to_string())],
             )
         } else {
-            tr("Sending is turned off here (HORIZON_TELEMETRY_URL=off)").into()
+            // MFRE (D6): sending is off unless a local endpoint was asked for.
+            tr("Sending is turned off in this build.").into()
         };
         let confirm = self.collection.confirm_delete;
         let actions = div()

@@ -594,15 +594,31 @@ impl Launcher {
     pub(crate) fn account_rows(&mut self, cx: &mut Context<Self>) -> (Div, usize) {
         let t = self.theme;
         let (mut rows, mut n) = self.microsoft_rows(cx);
-        n += 1;
-        let (title, detail, action) = self.sign_in_parts(cx);
-        rows = rows.child(index_row(
-            n,
-            title,
-            Some(detail.into_any_element()),
-            action,
-            &t,
-        ));
+        // MFRE: with no Microsoft in this build, no signed-in account and nothing the sign-in
+        // is doing (or failed at), the last row would repeat the offline add-name row above —
+        // it stays only when it has something to say.
+        let silent = account::client_id().is_none()
+            && self.accounts.accounts.is_empty()
+            && !matches!(
+                self.sign_in_state,
+                Some(
+                    SignInState::Starting
+                        | SignInState::Working(_)
+                        | SignInState::Code(_)
+                        | SignInState::Done(Err(_))
+                )
+            );
+        if !silent {
+            n += 1;
+            let (title, detail, action) = self.sign_in_parts(cx);
+            rows = rows.child(index_row(
+                n,
+                title,
+                Some(detail.into_any_element()),
+                action,
+                &t,
+            ));
+        }
         (rows, n)
     }
 
@@ -834,7 +850,10 @@ impl Launcher {
             Some(SignInState::Starting | SignInState::Code(_) | SignInState::Working(_))
         );
         let detail = match &self.sign_in_state {
-            _ if !configured => div().child(tr(account::NOT_CONFIGURED)),
+            // MFRE: no Microsoft configured is no error — the offline way is the normal one.
+            _ if !configured => div().child(tr(
+                "Type a name and play: single player and LAN need no account.",
+            )),
             Some(SignInState::Starting) => div().child(tr("Asking Microsoft…")),
             Some(SignInState::Working(phase)) => div().child(tr(phase.label())),
             Some(SignInState::Code(code)) => div()
@@ -989,6 +1008,10 @@ impl Launcher {
         };
         let title = match &self.sign_in_target {
             Some(target) => trf("Sign in again as {name}", &[("name", &target.name)]),
+            // MFRE: with no Microsoft in this build the row is the offline way in.
+            None if self.accounts.accounts.is_empty() && !configured => {
+                tr("Offline name").to_owned()
+            }
             None if self.accounts.accounts.is_empty() => tr("Microsoft account").to_owned(),
             None => tr("Another account").to_owned(),
         };

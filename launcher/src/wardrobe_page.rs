@@ -471,26 +471,21 @@ impl Launcher {
         .detach();
     }
 
-    /// Whether the top bar has this page: the cosmetics switch is on, or the cosmetics service
-    /// has a founder set to show, whatever the switch says (`shop::in_top_bar`): its public
-    /// answer, or the selected account's own (a preview for it, a claim), from this visit or kept
-    /// on disk.
+    /// Whether the top bar has this page. MFRE (D5): the shop/wardrobe layer is off in this
+    /// fork — the pages show only for the development preview (`HORIZON_COSMETICS=1`, which
+    /// reads local files); the cosmetics service never decides, and is never asked.
     pub(super) fn wardrobe_shown(&self) -> bool {
-        let own = (self.wardrobe.as_ref())
-            .and_then(|w| w.saved.me.as_ref())
-            .map(|m| &m.claim)
-            .or(self.shop_kept.as_ref());
-        horizon_launcher::shop::in_top_bar(
-            horizon_cosmetics::forced(),
-            self.shop_status.as_ref(),
-            own,
-        )
+        horizon_cosmetics::forced()
     }
 
     /// Ask the cosmetics service whether there is something to show, at start and every half hour
     /// (`GET /v1/shop`, no session, nothing about the player), and read the selected account's
     /// own last answer from disk. Offline, the last answer stands.
+    /// MFRE (D5): not asked at all unless the development preview forced the pages on.
     pub(super) fn watch_shop(&self, cx: &mut Context<Self>) {
+        if !horizon_cosmetics::forced() {
+            return;
+        }
         cx.spawn(async move |this, cx| loop {
             let Ok(uuid) = this.update(cx, |this, _| this.wardrobe_account().map(|a| a.uuid))
             else {

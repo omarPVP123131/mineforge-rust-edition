@@ -123,7 +123,8 @@ impl Launcher {
         let idle = self.sign_in_state.is_none()
             || matches!(self.sign_in_state, Some(SignInState::Done(_)));
         let first = !has_accounts && self.sign_in_target.is_none();
-        let heading = if first {
+        // MFRE (D2): with no Microsoft in this build the card heads the offline way.
+        let heading = if first && configured {
             tr("Play online with your Microsoft account").to_string()
         } else {
             title
@@ -186,7 +187,8 @@ impl Launcher {
             .when(has_accounts, |d| {
                 d.child(rows.mx(px(-16.)).mt(px(-16.)).mb(px(16.)))
             })
-            .child(microsoft::logo(36.))
+            // MFRE (D2): the Microsoft logo shows only where a sign-in is configured.
+            .children(configured.then(|| microsoft::logo(36.)))
             .child(
                 div()
                     .mt(px(20.))
