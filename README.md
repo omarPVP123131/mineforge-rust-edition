@@ -11,6 +11,13 @@
 </p>
 
 <p align="center">
+  <b>MineForge Rust Edition</b> — <code>MFRE 2026-11-23 (base Horizon 0949a05)</code><br>
+  A community fork of Horizon, by the Horizon contributors. Thanks for the foundation.<br>
+  Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.<br>
+  Unaffiliated with the Minecraft Forge project.
+</p>
+
+<p align="center">
   <a href="https://playhorizon.dev/download"><img src="docs/media/readme/download-button.png" alt="Download the Horizon launcher for Windows, macOS and Linux" width="400"></a><br>
   <sub>You need your own copy of Minecraft: Java Edition.</sub>
 </p>

@@ -10,6 +10,7 @@ use horizon_launcher::github_mods;
 use horizon_launcher::i18n::{tr, trf};
 use horizon_launcher::instances;
 use horizon_launcher::loaders;
+use horizon_launcher::mfre;
 use horizon_launcher::native_mods;
 use horizon_launcher::other_launchers;
 use horizon_launcher::server_list;
@@ -38,6 +39,7 @@ use std::process::Command;
 #[command(
     name = "horizon-launcher",
     version = backend::VERSION,
+    long_version = mfre::VERSION_STRING,
     about = "Installs, prepares and starts Horizon. Without a subcommand, opens the window."
 )]
 struct Cli {
@@ -4375,3 +4377,19 @@ mod developer_builds;
 
 mod settings_output;
 use settings_output::settings_json;
+
+#[cfg(test)]
+mod version_flag_tests {
+    use clap::CommandFactory;
+
+    /// `-V` keeps the semver the update code parses; `--version` shows the fork's string (F13).
+    #[test]
+    fn the_version_flags_carry_the_fork_string() {
+        let cmd = super::Cli::command();
+        assert_eq!(cmd.get_version(), Some(horizon_launcher::backend::VERSION));
+        assert_eq!(
+            cmd.get_long_version(),
+            Some(horizon_launcher::mfre::VERSION_STRING)
+        );
+    }
+}

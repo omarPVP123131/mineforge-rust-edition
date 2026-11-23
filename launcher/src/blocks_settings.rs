@@ -1,6 +1,7 @@
 //! The blocky look's Settings page, the native build consent and the settings rows.
 use super::servers_page::Field;
 use super::*;
+use horizon_launcher::mfre;
 
 impl Launcher {
     pub(crate) fn settings_page(&mut self, cx: &mut Context<Self>) -> Div {
@@ -267,6 +268,36 @@ impl Launcher {
                     .child(group("AI", "terminal"))
                     .child(self.no_ai_row(n + 6, cx))
                     .child(group("About", "info-box"))
+                    .child(index_row(
+                        n + 12,
+                        tr("Version"),
+                        Some(mono(format!(
+                            "{}  ·  launcher {}",
+                            mfre::VERSION_STRING,
+                            backend::VERSION
+                        ))),
+                        None,
+                        &t,
+                    ))
+                    .child(index_row(
+                        n + 13,
+                        tr("Based on Horizon"),
+                        Some(plain(&trf(
+                            "A community fork of Horizon {rev}, by the Horizon contributors. Thanks for the foundation.",
+                            &[("rev", mfre::BASE_REVISION)],
+                        ))),
+                        None,
+                        &t,
+                    ))
+                    .child(index_row(
+                        n + 14,
+                        tr("Not an official product"),
+                        Some(plain(tr(
+                            "Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft. Unaffiliated with the Minecraft Forge project.",
+                        ))),
+                        None,
+                        &t,
+                    ))
                     .child(self.location_row(n + 9, cx))
                     .child(index_row(
                         n + 10,

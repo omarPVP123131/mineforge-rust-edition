@@ -3891,9 +3891,9 @@ fn parse_version_output(out: &str) -> Option<&str> {
 /// update (the command line, another window) has replaced the file.
 pub(crate) fn installed_launcher_version(path: &Path) -> Option<String> {
     let mut cmd = crate::process::command(path);
-    cmd.arg("--version")
-        .stdin(Stdio::null())
-        .stderr(Stdio::null());
+    // MFRE (F13): `--version` prints the long fork string now; the short semver this parses
+    // stays on `-V`.
+    cmd.arg("-V").stdin(Stdio::null()).stderr(Stdio::null());
     let out = cmd.output().ok()?;
     parse_version_output(&String::from_utf8_lossy(&out.stdout)).map(String::from)
 }
