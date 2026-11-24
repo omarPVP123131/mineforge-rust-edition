@@ -1,3 +1,5 @@
 {
-  "block.mfre_kinetic.shaft": "Shaft"
+  "block.mfre_kinetic.shaft": "Shaft",
+  "block.mfre_kinetic.water_wheel": "Water Wheel",
+  "itemGroup.mfre_kinetic.kinetic": "MFRE Kinetics"
 }

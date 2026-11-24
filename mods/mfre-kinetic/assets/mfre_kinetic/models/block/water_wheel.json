@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "side": "mfre_kinetic:block/water_wheel_side",
+    "end": "mfre_kinetic:block/water_wheel_end"
+  }
+}

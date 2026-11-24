@@ -1,0 +1,8 @@
+{
+  "title": "itemGroup.mfre_kinetic.kinetic",
+  "icon": "mfre_kinetic:shaft",
+  "items": [
+    "mfre_kinetic:shaft",
+    "mfre_kinetic:water_wheel"
+  ]
+}

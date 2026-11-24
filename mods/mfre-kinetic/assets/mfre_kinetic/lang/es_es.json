@@ -1,3 +1,5 @@
 {
-  "block.mfre_kinetic.shaft": "Eje"
+  "block.mfre_kinetic.shaft": "Eje",
+  "block.mfre_kinetic.water_wheel": "Rueda hidráulica",
+  "itemGroup.mfre_kinetic.kinetic": "Cinética MFRE"
 }
