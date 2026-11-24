@@ -48,6 +48,21 @@ impl Axis {
             Self::Z => 2,
         }
     }
+
+    /// El vector unidad del eje en f32, para `draw.spin`/`draw.rotate_about`.
+    pub fn vector(self) -> [f32; 3] {
+        match self {
+            Self::X => [1.0, 0.0, 0.0],
+            Self::Y => [0.0, 1.0, 0.0],
+            Self::Z => [0.0, 0.0, 1.0],
+        }
+    }
+}
+
+/// Los grados por tick de un giro a `speed` RPM: 1 RPM = 360° por 1 200 ticks = 0.3°/tick
+/// (20 ticks por segundo). El signo es la dirección (negativo = al revés).
+pub fn degrees_per_tick(speed: i32) -> f32 {
+    speed as f32 * 0.3
 }
 
 /// Suma de posiciones.
@@ -243,6 +258,20 @@ mod tests {
         let members = solve(&MapWorld(map.clone()), [1, 0, 0]).unwrap();
         assert_eq!(members.len(), 2);
         assert!(members.iter().all(|m| m.speed == 0));
+    }
+
+    #[test]
+    fn rpm_to_degrees_per_tick() {
+        assert!((degrees_per_tick(8) - 2.4).abs() < 1e-6);
+        assert!((degrees_per_tick(-8) + 2.4).abs() < 1e-6);
+        assert_eq!(degrees_per_tick(0), 0.0);
+    }
+
+    #[test]
+    fn axis_vectors() {
+        assert_eq!(Axis::X.vector(), [1.0, 0.0, 0.0]);
+        assert_eq!(Axis::Y.vector(), [0.0, 1.0, 0.0]);
+        assert_eq!(Axis::Z.vector(), [0.0, 0.0, 1.0]);
     }
 
     #[test]

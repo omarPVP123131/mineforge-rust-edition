@@ -1,12 +1,14 @@
 //! Cinética MFRE — mod nativo (D21/D23): potencia rotacional al estilo Create, reescrita
 //! clean-room sobre Mod API 0.2. El launcher compila esta crate contra el juego fijado.
 //!
-//! F42, incremento 2: la red rotacional de servidor — `kinetic` es el resolvedor puro
-//! (BFS por eje, fuente de menor posición gana, con pruebas unitarias) y `state` lo conecta
-//! al nivel: block entities que tican, estado por nodo en un attachment persistido con el
-//! chunk y reescritura transaccional de la red cuando algo cambia. Fuentes: la rueda
-//! hidráulica (agua en sus cuatro vecinos perpendiculares → 8 RPM). El render giratorio y
-//! el sync al cliente llegan en el incremento 3.
+//! F42, incremento 3: la red rotacional completa de punta a punta — `kinetic` es el
+//! resolvedor puro (BFS por eje, fuente de menor posición gana, con pruebas unitarias) y
+//! `state` lo conecta al nivel y al cliente: block entities que tican y se auto-corrigen
+//! (attachment como verdad del servidor + espejo nbt sincronizado con
+//! `block_entity_sync`/`update_tag`), y render giratorio (`block_entity_submit` con
+//! `spin`+`keep`) para el eje y la rueda hidráulica (agua perpendicular → 8 RPM). Los
+//! modelos de mundo están vacíos: la geometría la dibuja el block entity; los modelos de
+//! item quedan estáticos para inventario/mano.
 mod kinetic;
 mod state;
 
@@ -85,10 +87,11 @@ impl Hooks for Mod {
         event.blocks.push(shaft);
 
         // La rueda hidráulica: fuente de 8 RPM con agua en sus vecinos perpendiculares.
-        // Cubo macizo por ahora (su rueda detallada y el giro visible llegan con el
-        // render del incremento 3).
+        // Su geometría la dibuja el block entity girando (incremento 3): el modelo de
+        // mundo está vacío y no ocluye, como el eje.
         let mut wheel = Block::new("mfre_kinetic:water_wheel", "minecraft:iron_block");
         wheel.properties.hardness = Some(1.5);
+        wheel.properties.occludes = Some(false);
         with_axis(&mut wheel, "x");
         event.blocks.push(wheel);
     }

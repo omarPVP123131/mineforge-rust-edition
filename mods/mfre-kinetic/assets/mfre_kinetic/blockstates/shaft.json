@@ -1,16 +1,13 @@
 {
   "variants": {
     "axis=x": {
-      "model": "mfre_kinetic:block/shaft",
-      "x": 90,
-      "y": 90
+      "model": "mfre_kinetic:block/empty"
     },
     "axis=y": {
-      "model": "mfre_kinetic:block/shaft"
+      "model": "mfre_kinetic:block/empty"
     },
     "axis=z": {
-      "model": "mfre_kinetic:block/shaft",
-      "x": 90
+      "model": "mfre_kinetic:block/empty"
     }
   }
 }
