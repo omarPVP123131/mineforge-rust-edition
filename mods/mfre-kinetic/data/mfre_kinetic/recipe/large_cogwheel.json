@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " C ",
+    "CSC",
+    " C "
+  ],
+  "key": {
+    "C": "mfre_kinetic:cogwheel",
+    "S": "mfre_kinetic:shaft"
+  },
+  "result": {
+    "id": "mfre_kinetic:large_cogwheel"
+  }
+}
