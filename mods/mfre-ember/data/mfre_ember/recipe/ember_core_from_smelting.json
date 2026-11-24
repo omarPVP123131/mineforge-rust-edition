@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "ingredient": "minecraft:coal_block",
+  "result": {
+    "id": "mfre_ember:ember_core"
+  },
+  "experience": 0.7,
+  "cookingtime": 200
+}

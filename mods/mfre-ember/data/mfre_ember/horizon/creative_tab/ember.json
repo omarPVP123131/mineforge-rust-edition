@@ -1,0 +1,8 @@
+{
+  "title": "itemGroup.mfre_ember.ember",
+  "icon": "mfre_ember:ember_core",
+  "items": [
+    "mfre_ember:ember_block",
+    "mfre_ember:ember_core"
+  ]
+}

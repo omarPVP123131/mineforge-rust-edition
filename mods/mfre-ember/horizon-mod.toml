@@ -1,0 +1,10 @@
+id = "mfre_ember"
+name = "MFRE Ember"
+version = "0.1.0"
+description = "Primer contenido propio de MineForge Rust Edition: el bloque de brasas y el núcleo de brasas, con la paleta ember del fork (F11)."
+authors = ["MineForge Rust Edition"]
+license = "MIT"
+credits = "Texturas generadas para el fork; declaraciones sobre las plantillas de la Mod API 0.2."
+api = "0.2"
+side = "both"
+capabilities = ["registries"]

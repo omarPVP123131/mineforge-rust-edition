@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    "mfre_ember:ember_block"
+  ],
+  "result": {
+    "id": "mfre_ember:ember_core",
+    "count": 9
+  }
+}
