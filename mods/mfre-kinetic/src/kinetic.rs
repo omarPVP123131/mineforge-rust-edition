@@ -1,19 +1,26 @@
-//! La red rotacional pura: nodos, conexiones, BFS y velocidad — sin tipos de `mod_api`.
-//! El adaptador sobre el nivel real vive en `state.rs`; este módulo se prueba con
-//! `cargo test` sin juego (validación sandbox de F42).
+//! La red rotacional pura: nodos, conexiones, BFS, velocidad y estrés — sin tipos de
+//! `mod_api`. El adaptador sobre el nivel real vive en `state.rs`; este módulo se prueba
+//! con `cargo test` sin juego (validación sandbox de F42).
 //!
 //! Reglas de conexión (limpias, inspiradas en Create — port clean-room D21):
 //! - **Axial** (a lo largo del eje compartido): el eje (Shaft) conecta con cualquier
-//!   cinético del mismo axis pegado a sus extremos (eje↔eje, eje↔rueda, eje↔engranaje).
-//!   Misma velocidad, mismo sentido. Entre dos no-ejes no hay conexión axial.
+//!   cinético del mismo axis pegado a sus extremos (eje↔eje, eje↔rueda, eje↔engranaje,
+//!   eje↔manivela, eje↔medidor). Misma velocidad, mismo sentido. Entre dos no-ejes no
+//!   hay conexión axial.
 //! - **Malla** (engranajes): dos engranajes (Cog/LargeCog) vecinos meshan cuando el
 //!   desplazamiento es perpendicular a AMBOS axes (incluye engranajes coplanares del
 //!   mismo axis en fila). Cada malla invierte el sentido y aplica la relación de
 //!   tamaños: grande→chico ×2, chico→grande ×0.5, iguales ×1.
 //!
-//! La velocidad la propagan las fuentes (ruedas con agua) por BFS multi-fuente en orden
-//! de posición (x,y,z): cada miembro toma la velocidad de la fuente prioritaria que lo
-//! alcanza primero; sin fuente, 0. Las relaciones son potencias de 2: exactas en f32.
+//! La velocidad la propagan las fuentes (ruedas con agua, manivelas activas) por BFS
+//! multi-fuente en orden de posición (x,y,z): cada miembro toma la velocidad de la fuente
+//! prioritaria que lo alcanza primero; sin fuente, 0. Las relaciones son potencias de 2:
+//! exactas en f32.
+//!
+//! **Estrés** (simplificación clean-room de Create): cada fuente activa aporta capacidad
+//! (rueda 16, manivela 8) y cada miembro una carga por tipo (engranaje 1, grande 2, el
+//! resto 0 — los medidores no frenan la red). Si la carga supera la capacidad la red se
+//! **sobrecarga** y se detiene: todas las velocidades a 0.
 
 use std::collections::VecDeque;
 
@@ -72,7 +79,7 @@ impl Axis {
     }
 }
 
-/// El tipo de bloque cinético, para las reglas de conexión y las relaciones.
+/// El tipo de bloque cinético, para las reglas de conexión, las relaciones y la carga.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {
     /// Eje: transmisión recta; conector axial universal.
@@ -83,6 +90,12 @@ pub enum Kind {
     Cog,
     /// Engranaje grande: malla como el chico, con relación 2:1.
     LargeCog,
+    /// Manivela: fuente transitoria mientras el jugador la gira.
+    HandCrank,
+    /// Medidor de velocidad: aguja según |speed|; sin carga.
+    Speedometer,
+    /// Medidor de estrés: aguja según carga/capacidad; sin carga.
+    Stressometer,
 }
 
 impl Kind {
@@ -94,16 +107,21 @@ impl Kind {
     fn is_large(self) -> bool {
         matches!(self, Self::LargeCog)
     }
+
+    /// La carga de estrés que este tipo añade a su red (simplificación clean-room:
+    /// engranaje 1, grande 2, todo lo demás 0 — ejes, fuentes y medidores no frenan).
+    pub fn impact(self) -> i32 {
+        match self {
+            Self::Cog => 1,
+            Self::LargeCog => 2,
+            _ => 0,
+        }
+    }
 }
 
 /// Suma de posiciones.
 pub fn add(a: [i32; 3], b: [i32; 3]) -> [i32; 3] {
     [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
-}
-
-/// Resta de posiciones (el desplazamiento de `a` a `b`).
-pub fn sub(a: [i32; 3], b: [i32; 3]) -> [i32; 3] {
-    [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
 
 /// El bit de conexión axial en la dirección del eje: positiva `1 << índice`,
@@ -118,10 +136,12 @@ pub fn conn_bit(axis: Axis, positive: bool) -> u8 {
 pub struct Node {
     /// Su eje de transmisión.
     pub axis: Axis,
-    /// Su tipo (reglas de conexión y relación).
+    /// Su tipo (reglas de conexión, relación y carga).
     pub kind: Kind,
     /// Las RPM que aporta como fuente; 0 si no es fuente o su fuente está inactiva.
     pub source_speed: f32,
+    /// La capacidad de estrés que aporta (sólo las fuentes activas: rueda 16, manivela 8).
+    pub capacity: i32,
 }
 
 /// La lectura de sólo que el resolvedor necesita; el nivel real la implementa en `state.rs`.
@@ -139,6 +159,18 @@ pub struct Member {
     pub speed: f32,
     /// Su bitmask de conexiones axiales al resolver.
     pub conns: u8,
+}
+
+/// La red completa resuelta: sus miembros y los totales de estrés.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Solution {
+    /// Los miembros ordenados por posición (determinista para pruebas y diffs). Con
+    /// sobrecarga, todos con velocidad 0.
+    pub members: Vec<Member>,
+    /// La capacidad de estrés total (suma de las fuentes activas).
+    pub capacity: i32,
+    /// La carga de estrés total (suma de los impactos por tipo).
+    pub load: i32,
 }
 
 /// ¿Dos nodos vecinos se conectan? `offset` es el desplazamiento de `a` a `b`.
@@ -193,9 +225,10 @@ const NEIGHBORS: [[i32; 3]; 6] = [
 
 /// Resuelve la red que contiene `start`: descubre el componente por BFS (aristas axiales
 /// y mallas), propaga las velocidades desde las fuentes en orden de posición (x,y,z) y
-/// devuelve los miembros ordenados por posición (determinista para pruebas y diffs).
-/// `None` sólo si `start` no es un nodo.
-pub fn solve<W: KineticWorld>(world: &W, start: [i32; 3]) -> Option<Vec<Member>> {
+/// suma el estrés (capacidad de las fuentes activas, carga por tipo). Si la carga supera
+/// la capacidad, la red se sobrecarga y todas las velocidades salen 0. `None` sólo si
+/// `start` no es un nodo.
+pub fn solve<W: KineticWorld>(world: &W, start: [i32; 3]) -> Option<Solution> {
     world.node(start)?;
     // 1) El componente: BFS por todas las aristas; guarda nodos y bits axiales.
     let mut nodes: Vec<([i32; 3], Node, u8)> = Vec::new();
@@ -264,21 +297,33 @@ pub fn solve<W: KineticWorld>(world: &W, start: [i32; 3]) -> Option<Vec<Member>>
             }
         }
     }
-    // 3) Los miembros ordenados por posición, con su velocidad (0 sin fuente que alcance).
+    // 3) El estrés: capacidad de las fuentes activas, carga por tipo de miembro.
+    let capacity: i32 = nodes.iter().map(|(_, node, _)| node.capacity).sum();
+    let load: i32 = nodes.iter().map(|(_, node, _)| node.kind.impact()).sum();
+    let overloaded = load > capacity;
+    // 4) Los miembros ordenados por posición, con su velocidad (0 sin fuente que alcance
+    //    o con sobrecarga).
     nodes.sort_by_key(|(pos, _, _)| (pos[0], pos[1], pos[2]));
-    Some(
-        nodes
-            .into_iter()
-            .map(|(pos, _, conns)| Member {
-                pos,
-                speed: speeds
+    let members = nodes
+        .into_iter()
+        .map(|(pos, _, conns)| Member {
+            pos,
+            speed: if overloaded {
+                0.0
+            } else {
+                speeds
                     .iter()
                     .find(|(p, _)| *p == pos)
-                    .map_or(0.0, |(_, s)| *s),
-                conns,
-            })
-            .collect(),
-    )
+                    .map_or(0.0, |(_, s)| *s)
+            },
+            conns,
+        })
+        .collect();
+    Some(Solution {
+        members,
+        capacity,
+        load,
+    })
 }
 
 /// Los grados por tick de un giro a `speed` RPM: 1 RPM = 360° por 1 200 ticks = 0.3°/tick
@@ -305,6 +350,7 @@ mod tests {
             axis,
             kind: Kind::Shaft,
             source_speed: 0.0,
+            capacity: 0,
         }
     }
 
@@ -313,6 +359,7 @@ mod tests {
             axis,
             kind: Kind::Wheel,
             source_speed: rpm,
+            capacity: if rpm != 0.0 { 16 } else { 0 },
         }
     }
 
@@ -321,6 +368,7 @@ mod tests {
             axis,
             kind: Kind::Cog,
             source_speed: 0.0,
+            capacity: 0,
         }
     }
 
@@ -329,7 +377,30 @@ mod tests {
             axis,
             kind: Kind::LargeCog,
             source_speed: 0.0,
+            capacity: 0,
         }
+    }
+
+    fn crank(axis: Axis, rpm: f32) -> Node {
+        Node {
+            axis,
+            kind: Kind::HandCrank,
+            source_speed: rpm,
+            capacity: if rpm != 0.0 { 8 } else { 0 },
+        }
+    }
+
+    fn speedometer(axis: Axis) -> Node {
+        Node {
+            axis,
+            kind: Kind::Speedometer,
+            source_speed: 0.0,
+            capacity: 0,
+        }
+    }
+
+    fn members_of(solution: Option<Solution>) -> Vec<Member> {
+        solution.unwrap().members
     }
 
     fn member_at(members: &[Member], pos: [i32; 3]) -> Member {
@@ -342,7 +413,7 @@ mod tests {
         map.insert([0, 0, 0], wheel(Axis::X, 8.0));
         map.insert([1, 0, 0], shaft(Axis::X));
         map.insert([2, 0, 0], shaft(Axis::X));
-        let members = solve(&MapWorld(map.clone()), [1, 0, 0]).unwrap();
+        let members = members_of(solve(&MapWorld(map.clone()), [1, 0, 0]));
         assert_eq!(members.len(), 3);
         assert!(members.iter().all(|m| m.speed == 8.0));
         assert_eq!(
@@ -364,10 +435,10 @@ mod tests {
         let mut map = HashMap::new();
         map.insert([0, 0, 0], wheel(Axis::X, 8.0));
         map.insert([1, 0, 0], shaft(Axis::Y));
-        let members = solve(&MapWorld(map.clone()), [0, 0, 0]).unwrap();
+        let members = members_of(solve(&MapWorld(map.clone()), [0, 0, 0]));
         assert_eq!(members.len(), 1);
         assert_eq!(members[0].conns, 0);
-        let other = solve(&MapWorld(map), [1, 0, 0]).unwrap();
+        let other = members_of(solve(&MapWorld(map), [1, 0, 0]));
         assert_eq!(other.len(), 1);
         assert_eq!(other[0].speed, 0.0);
     }
@@ -377,7 +448,7 @@ mod tests {
         let mut map = HashMap::new();
         map.insert([0, 0, 0], shaft(Axis::Z));
         map.insert([0, 0, 1], shaft(Axis::Z));
-        let members = solve(&MapWorld(map), [0, 0, 0]).unwrap();
+        let members = members_of(solve(&MapWorld(map), [0, 0, 0]));
         assert_eq!(members.len(), 2);
         assert!(members.iter().all(|m| m.speed == 0.0));
     }
@@ -389,10 +460,10 @@ mod tests {
         map.insert([1, 0, 0], shaft(Axis::X));
         // hueco en [2,0,0]
         map.insert([3, 0, 0], shaft(Axis::X));
-        let left = solve(&MapWorld(map.clone()), [1, 0, 0]).unwrap();
+        let left = members_of(solve(&MapWorld(map.clone()), [1, 0, 0]));
         assert_eq!(left.len(), 2);
         assert!(left.iter().all(|m| m.speed == 8.0));
-        let right = solve(&MapWorld(map), [3, 0, 0]).unwrap();
+        let right = members_of(solve(&MapWorld(map), [3, 0, 0]));
         assert_eq!(right.len(), 1);
         assert_eq!(right[0].speed, 0.0);
     }
@@ -403,7 +474,7 @@ mod tests {
         map.insert([0, 0, 0], wheel(Axis::X, -8.0));
         map.insert([1, 0, 0], shaft(Axis::X));
         map.insert([2, 0, 0], wheel(Axis::X, 8.0));
-        let members = solve(&MapWorld(map), [1, 0, 0]).unwrap();
+        let members = members_of(solve(&MapWorld(map), [1, 0, 0]));
         assert!(members.iter().all(|m| m.speed == -8.0));
     }
 
@@ -412,7 +483,7 @@ mod tests {
         let mut map = HashMap::new();
         map.insert([0, 0, 0], wheel(Axis::X, 0.0));
         map.insert([1, 0, 0], shaft(Axis::X));
-        let members = solve(&MapWorld(map), [1, 0, 0]).unwrap();
+        let members = members_of(solve(&MapWorld(map), [1, 0, 0]));
         assert_eq!(members.len(), 2);
         assert!(members.iter().all(|m| m.speed == 0.0));
     }
@@ -428,7 +499,7 @@ mod tests {
         map.insert([2, 0, 0], shaft(Axis::X));
         map.insert([0, 0, 0], shaft(Axis::X));
         map.insert([1, 0, 0], shaft(Axis::X));
-        let members = solve(&MapWorld(map), [1, 0, 0]).unwrap();
+        let members = members_of(solve(&MapWorld(map), [1, 0, 0]));
         let positions: Vec<[i32; 3]> = members.iter().map(|m| m.pos).collect();
         assert_eq!(positions, vec![[0, 0, 0], [1, 0, 0], [2, 0, 0]]);
     }
@@ -456,7 +527,7 @@ mod tests {
         map.insert([0, 0, 0], wheel(Axis::X, 8.0));
         map.insert([1, 0, 0], shaft(Axis::X));
         map.insert([2, 0, 0], cog(Axis::X));
-        let members = solve(&MapWorld(map), [1, 0, 0]).unwrap();
+        let members = members_of(solve(&MapWorld(map), [1, 0, 0]));
         assert_eq!(members.len(), 3);
         assert_eq!(member_at(&members, [2, 0, 0]).speed, 8.0);
         // la conexión coaxial con el eje sí cuenta como axial
@@ -474,7 +545,7 @@ mod tests {
         map.insert([0, 1, 0], shaft(Axis::Y));
         map.insert([0, 2, 0], cog(Axis::Y));
         map.insert([1, 2, 0], cog(Axis::Y));
-        let members = solve(&MapWorld(map), [0, 1, 0]).unwrap();
+        let members = members_of(solve(&MapWorld(map), [0, 1, 0]));
         assert_eq!(members.len(), 4);
         assert_eq!(member_at(&members, [0, 2, 0]).speed, 8.0);
         assert_eq!(member_at(&members, [1, 2, 0]).speed, -8.0);
@@ -487,7 +558,7 @@ mod tests {
         map.insert([0, 1, 0], shaft(Axis::Y));
         map.insert([0, 2, 0], large_cog(Axis::Y));
         map.insert([1, 2, 0], cog(Axis::Y));
-        let members = solve(&MapWorld(map), [0, 1, 0]).unwrap();
+        let members = members_of(solve(&MapWorld(map), [0, 1, 0]));
         assert_eq!(member_at(&members, [0, 2, 0]).speed, 8.0);
         assert_eq!(member_at(&members, [1, 2, 0]).speed, -16.0);
     }
@@ -499,7 +570,7 @@ mod tests {
         map.insert([0, 1, 0], shaft(Axis::Y));
         map.insert([0, 2, 0], cog(Axis::Y));
         map.insert([1, 2, 0], large_cog(Axis::Y));
-        let members = solve(&MapWorld(map), [0, 1, 0]).unwrap();
+        let members = members_of(solve(&MapWorld(map), [0, 1, 0]));
         assert_eq!(member_at(&members, [0, 2, 0]).speed, 8.0);
         assert_eq!(member_at(&members, [1, 2, 0]).speed, -4.0);
     }
@@ -512,7 +583,7 @@ mod tests {
         map.insert([1, 0, 0], shaft(Axis::X));
         map.insert([2, 0, 0], cog(Axis::X));
         map.insert([2, 0, 1], cog(Axis::Y));
-        let members = solve(&MapWorld(map), [1, 0, 0]).unwrap();
+        let members = members_of(solve(&MapWorld(map), [1, 0, 0]));
         assert_eq!(members.len(), 4);
         assert_eq!(member_at(&members, [2, 0, 0]).speed, 8.0);
         assert_eq!(member_at(&members, [2, 0, 1]).speed, -8.0);
@@ -525,7 +596,7 @@ mod tests {
         let mut map = HashMap::new();
         map.insert([0, 0, 0], cog(Axis::Y));
         map.insert([0, 1, 0], cog(Axis::Y));
-        let members = solve(&MapWorld(map), [0, 0, 0]).unwrap();
+        let members = members_of(solve(&MapWorld(map), [0, 0, 0]));
         assert_eq!(members.len(), 1);
     }
 
@@ -539,7 +610,7 @@ mod tests {
         map.insert([0, 2, 0], cog(Axis::Y));
         map.insert([1, 2, 0], cog(Axis::Y));
         map.insert([2, 2, 0], cog(Axis::Y));
-        let members = solve(&MapWorld(map), [0, 1, 0]).unwrap();
+        let members = members_of(solve(&MapWorld(map), [0, 1, 0]));
         assert_eq!(member_at(&members, [0, 2, 0]).speed, 8.0);
         assert_eq!(member_at(&members, [1, 2, 0]).speed, -8.0);
         assert_eq!(member_at(&members, [2, 2, 0]).speed, 8.0);
@@ -551,7 +622,114 @@ mod tests {
         let mut map = HashMap::new();
         map.insert([0, 0, 0], wheel(Axis::X, 8.0));
         map.insert([1, 0, 0], cog(Axis::X));
-        let members = solve(&MapWorld(map), [0, 0, 0]).unwrap();
+        let members = members_of(solve(&MapWorld(map), [0, 0, 0]));
         assert_eq!(members.len(), 1);
+    }
+
+    // ---- manivela, medidores y estrés (incremento 5) ----
+
+    #[test]
+    fn active_crank_is_a_source() {
+        // manivela activa (8 RPM) → eje: la red gira
+        let mut map = HashMap::new();
+        map.insert([0, 0, 0], crank(Axis::X, 8.0));
+        map.insert([1, 0, 0], shaft(Axis::X));
+        let solution = solve(&MapWorld(map), [1, 0, 0]).unwrap();
+        assert_eq!(solution.capacity, 8);
+        assert_eq!(solution.load, 0);
+        assert!(solution.load <= solution.capacity);
+        assert!(solution.members.iter().all(|m| m.speed == 8.0));
+    }
+
+    #[test]
+    fn inactive_crank_is_not_a_source() {
+        let mut map = HashMap::new();
+        map.insert([0, 0, 0], crank(Axis::X, 0.0));
+        map.insert([1, 0, 0], shaft(Axis::X));
+        let solution = solve(&MapWorld(map), [1, 0, 0]).unwrap();
+        assert_eq!(solution.capacity, 0);
+        assert!(solution.members.iter().all(|m| m.speed == 0.0));
+    }
+
+    #[test]
+    fn meters_join_axially_and_add_no_load() {
+        // rueda → eje → medidor: el medidor lee la velocidad y no añade carga
+        let mut map = HashMap::new();
+        map.insert([0, 0, 0], wheel(Axis::X, 8.0));
+        map.insert([1, 0, 0], shaft(Axis::X));
+        map.insert([2, 0, 0], speedometer(Axis::X));
+        let solution = solve(&MapWorld(map), [1, 0, 0]).unwrap();
+        assert_eq!(solution.capacity, 16);
+        assert_eq!(solution.load, 0);
+        assert_eq!(member_at(&solution.members, [2, 0, 0]).speed, 8.0);
+    }
+
+    #[test]
+    fn load_sums_by_kind() {
+        // rueda (16) → eje → 2 engranajes coaxiales + 1 grande en malla: carga 1+1+2 = 4
+        let mut map = HashMap::new();
+        map.insert([0, 0, 0], wheel(Axis::Y, 8.0));
+        map.insert([0, 1, 0], shaft(Axis::Y));
+        map.insert([0, 2, 0], cog(Axis::Y));
+        map.insert([0, 3, 0], shaft(Axis::Y));
+        map.insert([0, 4, 0], cog(Axis::Y));
+        map.insert([1, 4, 0], large_cog(Axis::Y));
+        let solution = solve(&MapWorld(map), [0, 1, 0]).unwrap();
+        assert_eq!(solution.capacity, 16);
+        assert_eq!(solution.load, 4);
+        assert!(solution.load <= solution.capacity);
+    }
+
+    #[test]
+    fn overload_stops_the_network() {
+        // manivela activa (capacidad 8) con 9 engranajes (carga 9) → sobrecarga: todo a 0
+        let mut map = HashMap::new();
+        map.insert([0, 0, 0], crank(Axis::Y, 8.0));
+        map.insert([0, 1, 0], shaft(Axis::Y));
+        for i in 0..9 {
+            map.insert([i, 2, 0], cog(Axis::Y));
+        }
+        let solution = solve(&MapWorld(map), [0, 1, 0]).unwrap();
+        assert_eq!(solution.capacity, 8);
+        assert_eq!(solution.load, 9);
+        assert!(solution.load > solution.capacity);
+        assert!(solution.members.iter().all(|m| m.speed == 0.0));
+    }
+
+    #[test]
+    fn exact_capacity_is_not_overloaded() {
+        // manivela activa (8) con exactamente 8 engranajes: al límite, pero gira
+        let mut map = HashMap::new();
+        map.insert([0, 0, 0], crank(Axis::Y, 8.0));
+        map.insert([0, 1, 0], shaft(Axis::Y));
+        for i in 0..8 {
+            map.insert([i, 2, 0], cog(Axis::Y));
+        }
+        let solution = solve(&MapWorld(map), [0, 1, 0]).unwrap();
+        assert_eq!(solution.load, 8);
+        assert!(solution.load <= solution.capacity);
+        assert_eq!(member_at(&solution.members, [0, 2, 0]).speed, 8.0);
+    }
+
+    #[test]
+    fn crank_does_not_mesh() {
+        // la manivela no es engranaje: pegada a un engranaje no conecta
+        let mut map = HashMap::new();
+        map.insert([0, 0, 0], crank(Axis::Y, 8.0));
+        map.insert([1, 0, 0], cog(Axis::Y));
+        let members = members_of(solve(&MapWorld(map), [0, 0, 0]));
+        assert_eq!(members.len(), 1);
+    }
+
+    #[test]
+    fn two_sources_sum_capacity() {
+        // dos ruedas con agua en la misma red: capacidad 32
+        let mut map = HashMap::new();
+        map.insert([0, 0, 0], wheel(Axis::X, 8.0));
+        map.insert([1, 0, 0], shaft(Axis::X));
+        map.insert([2, 0, 0], wheel(Axis::X, 8.0));
+        let solution = solve(&MapWorld(map), [1, 0, 0]).unwrap();
+        assert_eq!(solution.capacity, 32);
+        assert!(solution.members.iter().all(|m| m.speed == 8.0));
     }
 }

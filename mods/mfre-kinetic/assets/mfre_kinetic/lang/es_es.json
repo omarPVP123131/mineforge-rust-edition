@@ -3,5 +3,8 @@
   "block.mfre_kinetic.water_wheel": "Rueda hidráulica",
   "block.mfre_kinetic.cogwheel": "Engranaje",
   "block.mfre_kinetic.large_cogwheel": "Engranaje grande",
+  "block.mfre_kinetic.hand_crank": "Manivela",
+  "block.mfre_kinetic.speedometer": "Medidor de velocidad",
+  "block.mfre_kinetic.stressometer": "Medidor de estrés",
   "itemGroup.mfre_kinetic.kinetic": "Cinética MFRE"
 }

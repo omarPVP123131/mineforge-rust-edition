@@ -1,0 +1,78 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "side": "mfre_kinetic:block/meter_side",
+    "dial": "mfre_kinetic:block/stressometer_dial",
+    "particle": "mfre_kinetic:block/meter_side"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        5,
+        2
+      ],
+      "to": [
+        14,
+        11,
+        14
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            2,
+            2,
+            14,
+            14
+          ],
+          "texture": "#dial"
+        },
+        "up": {
+          "uv": [
+            2,
+            2,
+            14,
+            14
+          ],
+          "texture": "#dial"
+        },
+        "north": {
+          "uv": [
+            2,
+            5,
+            14,
+            11
+          ],
+          "texture": "#side"
+        },
+        "south": {
+          "uv": [
+            2,
+            5,
+            14,
+            11
+          ],
+          "texture": "#side"
+        },
+        "west": {
+          "uv": [
+            2,
+            5,
+            14,
+            11
+          ],
+          "texture": "#side"
+        },
+        "east": {
+          "uv": [
+            2,
+            5,
+            14,
+            11
+          ],
+          "texture": "#side"
+        }
+      }
+    }
+  ]
+}

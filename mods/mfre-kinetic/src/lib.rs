@@ -1,13 +1,14 @@
 //! Cinética MFRE — mod nativo (D21/D23): potencia rotacional al estilo Create, reescrita
 //! clean-room sobre Mod API 0.2. El launcher compila esta crate contra el juego fijado.
 //!
-//! F42, incremento 4: engranajes y recetas — el resolvedor (`kinetic`) generaliza a
-//! nodos con tipo (eje/rueda/engranaje/engranaje grande): conexiones axiales vía eje,
-//! mallas de engranajes perpendiculares al desplazamiento con inversión de sentido y
-//! relación 2:1/1:2, velocidades f32 por miembro y BFS multi-fuente en orden de posición.
-//! `state` lo conecta al nivel y al cliente (attachment + espejo nbt + render giratorio
-//! con `spin`+`keep`; los modelos de mundo están vacíos y los de item quedan estáticos).
-//! Recetas de crafteo para los cuatro bloques (data/mfre_kinetic/recipe/).
+//! F42, incremento 5: manivela, medidores y estrés — cierre del MVP rotacional. El
+//! resolvedor (`kinetic`) suma la manivela (fuente transitoria por clic derecho, alterna
+//! el sentido), el medidor de velocidad y el de estrés (lectores sin carga), y el modelo
+//! de estrés: capacidad por fuente activa (rueda 16, manivela 8), carga por tipo
+//! (engranaje 1, grande 2), y sobrecarga (carga > capacidad) detiene la red. `state` lo
+//! conecta al nivel y al cliente: `use_without_item` da el manivelazo, el espejo nbt lleva
+//! capacidad/carga, y el render dibuja agujas rotadas (`rotate_about`) en los medidores.
+//! Con inc.4 (engranajes 2:1 + recetas) cierra el MVP de F42.
 mod kinetic;
 mod state;
 
@@ -108,6 +109,27 @@ impl Hooks for Mod {
         large_cog.properties.occludes = Some(false);
         with_axis(&mut large_cog, "y");
         event.blocks.push(large_cog);
+
+        // La manivela: fuente transitoria — cada clic derecho (mano vacía) la activa un
+        // segundo y alterna el sentido. Los medidores: lectores de la red (velocidad y
+        // carga/capacidad) sin carga propia; su aguja la rota el block entity.
+        let mut crank = Block::new("mfre_kinetic:hand_crank", "minecraft:iron_block");
+        crank.properties.hardness = Some(1.0);
+        crank.properties.occludes = Some(false);
+        with_axis(&mut crank, "y");
+        event.blocks.push(crank);
+
+        let mut speedometer = Block::new("mfre_kinetic:speedometer", "minecraft:iron_block");
+        speedometer.properties.hardness = Some(1.0);
+        speedometer.properties.occludes = Some(false);
+        with_axis(&mut speedometer, "y");
+        event.blocks.push(speedometer);
+
+        let mut stressometer = Block::new("mfre_kinetic:stressometer", "minecraft:iron_block");
+        stressometer.properties.hardness = Some(1.0);
+        stressometer.properties.occludes = Some(false);
+        with_axis(&mut stressometer, "y");
+        event.blocks.push(stressometer);
     }
 
     /// Una vez al arrancar: claves de registro, el tipo de block entity cinético y su Part.
@@ -116,12 +138,26 @@ impl Hooks for Mod {
         let _ = state::WHEEL.set(r.block_key("mfre_kinetic:water_wheel"));
         let _ = state::COG.set(r.block_key("mfre_kinetic:cogwheel"));
         let _ = state::LARGE_COG.set(r.block_key("mfre_kinetic:large_cogwheel"));
+        let crank_key = r.block_key("mfre_kinetic:hand_crank");
+        let _ = state::CRANK.set(crank_key);
+        let _ = state::SPEEDOMETER.set(r.block_key("mfre_kinetic:speedometer"));
+        let _ = state::STRESSOMETER.set(r.block_key("mfre_kinetic:stressometer"));
         let _ = state::WATER.set(r.block_key("minecraft:water"));
         let kind = r
             .block_entity_type("kinetic")
-            .blocks(&["shaft", "water_wheel", "cogwheel", "large_cogwheel"])
+            .blocks(&[
+                "shaft",
+                "water_wheel",
+                "cogwheel",
+                "large_cogwheel",
+                "hand_crank",
+                "speedometer",
+                "stressometer",
+            ])
             .build();
         r.block_entity_part_with_state(&kind, Kinetic)
             .expect("native block entity type");
+        // El clic derecho de la manivela: BlockPart sobre el bloque (use_without_item).
+        r.block_part(crank_key, Kinetic);
     }
 }

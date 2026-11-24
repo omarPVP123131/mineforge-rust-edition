@@ -5,6 +5,9 @@
     "mfre_kinetic:shaft",
     "mfre_kinetic:water_wheel",
     "mfre_kinetic:cogwheel",
-    "mfre_kinetic:large_cogwheel"
+    "mfre_kinetic:large_cogwheel",
+    "mfre_kinetic:hand_crank",
+    "mfre_kinetic:speedometer",
+    "mfre_kinetic:stressometer"
   ]
 }

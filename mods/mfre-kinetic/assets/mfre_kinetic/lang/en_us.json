@@ -3,5 +3,8 @@
   "block.mfre_kinetic.water_wheel": "Water Wheel",
   "block.mfre_kinetic.cogwheel": "Cogwheel",
   "block.mfre_kinetic.large_cogwheel": "Large Cogwheel",
+  "block.mfre_kinetic.hand_crank": "Hand Crank",
+  "block.mfre_kinetic.speedometer": "Speedometer",
+  "block.mfre_kinetic.stressometer": "Stressometer",
   "itemGroup.mfre_kinetic.kinetic": "MFRE Kinetics"
 }

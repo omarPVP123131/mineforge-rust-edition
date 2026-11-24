@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " C ",
+    "GRG"
+  ],
+  "key": {
+    "C": "mfre_kinetic:cogwheel",
+    "G": "minecraft:gold_ingot",
+    "R": "minecraft:redstone"
+  },
+  "result": {
+    "id": "mfre_kinetic:stressometer"
+  }
+}

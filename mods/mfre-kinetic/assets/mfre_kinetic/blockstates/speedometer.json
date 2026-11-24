@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "mfre_kinetic:block/empty"
+    },
+    "axis=y": {
+      "model": "mfre_kinetic:block/empty"
+    },
+    "axis=z": {
+      "model": "mfre_kinetic:block/empty"
+    }
+  }
+}

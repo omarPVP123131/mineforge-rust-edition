@@ -1,0 +1,214 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "base": "mfre_kinetic:block/hand_crank_base",
+    "handle": "mfre_kinetic:block/hand_crank_handle",
+    "particle": "mfre_kinetic:block/hand_crank_base"
+  },
+  "elements": [
+    {
+      "from": [
+        5,
+        5,
+        5
+      ],
+      "to": [
+        11,
+        11,
+        11
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            5,
+            5,
+            11,
+            11
+          ],
+          "texture": "#base"
+        },
+        "up": {
+          "uv": [
+            5,
+            5,
+            11,
+            11
+          ],
+          "texture": "#base"
+        },
+        "north": {
+          "uv": [
+            5,
+            5,
+            11,
+            11
+          ],
+          "texture": "#base"
+        },
+        "south": {
+          "uv": [
+            5,
+            5,
+            11,
+            11
+          ],
+          "texture": "#base"
+        },
+        "west": {
+          "uv": [
+            5,
+            5,
+            11,
+            11
+          ],
+          "texture": "#base"
+        },
+        "east": {
+          "uv": [
+            5,
+            5,
+            11,
+            11
+          ],
+          "texture": "#base"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        8,
+        7
+      ],
+      "to": [
+        9,
+        14,
+        9
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            7,
+            2,
+            9,
+            8
+          ],
+          "texture": "#base"
+        },
+        "up": {
+          "uv": [
+            7,
+            2,
+            9,
+            8
+          ],
+          "texture": "#base"
+        },
+        "north": {
+          "uv": [
+            7,
+            2,
+            9,
+            8
+          ],
+          "texture": "#base"
+        },
+        "south": {
+          "uv": [
+            7,
+            2,
+            9,
+            8
+          ],
+          "texture": "#base"
+        },
+        "west": {
+          "uv": [
+            7,
+            2,
+            9,
+            8
+          ],
+          "texture": "#base"
+        },
+        "east": {
+          "uv": [
+            7,
+            2,
+            9,
+            8
+          ],
+          "texture": "#base"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        12,
+        6
+      ],
+      "to": [
+        10,
+        16,
+        10
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            6,
+            0,
+            10,
+            4
+          ],
+          "texture": "#handle"
+        },
+        "up": {
+          "uv": [
+            6,
+            0,
+            10,
+            4
+          ],
+          "texture": "#handle"
+        },
+        "north": {
+          "uv": [
+            6,
+            0,
+            10,
+            4
+          ],
+          "texture": "#handle"
+        },
+        "south": {
+          "uv": [
+            6,
+            0,
+            10,
+            4
+          ],
+          "texture": "#handle"
+        },
+        "west": {
+          "uv": [
+            6,
+            0,
+            10,
+            4
+          ],
+          "texture": "#handle"
+        },
+        "east": {
+          "uv": [
+            6,
+            0,
+            10,
+            4
+          ],
+          "texture": "#handle"
+        }
+      }
+    }
+  ]
+}

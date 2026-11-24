@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "mfre_kinetic:hand_crank"
+        }
+      ],
+      "rolls": 1
+    }
+  ],
+  "random_sequence": "mfre_kinetic:blocks/hand_crank"
+}
