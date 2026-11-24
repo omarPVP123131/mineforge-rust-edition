@@ -6,11 +6,13 @@ API destino: **Horizon Mod API 0.2** (este repo, `docs/modding/`).
 
 ## 1. Veredicto
 
-**GO condicionado.** Las fases F42 (MVP rotacional) y F43 (máquinas y logística) tienen
-cobertura casi total en Mod API 0.2 — la documentación del motor incluye ejemplos
-literales de lo que Create necesita (ejes rotatorios, cintas animadas, deployers,
-fluidos en mB, recetas de máquina). F44 (contraptions/trenes) queda **condicionada** al
-gap G1 (entidades libres), con un spike exploratorio al inicio de F43.
+**GO.** Las fases F42 (MVP rotacional) y F43 (máquinas y logística) tienen cobertura casi
+total en Mod API 0.2 — la documentación del motor incluye ejemplos literales de lo que
+Create necesita (ejes rotatorios, cintas animadas, deployers, fluidos en mB, recetas de
+máquina). El único gap grande (G1, entidades libres para contraptions/trenes) quedó
+resuelto por política: se **extiende la Mod API en el motor de nuestro fork** (D23,
+forma fork-only) — trabajo de ingeniería de alcance conocido, no una incógnita de
+factibilidad. El spike de F43 pasa a ser diseño + prototipo de esa extensión.
 
 ## 2. Marco legal
 
@@ -76,10 +78,10 @@ BE parts **sí cruzan a wasm** (los *entity* parts no: `r.entity_part` es nativo
 
 | # | Gap | Severidad | Mitigación |
 |---|---|---|---|
-| **G1** | **Entidades libres para contraptions/trenes.** Los tipos de entidad declarables copian plantilla vanilla: `minecraft:snowball` (thrown) o living mob. No existe una clase de entidad arbitraria como `AbstractContraptionEntity` de Create. | **ALTA** (solo F44) | Entidad con plantilla living + `EntityRenderer` propio (dibuja la estructura: `block/cube/model_part`), `entity_size` para la hitbox, `entity_tick_pre/post` para la física propia, `entity_invulnerability_check` + `living_motion_values` para anular daño/gravedad no deseada, `requiresCustomPersistence` contra despawn, attachments para el estado, pasajeros para asientos. **Spike mínimo en F43** (entidad-prototipo: renderer + tick + tamaño + pasajero). Si el muro es real: issue a upstream (API activa, 756 hooks) y F44 se re-planifica. |
+| **G1** | **Entidades libres para contraptions/trenes.** Los tipos de entidad declarables copian plantilla vanilla: `minecraft:snowball` (thrown) o living mob. No existe una clase de entidad arbitraria como `AbstractContraptionEntity` de Create. | MEDIA (tras D23; era ALTA) | **D23: crecer la API en el motor (fork-only).** Añadir a Mod API una primitiva de entidad libre de mod (tipo de entidad propiedad del mod: física/tick propios, renderer, hitbox, attachments, pasajeros) en los crates del engine de nuestro fork. El workaround living-plantilla queda solo como plan B. **Spike de F43 = diseño + prototipo de la extensión** (entidad-prototipo: tick + tamaño + renderer + pasajero sobre la API nueva). |
 | **G2** | Bulk edits no representan NBT ("NBT is not representable") → una contraption con cofres/hornos perdería el contenido si solo se usa el bulk edit. | MEDIA | Tras el bulk edit, escribir cada block entity por su handle (los edits "preserve strict block-entity behavior"; la escritura posterior es la ruta documentada para datos). |
 | **G3** | La red rotacional (propagación, estrés, RPM, cachés) es código propio puro: no hay un "kinetic system" en la API. | MEDIA (esperado) | Es justamente el trabajo clean-room: grafo en attachments de BE (`network_id`, `speed`, `stress`), BFS en `on_block_state_change`/ticks, sync por payload. Create lo resuelve igual (su `RotationPropagator` es código de mod, no de Forge). |
-| **G4** | Entity parts son nativo-only → **Cinética MFRE será mod nativo**, no wasm. El toolchain validado en F18 es wasm. | MEDIA | La ruta nativa es primera clase (13 guías: empaquetado, multiplayer, export de servidor dedicado, trust). F42 arranca con spike "native hello-world" (validar toolchain nativo antes del código cinético). Los mods de contenido decorativo sí pueden ser wasm/content puros. |
+| **G4** | Entity parts son nativo-only → **Cinética MFRE será mod nativo**, no wasm. El toolchain validado en F18 es wasm. | MEDIA | La ruta nativa es primera clase (13 guías: empaquetado, multiplayer, export de servidor dedicado, trust) y con D23 es la política general para mods de código. F42 arranca con spike "native hello-world" (validar toolchain nativo antes del código cinético). Los mods de contenido decorativo sí pueden ser wasm/content puros. |
 | **G5** | Límites de registro: 2^20 block states, 16,384 sprites; ~500 bloques con variantes (ejes por eje, cintas por dirección…) consumen atlas y estados. | BAJA | Cabe de sobra, pero medir en F42 (los bloques cinéticos son pocos; la decoración va en paquetes aparte). |
 | **G6** | Ponder (tutoriales) no tiene equivalente directo. | BAJA | Fuera de alcance F42–F44. `screens` + `living-scenes` podrían aproximar; se decide después. |
 | **G7** | Trenes: vías propias + señales + horarios sobre la entidad de G1; además el render de vías suaves puede requerir engine (D10). | BAJA→ALTA | F44 queda condicionado a G1; trenes son el último hito y pueden moverse a un F46 si el spike falla. |
@@ -114,18 +116,19 @@ añadir carga por encima del estrés disponible detiene la red; los medidores mu
 y estrés reales; QA en hardware (§5.13).
 
 ### F43 — Máquinas y logística
-Spike G1 (entidad-prototipo). Basin + prensa + mezcladora, ruedas de trituración,
+Spike G1 al inicio: diseño + prototipo de la **extensión de API en el motor** (entidad
+libre de mod, D23 fork-only; primer cambio de motor → abrir `MOTOR-MFRE.md`).
+Basin + prensa + mezcladora, ruedas de trituración,
 molino de piedra, sierra mecánica, deployer (fake player), cinta con transporte de ítems
 y render animado, chute + embudo, bomba/tubería/tanque/spout, crafter mecánico,
 recetas propias en JSON. **Aceptación**: granja automática (sierra+taladro opcional),
 línea de trigo→harina→pan mecánico, prensa con receta propia, red de fluidos con tanque
 visible lleno/vacío.
 
-### F44 — Contraptions y trenes (condicionada a G1)
-Rodamiento mecánico (estructura giratoria como entidad), pistón/portal mecánico,
+### F44 — Contraptions y trenes (sobre la extensión de API de F43, D23)
+Rodamiento mecánico (estructura giratoria como entidad libre), pistón/portal mecánico,
 asientos tripulables, ensamblador de vagonetas, planos + cañón (bulk edits + datafixers).
-Trenes (vía/señal/horario) solo si el spike de F43 confirma G1 viable; si no, se mueven
-a F46 y se documenta la dependencia (posible issue a upstream / engine D10).
+Trenes (vía/señal/horario) entran aquí si el alcance lo permite; si no, se mueven a F46.
 **Aceptación**: puerta giratoria de 5×5 con rodamiento, máquina voladora simple con
 pistones, jugador sentado viaja con la contraption sin desync en LAN.
 
@@ -134,14 +137,24 @@ pistones, jugador sentado viaja con la contraption sin desync en LAN.
 - **D21**: Cinética MFRE = **mod nativo** (`mfre_kinetic`), assets 100% propios, referencia
   Create 6.0.8/mc1.21.1, atribución MIT en NOTICE-MFRE + LICENSES/. La red rotacional y las
   recetas de máquina son código clean-room propio sobre Mod API 0.2.
-- **D22**: F44 queda **condicionada** al resultado del spike G1 (entidad libre sobre
-  plantilla living). Trenes pueden moverse a F46.
+- **D22** (revisada por D23): el spike G1 de F43 ya no es go/no-go de workarounds: es
+  diseño + prototipo de la extensión de API. Trenes pueden moverse a F46 por alcance.
+- **D23**: política de integración **"crecer la API, no el juego"** (confirmada por el
+  usuario): mods de código = mods nativos in-process (velocidad de motor); todo gap de
+  API se resuelve extendiendo la Mod API en el motor de nuestro fork, en forma
+  **fork-only** (sin restricción upstreamable; el rebase F27 asume la divergencia y se
+  mitiga acotando los cambios a la superficie de API con sus tests). No se hardcodea
+  Create en el juego. Cada cambio de motor se registra en `MOTOR-MFRE.md` (se abre con
+  el primero, en el spike G1 de F43).
 - **D20** (registrada en TRAYECTORIA con esta fase): la conversora de contenido Java→.hmod
   queda añadida al roadmap como **F45** (confirmada por el usuario).
 
 ## 9. Riesgo global y esfuerzo
 
 F42 y F43 son de riesgo **bajo-medio** (la API cubre todo; el trabajo es volumen).
-F44 es **alto** en su parte de entidades (G1) y es la única que puede fallar.
-Orden de ejecución: spike nativo → núcleo cinético → máquinas → spike entidad → contraptions.
-Cada fase cierra con su parche, gates y QA (GUÍA-QA §5.13+).
+F44 pasa de alto a **medio** con D23: G1 es trabajo de motor de alcance conocido
+(primitiva de entidad libre + su render/tick/pasajeros), no una incógnita.
+Orden de ejecución: spike nativo → núcleo cinético → máquinas → extensión de API G1
+(prototipo) → contraptions → trenes (o F46).
+Cada fase cierra con su parche, gates y QA (GUÍA-QA §5.13+). Los cambios de motor
+llevan sus gates completos (fmt + tests del engine) y su registro en MOTOR-MFRE.md.
