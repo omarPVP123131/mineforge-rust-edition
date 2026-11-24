@@ -247,7 +247,7 @@ impl Launcher {
                 Some(
                     div()
                         .child(trf(
-                            "Minecraft {version} (Java Edition). Play downloads it from Mojang for your account the first time, with the Java it needs.",
+                            "Minecraft {version} (Java Edition). Play downloads it from Mojang the first time, with the Java it needs.",
                             &[("version", &java.minecraft)],
                         ))
                         .into_any_element(),

@@ -284,7 +284,7 @@ mod tests {
         assert_eq!(
             failed().said(crate::native_mods::Caller::CommandLine),
             format!(
-                "v0 is not prepared yet. Prepare it first: `horizon-launcher prepare --version v0` uses your own Minecraft {v}, or downloads it from Mojang for the signed-in account that owns it."
+                "v0 is not prepared yet. Prepare it first: `horizon-launcher prepare --version v0` uses your own Minecraft {v}, or downloads it from Mojang with no account, behind this launcher's Minecraft EULA consent (`horizon-launcher eula accept`)."
             )
         );
         assert_eq!(String::from(failed()), crate::backend::prepare_hint("v0"));

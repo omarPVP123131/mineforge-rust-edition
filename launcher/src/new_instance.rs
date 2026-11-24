@@ -429,10 +429,12 @@ impl Launcher {
                     .child(self.loader_version_list(&choice, cx));
             }
         }
-        rows.child(shell::text(night::CAPTION, c(n.muted)).child(
-            tr("Play downloads the game from Mojang for your account the first time, with the Java it needs.")
-                .to_string(),
-        ))
+        rows.child(
+            shell::text(night::CAPTION, c(n.muted)).child(
+                tr("Play downloads the game from Mojang the first time, with the Java it needs.")
+                    .to_string(),
+            ),
+        )
     }
 }
 

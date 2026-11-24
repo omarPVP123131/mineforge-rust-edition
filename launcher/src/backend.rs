@@ -2554,10 +2554,12 @@ fn incomplete_or_not_found(
 /// Where the preparation takes Minecraft's files from.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MinecraftFrom {
-    /// The player's own install (any launcher's); Mojang only when none has the version and an
-    /// account that owns the game is signed in.
+    /// The player's own install (any launcher's); Mojang only when none has the version and the
+    /// download gate opens (MFRE D8: an account that owns the game, or the Minecraft EULA
+    /// consent — no account needed).
     Install,
-    /// Mojang, for the signed-in account that owns the game ("Download and prepare").
+    /// Mojang ("Download and prepare"), through the same gate: an account that owns the
+    /// game, or the Minecraft EULA consent (MFRE D8).
     Mojang,
 }
 
@@ -3477,8 +3479,8 @@ impl From<NotReady> for String {
 pub fn prepare_hint(tag: &str) -> String {
     format!(
         "{tag} is not prepared yet. Prepare it first: `horizon-launcher prepare --version {tag}` \
-         uses your own Minecraft {v}, or downloads it from Mojang for the signed-in account \
-         that owns it.",
+         uses your own Minecraft {v}, or downloads it from Mojang with no account, behind this \
+         launcher's Minecraft EULA consent (`horizon-launcher eula accept`).",
         v = game_version(tag)
     )
 }
