@@ -1,0 +1,13 @@
+[package]
+name = "mod-mfre-kinetic"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+# Spike F42 en el árbol del juego (opción B de MODS-MFRE): API por path al árbol del fork.
+# Flujo estándar fuera del árbol: horizon-mod-api = { path = ".horizon/sdk/api/crates/horizon-mod-api" }
+horizon-mod-api = { path = "../../crates/horizon-mod-api" }
+
+# A mod is its own project, not a member of the game's workspace.
+[workspace]

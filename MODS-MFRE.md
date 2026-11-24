@@ -1,7 +1,8 @@
 # MODS-MFRE — Toolchain de mods validada (Fase 18)
 
-**Actualizado:** 2026-11-23 · **Rama:** `mfre/main` (parche 0017) · **Estado:** validada en
-sandbox 🟦; lo que necesita GPU o el motor prebuilt queda marcado 🖥️ (máquina real, GUÍA-QA §5.10).
+**Actualizado:** 2026-11-24 · **Rama:** `mfre/main` (parche 0022) · **Estado:** validada en
+sandbox 🟦 (wasm **y nativo game-tree**, F42); lo que necesita GPU o el motor prebuilt queda
+marcado 🖥️ (máquina real, GUÍA-QA §5.10 y §5.13).
 
 La infraestructura de mods es la de upstream y el fork la conserva completa y sin tocar
 (`git diff` del fork sobre `crates/horizon-mod-*`, `crates/cargo-horizon-mod` y `docs/modding/`
@@ -22,6 +23,7 @@ registra qué se validó en la sandbox del fork, cómo se usa y qué decisiones 
 | 7 | Tests de empaquetado: `cargo test -p horizon-mod-package` | ✅ 176/0 |
 | 8 | `wasm-std` (el miembro std del juego) y el fixture de pruebas, construidos con la herramienta | ✅ |
 | 9 | Runtime: `cargo test -p horizon-mod-wasm --test real_member --features listener-fixture` con `HORIZON_WASM_STD`/`HORIZON_WASM_FIXTURE` locales | ⚠️ ver abajo |
+| 10 | **Nativo game-tree (F42, 2026-11-24)**: `mods/mfre-kinetic` (hello nativo, D21/D23) — `cargo check` ✅ (2 min, 62 crates), `cargo horizon-mod build` ✅ "Building against the game checkout" → `mfre_kinetic.hmod` 5,480 B sha256 `1d509f80…`, `check` ✅ "native-mod, format native-1/0719b37…/e59da90…, for 26.3" | ✅ paquete+check; compilación/carga vía launcher 🖥️ (§5.13) |
 
 Sobre (9): `dump_members` pasa y `real_member` **ejecuta el miembro wasm real de punta a punta**
 (carga del grupo, std compartido, registro, inicialización del guest, dispatch de hooks y ticks
@@ -54,9 +56,12 @@ cd docs/modding/examples/wasm-hello
 cargo horizon-mod build --wasm
 ```
 
-`cargo horizon-mod run` (build + arrancar `horizon-client` con `--dev-mod <id>.hmod`) y los mods
-nativos (`horizon-launcher native-build <ruta> --trust-native-code`, que compila contra el motor
-prebuilt) necesitan GPU/motor instalado → máquina real (GUÍA-QA §5.10).
+`cargo horizon-mod run` (build + arrancar `horizon-client` con `--dev-mod <id>.hmod`) necesita
+GPU → máquina real (GUÍA-QA §5.10). De los mods nativos, el **empaquetado y el check sí caben en
+la sandbox** (game-tree: el `Cargo.toml` del mod apunta por path a `crates/horizon-mod-api` del
+árbol; probado en F42 con `mods/mfre-kinetic`); la **compilación contra el SDK y la carga**
+(`horizon-launcher native-build <ruta> --trust-native-code`, o base developer +
+`HORIZON_LAUNCHER_DEVELOPER_SDK`) necesitan el motor instalado → máquina real (GUÍA-QA §5.13).
 
 ## 3. Decisiones y limitaciones del fork
 
