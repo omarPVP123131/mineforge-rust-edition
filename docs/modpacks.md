@@ -467,7 +467,8 @@ way. After those come `ClientTickEvent.Post` and `.Pre` (95, 46), `RenderLevelSt
 by SHA-1, or through a CurseForge app instance's `minecraftinstance.json`), else downloaded from
 the link the pack itself gives (a `.mrpack`'s, on the format's hosts only) or, for a CurseForge
 pack, the same file on Modrinth's public CDN, found by its SHA-1. A jar is kept only when its
-hash matches. A file only CurseForge has is listed as "CurseForge downloads coming soon" (its API
+hash matches. A file only CurseForge has is fetched through its API when `HORIZON_CURSEFORGE_API_KEY`
+is set, and listed as "CurseForge needs its API key" when it isn't (the API
 needs a paid key; Ludovic, 2026-10-22), with the player's installed instance as the way round it.
 `<work>/fetch.json` says what happened to each file. On All the Mods 10 8.3's CurseForge zip
 (2026-10-17): of the 54 data-tier content mods, 42 come from Modrinth's CDN (84 MB) and 12 need

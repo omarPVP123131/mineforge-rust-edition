@@ -356,13 +356,13 @@ Earlier research ([#527](https://github.com/horizon-rust/horizon/issues/527), cl
 
 </details>
 
-#### CurseForge in the mod browser (coming soon)
+#### CurseForge in the mod browser (done, behind its API key)
 
-Coming soon: search and download CurseForge mods and modpacks from the launcher, as you can with Modrinth today.
+Search and download CurseForge mods, modpacks and packs from the launcher work like Modrinth's — once a CurseForge API key is set (`HORIZON_CURSEFORGE_API_KEY`, from CurseForge's developer console). Without a key nothing goes to CurseForge; Modrinth needs no key and covers the catalog.
 
 <details><summary>Technical</summary>
 
-The mod browser lists CurseForge as coming soon ([docs/mod-browser.md](docs/mod-browser.md)): it needs CurseForge API access. Meanwhile packs import from a CurseForge zip or instance folder, and jars only CurseForge hosts come from the player's own instance ([docs/modpacks.md](docs/modpacks.md)).
+`browser::sources()` adds the CurseForge source when a key is available ([docs/mod-browser.md](docs/mod-browser.md)). Pack imports fetch jars only CurseForge serves through the API's download URL when the key is set; without one they come from the player's own instance or Modrinth's CDN ([docs/modpacks.md](docs/modpacks.md)).
 
 </details>
 

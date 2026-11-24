@@ -3,6 +3,7 @@
 //! (nothing is ported). The instance's `mod-browser.json` lists them, as for Horizon's folder.
 use super::installed::{self, Entry, Installed, Step};
 use super::{details, Kind, Project, Query, Source, Version};
+use crate::i18n::{tr, trf};
 use std::fs;
 use std::path::Path;
 
@@ -30,26 +31,39 @@ impl Target {
     /// The folder files of `kind` go in, or why they don't go in this instance.
     pub fn folder(&self, kind: Kind) -> Result<&'static str, String> {
         match kind {
-            Kind::Mod if self.loader.is_none() => Err(format!(
-                "This instance plays vanilla Minecraft {}: give it a loader (Fabric, Quilt...) \
-                 for mods.",
-                self.minecraft
+            Kind::Mod if self.loader.is_none() => Err(trf(
+                "This instance plays vanilla Minecraft {version}: give it a loader (Fabric, \
+                 Quilt...) for mods.",
+                &[("version", &self.minecraft)],
             )),
             Kind::Mod => Ok("mods"),
             Kind::ResourcePack => Ok("resourcepacks"),
-            Kind::Modpack => Err("A modpack is imported as its own instance.".into()),
-            Kind::DataPack => Err("A data pack goes in a world.".into()),
-            Kind::Shader => Err("Shader packs for Java instances aren't supported yet.".into()),
+            Kind::Modpack => Err(tr("A modpack is imported as its own instance.").into()),
+            Kind::DataPack => Err(tr("A data pack goes in a world.").into()),
+            Kind::Shader if self.shader_loader() => Ok("shaderpacks"),
+            Kind::Shader => Err(tr(
+                "This instance has no shader loader: install Iris or OptiFine for shader packs.",
+            )
+            .into()),
         }
+    }
+
+    /// Whether a shader loader is present (Iris or OptiFine): shader packs go in `shaderpacks/`,
+    /// which those load. Iris opens OptiFine's packs too, so either takes either.
+    pub fn shader_loader(&self) -> bool {
+        self.loader
+            .as_deref()
+            .is_some_and(|l| super::SHADER_LOADERS.contains(&l))
     }
 
     /// A search of `kind` for what runs here: made for its version and, for mods, its loader.
     pub fn query(&self, text: &str, kind: Kind) -> Query {
         let mut query = Query::new(text, kind);
-        // Java's resource packs can use mod features. The explicit version still applies.
-        query.everything = kind == Kind::ResourcePack;
+        // Java's resource packs can use mod features. Shader packs aren't tied to a game
+        // version: their files say what they load (see `pick`).
+        query.everything = matches!(kind, Kind::ResourcePack | Kind::Shader);
         query.filters = details::Filters {
-            game_version: Some(self.minecraft.clone()),
+            game_version: (kind != Kind::Shader).then(|| self.minecraft.clone()),
             loader: match kind {
                 Kind::Mod => self.loader.clone(),
                 _ => None,
@@ -72,16 +86,17 @@ impl Target {
         query
     }
 
-    /// Whether this instance takes files of `kind` from the browser as they are: mods and
-    /// resource packs.
+    /// Whether this instance takes files of `kind` from the browser as they are: mods, resource
+    /// packs and (with Iris or OptiFine) shader packs.
     pub fn takes(&self, kind: Kind) -> bool {
         matches!(kind, Kind::Mod | Kind::ResourcePack)
+            || (kind == Kind::Shader && self.shader_loader())
     }
 
     /// What it plays, as a search with no results names it: `Minecraft 1.21.1 with fabric`.
     pub fn describe(&self, kind: Kind) -> String {
         match (&self.loader, kind) {
-            (Some(l), Kind::Mod) => format!("Minecraft {} with {l}", self.minecraft),
+            (Some(l), Kind::Mod | Kind::Shader) => format!("Minecraft {} with {l}", self.minecraft),
             _ => format!("Minecraft {}", self.minecraft),
         }
     }
@@ -90,8 +105,19 @@ impl Target {
     /// only accepts (a Fabric file in a Quilt instance).
     pub fn pick<'a>(&self, kind: Kind, versions: &'a [Version]) -> Option<&'a Version> {
         let mut usable = versions.iter().filter(|v| {
-            v.blocked.is_none() && v.file().is_some() && v.game_versions.contains(&self.minecraft)
+            v.blocked.is_none()
+                && v.file().is_some()
+                && (kind == Kind::Shader || v.game_versions.contains(&self.minecraft))
         });
+        if kind == Kind::Shader {
+            // A shader pack's file says which shader loaders it is for; either one's packs run
+            // under Iris, and OptiFine takes its own.
+            return usable.find(|v| {
+                v.loaders
+                    .iter()
+                    .any(|l| super::SHADER_LOADERS.contains(&l.as_str()))
+            });
+        }
         if kind != Kind::Mod {
             return usable.find(|v| v.loaders.iter().any(|l| l == "minecraft"));
         }

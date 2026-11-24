@@ -2169,8 +2169,10 @@ impl Launcher {
         }
         let shown = m.shown();
         if shown.is_empty() {
-            let line = if m.kind == PackKind::Shader && m.java.is_some() {
-                tr("Shader packs for Java instances aren't supported yet.")
+            let line = if m.kind == PackKind::Shader
+                && m.java.as_ref().is_some_and(|t| !t.shader_loader())
+            {
+                tr("This instance has no shader loader: install Iris or OptiFine for shader packs.")
             } else if m.searching || !m.searched {
                 tr("Searching…")
             } else if !m.results.is_empty() {
@@ -2403,7 +2405,7 @@ fn browse_source(kind: PackKind, picked: SourceId, java: Option<&Target>) -> Sou
 
 fn can_install_in(kind: PackKind, source: SourceId, java: Option<&Target>) -> bool {
     match (java, kind) {
-        (Some(_), PackKind::Shader) => false,
+        (Some(target), PackKind::Shader) => target.shader_loader() && source != SourceId::Horizon,
         (Some(_), PackKind::Mod | PackKind::ResourcePack) => source != SourceId::Horizon,
         (Some(_), PackKind::Modpack | PackKind::DataPack) => source == SourceId::Horizon,
         (None, _) => true,
@@ -2608,6 +2610,20 @@ mod tests {
                 Some(&java)
             ));
             assert!(can_install_in(PackKind::Shader, SourceId::Modrinth, None));
+            let iris = Target {
+                minecraft: "1.20.1".into(),
+                loader: Some("iris".into()),
+            };
+            assert!(can_install_in(
+                PackKind::Shader,
+                SourceId::Modrinth,
+                Some(&iris)
+            ));
+            assert!(!can_install_in(
+                PackKind::Shader,
+                SourceId::Horizon,
+                Some(&iris)
+            ));
         });
     }
 

@@ -1109,7 +1109,6 @@
   "no exact file on Modrinth": "no hay ningún archivo exacto en Modrinth",
   "not found": "no encontrados",
   "on the dedicated GPU": "en la GPU dedicada",
-  "only on CurseForge (CurseForge downloads coming soon: choose your installed instance instead)": "solo en CurseForge (las descargas de CurseForge llegarán pronto: elige tu instancia instalada en su lugar)",
   "optimization": "Optimización",
   "realistic": "Realista",
   "runs {command} after": "ejecuta después {command}",
@@ -1575,7 +1574,6 @@
   "Remove this server": "Quitar este servidor",
   "Saved servers": "Servidores guardados",
   "Shaders": "Shaders",
-  "Shader packs for Java instances aren't supported yet.": "Los packs de shaders para instancias Java aún no están admitidos.",
   "Sign in to join": "Inicia sesión para unirte",
   "The installed pack changed while this update was being checked.": "El pack instalado cambió mientras se comprobaba esta actualización.",
   "This pack cannot be installed in the selected instance.": "Este pack no se puede instalar en la instancia seleccionada.",
@@ -1756,5 +1754,10 @@
   "{name} is larger than {size}": "{name} es más grande que {size}",
   "{opening} What each one sends is below it; the privacy page on playhorizon.dev says how long it is kept.": "{opening} Lo que cada uno envía está debajo; la página de privacidad en playhorizon.dev dice cuánto tiempo se guarda.",
   "{step}: {ms} ms": "{step}: {ms} ms",
-  "Everything has a default: accept Minecraft's terms and Create makes a friends-only survival world. You can change all of it later, from the server's Settings tab.": "Todo tiene valores por defecto: aceptar los términos de Minecraft y Crear hace un mundo de supervivencia solo para amigos. Puedes cambiarlo todo después, desde la pestaña Ajustes del servidor."
+  "Everything has a default: accept Minecraft's terms and Create makes a friends-only survival world. You can change all of it later, from the server's Settings tab.": "Todo tiene valores por defecto: aceptar los términos de Minecraft y Crear hace un mundo de supervivencia solo para amigos. Puedes cambiarlo todo después, desde la pestaña Ajustes del servidor.",
+  "A data pack goes in a world.": "Un datapack va en un mundo.",
+  "A modpack is imported as its own instance.": "Un modpack se importa como su propia instancia.",
+  "This instance has no shader loader: install Iris or OptiFine for shader packs.": "Esta instancia no tiene cargador de shaders: instala Iris u OptiFine para usar packs de shaders.",
+  "This instance plays vanilla Minecraft {version}: give it a loader (Fabric, Quilt...) for mods.": "Esta instancia juega Minecraft {version} vanilla: dale un cargador (Fabric, Quilt...) para usar mods.",
+  "only on CurseForge (its API key isn't set: choose your installed instance instead)": "solo en CurseForge (su clave de API no está configurada: elige tu instancia instalada)"
 }

@@ -1,5 +1,5 @@
-//! The mod browser's sources: search Modrinth (CurseForge support is coming soon) for what
-//! Horizon loads, say how well each result runs, and download a file only after its checksum
+//! The mod browser's sources: search Modrinth (and CurseForge when an API key is set) for
+//! what Horizon loads, say how well each result runs, and download a file only after its checksum
 //! matches (docs/mod-browser.md).
 //!
 //! Offered: Java mods (Fabric, NeoForge, Forge), whose content Horizon ports and whose jar is
@@ -302,18 +302,22 @@ pub trait Source: Send + Sync {
     }
 }
 
-/// What the launcher says wherever CurseForge would be.
-pub const CURSEFORGE_SOON: &str = "CurseForge support is coming soon.";
+/// What the launcher says wherever CurseForge is asked for and no API key is set.
+pub const CURSEFORGE_NEEDS_KEY: &str = "CurseForge needs an API key: set \
+     HORIZON_CURSEFORGE_API_KEY in the environment, or build the launcher with it.";
 /// What another source answers for shader packs: Horizon's own are on its registry only.
 pub const SHADERS_ON_HORIZON: &str =
     "Horizon's shader packs are on Horizon's registry: pick Horizon.";
 const SHADER_LOADERS: [&str; 2] = ["iris", "optifine"];
 
-/// The sources this launcher uses: Modrinth and Horizon's registry. CurseForge support is coming
-/// soon: its API needs a paid key, so no search or install goes to it; `curseforge` is kept for
-/// then.
+/// The sources this launcher uses: Modrinth and Horizon's registry, plus CurseForge when an API
+/// key is available (`HORIZON_CURSEFORGE_API_KEY`: the environment's, else the one built in;
+/// docs/mod-browser.md#curseforge). Without a key nothing goes to CurseForge.
 pub fn sources() -> Vec<Box<dyn Source>> {
-    vec![Box::new(modrinth::Modrinth), Box::new(horizon::Registry)]
+    let mut sources: Vec<Box<dyn Source>> =
+        vec![Box::new(modrinth::Modrinth), Box::new(horizon::Registry)];
+    sources.extend(curseforge::CurseForge::from_env().map(|cf| Box::new(cf) as Box<dyn Source>));
+    sources
 }
 
 /// The source of that id, when this launcher can use it.

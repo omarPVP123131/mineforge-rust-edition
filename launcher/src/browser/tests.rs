@@ -100,6 +100,40 @@ fn picks_iris_or_optifine_shaders_without_a_game_version_match() {
 }
 
 #[test]
+fn a_java_instance_with_a_shader_loader_takes_shader_packs() {
+    let iris = java_instance::Target {
+        minecraft: "1.20.1".into(),
+        loader: Some("iris".into()),
+    };
+    assert_eq!(iris.folder(Kind::Shader).unwrap(), "shaderpacks");
+    assert!(iris.takes(Kind::Shader));
+    assert_eq!(iris.describe(Kind::Shader), "Minecraft 1.20.1 with iris");
+    // A shader pack's file names its shader loaders, not a game version: either one is a pick.
+    let versions = [
+        version("canvas", &["1.20.1"], &["canvas"]),
+        version("pack", &[], &["optifine"]),
+    ];
+    assert_eq!(iris.pick(Kind::Shader, &versions).unwrap().id, "pack");
+    // The search isn't narrowed to the instance's game version either.
+    assert_eq!(
+        modrinth::facets(&iris.query("", Kind::Shader)),
+        r#"[["project_type:shader"],["categories:iris","categories:optifine"]]"#
+    );
+    let fabric = java_instance::Target {
+        minecraft: "1.20.1".into(),
+        loader: Some("fabric".into()),
+    };
+    assert!(fabric.folder(Kind::Shader).is_err());
+    assert!(!fabric.takes(Kind::Shader));
+    let vanilla = java_instance::Target {
+        minecraft: "1.20.1".into(),
+        loader: None,
+    };
+    assert!(vanilla.folder(Kind::Shader).is_err());
+    assert!(vanilla.folder(Kind::Mod).is_err());
+}
+
+#[test]
 fn data_packs_are_their_own_kind() {
     // Most data packs on Modrinth also ship a mod build; only the data pack files are picked.
     let versions = [
@@ -547,8 +581,12 @@ fn live_modrinth_search_pick_and_download() {
 }
 
 #[test]
-fn curseforge_is_coming_soon_and_never_searched() {
-    let ids: Vec<SourceId> = sources().iter().map(|s| s.id()).collect();
-    assert_eq!(ids, [SourceId::Modrinth, SourceId::Horizon]);
-    assert!(source(SourceId::CurseForge).is_none());
+fn curseforge_joins_the_sources_only_with_a_key() {
+    // The test environment sets no HORIZON_CURSEFORGE_API_KEY: CurseForge stays out of the
+    // sources, and asking for it by id fails (the CLI then names the key it needs).
+    if std::env::var_os("HORIZON_CURSEFORGE_API_KEY").is_none() {
+        let ids: Vec<SourceId> = sources().iter().map(|s| s.id()).collect();
+        assert_eq!(ids, [SourceId::Modrinth, SourceId::Horizon]);
+        assert!(source(SourceId::CurseForge).is_none());
+    }
 }

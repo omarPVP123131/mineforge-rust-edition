@@ -1,6 +1,6 @@
 # The launcher's mod browser
 
-Search Modrinth (CurseForge support is coming soon) for Java mods, modpacks, resource packs and data packs, and Horizon's
+Search Modrinth (and CurseForge when an API key is set) for Java mods, modpacks, resource packs and data packs, and Horizon's
 registry for Horizon's own mods, modpacks, resource packs and shader packs; see how well each one runs before installing it, and install it with its checksum checked. This is item 16 of the roadmap and issue #577. The code is in
 `launcher/src/browser.rs` and `launcher/src/browser/`.
 
@@ -86,7 +86,7 @@ start); the hedge places and its recipe crafts 4.
 
 The launcher's **Mods** page has the five kinds as tabs: **Mods**, **Modpacks**, **Resource packs**, **Shader packs**
 and **Data packs**, each with a search field (Enter searches). Mods, Modpacks, Resource packs and Data packs pick their
-source: Horizon's registry or Modrinth, with **CurseForge (coming soon)** beside them, disabled. Mods start on
+source: Horizon's registry or Modrinth, plus **CurseForge** when an API key is set. Mods start on
 Horizon's registry; **Shader packs** search it only (Horizon's own packs); data packs install into the world picked
 under the search. On Horizon's registry, **Filters** lists the kind's categories (`horizon_mod_package::index::page::categories`,
 named and ordered as on playhorizon.dev) and the tags its projects carry (the 30 most used, `#tag`): a result has
@@ -122,8 +122,8 @@ Modrinth `GET /project/{id}` and `/project/{id}/members`, then `/project/{id}/ve
 **Filters**, the loader, game version, environment (client, server) and categories, with the values the source lists
 for the kind (Modrinth's `/tag/category`, `/tag/loader`, `/tag/game_version`, asked once per run). A loader or version
 picked replaces the default (Java mod loaders and 26.3 for mods); a version other than 26.3 checks and installs the
-newest file for 1.21 or later, as **Show everything** does. Changing tabs clears the filters. CurseForge support
-is coming soon; its source already maps the order and the game version.
+newest file for 1.21 or later, as **Show everything** does. Changing tabs clears the filters. The CurseForge
+source maps the order and the game version too, and joins the search when its API key is set.
 
 **Icons and gallery images** are the projects' own, fetched at run time from the source's image server
 (`browser::images`): HTTPS from the hosts listed there only (`cdn.modrinth.com`, CurseForge's `media.forgecdn.net` and
@@ -149,7 +149,7 @@ tab and plain Minecraft instances show it. No Mojang file or logo is in the laun
 prohibited without explicit written permission from Rinth, Inc." (`packages/assets/COPYING.md` in
 [modrinth/code](https://github.com/modrinth/code/blob/main/packages/assets/COPYING.md)), and its
 [terms](https://modrinth.com/legal/terms) ask for prior written permission to use its marks. Results name their source
-in text ("from Modrinth") until Rinth, Inc. agrees. CurseForge support, and so its logo, is coming soon.
+in text ("from Modrinth") until Rinth, Inc. agrees. CurseForge results are named in text too.
 
 ## Installing, updating, removing
 
@@ -218,13 +218,15 @@ horizon-launcher modpack play cozy
 **Modrinth.** The public API (`api.modrinth.com/v2`) needs no key. The launcher names itself in its user agent, as
 Modrinth asks.
 
-### CurseForge (coming soon)
+### CurseForge (behind its API key)
 
-CurseForge support is coming soon. Its API (`api.curseforge.com/v1`) needs a paid key, so for now the launcher
-doesn't use it: the Mods page shows **CurseForge (coming soon)** beside the Modrinth switch, disabled, and no search
-or install goes to CurseForge (`browser::sources()` holds Modrinth and Horizon's registry; `horizon-launcher mods ... --source curseforge`
-says it is coming soon). The CurseForge source (`browser/curseforge.rs`) is kept for when it comes.
+CurseForge's API (`api.curseforge.com/v1`) needs a key from its developer console, so the source is **off until a
+key is given**: `HORIZON_CURSEFORGE_API_KEY` in the environment, else the same variable when the launcher was built.
+With a key, `browser::sources()` adds CurseForge beside Modrinth and Horizon's registry, searches and installs go to
+it like any source (files checked against their SHA-1), and `horizon-launcher mods ... --source curseforge` works.
+Without one, nothing goes to CurseForge and the CLI says the key is needed. The fork never ships a key.
 
-A CurseForge modpack zip or instance the player already has still imports, since that needs no key: its jars come
-from the player's installed instance or, when Modrinth has the same file, from Modrinth. A jar only CurseForge serves
-is listed under the pack as "CurseForge downloads coming soon".
+A CurseForge modpack zip or instance the player already has imports with or without a key: its jars come from the
+player's installed instance or, when Modrinth has the same file, from Modrinth. With a key, a jar only CurseForge
+serves is fetched through the API's download URL; without one it is listed under the pack as "CurseForge needs its
+API key".

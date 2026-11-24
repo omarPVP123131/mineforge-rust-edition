@@ -51,7 +51,7 @@ pub struct Imported {
     /// The carried-over mods the profile loads.
     pub mods: Vec<PathBuf>,
     /// Mods left off, with why: a ported one an earlier one owns a namespace of, or one whose
-    /// jar only CurseForge serves (CurseForge downloads coming soon).
+    /// jar only CurseForge serves and no API key is set to fetch it.
     pub left_off: Vec<String>,
     /// The mods the port step gets and carries over (content, data tier).
     pub portable: usize,
@@ -148,8 +148,8 @@ impl Imported {
             (How::Present, "already here"),
             (
                 How::NeedsKey,
-                "only on CurseForge (CurseForge downloads coming soon: choose your installed \
-                 instance instead)",
+                "only on CurseForge (its API key isn't set: choose your installed instance \
+                 instead)",
             ),
             (How::NotFound, "not found"),
             (How::Failed, "failed"),
@@ -284,7 +284,7 @@ pub fn load(work: &Path) -> Result<Imported, String> {
             .files
             .iter()
             .filter(|o| o.how == How::NeedsKey)
-            .map(|o| format!("{}: CurseForge downloads coming soon", o.key)),
+            .map(|o| format!("{}: CurseForge needs its API key", o.key)),
     );
     let resources = ResourceReport::load(work);
     let profile: ResourceReport =
@@ -692,7 +692,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn jars_only_curseforge_serves_are_left_off_as_coming_soon() {
+    fn jars_only_curseforge_serves_are_left_off_without_a_key() {
         use horizon_port_pack::fetch::Outcome;
         let work = std::env::temp_dir().join(format!("horizon-launcher-cf-{}", std::process::id()));
         let _ = fs::remove_dir_all(&work);
@@ -710,12 +710,9 @@ pub(crate) mod tests {
         let pack = load(&work).unwrap();
         assert_eq!(
             pack.left_off,
-            ["allthemodium: CurseForge downloads coming soon"]
+            ["allthemodium: CurseForge needs its API key"]
         );
-        assert!(pack
-            .jars()
-            .unwrap()
-            .contains("CurseForge downloads coming soon"));
+        assert!(pack.jars().unwrap().contains("only on CurseForge"));
         fs::remove_dir_all(&work).unwrap();
     }
 

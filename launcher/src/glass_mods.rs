@@ -361,8 +361,11 @@ impl Launcher {
         }
         let shown = m.shown();
         if shown.is_empty() {
-            let line = if m.kind == PackKind::Shader && m.java.is_some() {
-                tr("Shader packs for Java instances aren't supported yet.").to_string()
+            let line = if m.kind == PackKind::Shader
+                && m.java.as_ref().is_some_and(|t| !t.shader_loader())
+            {
+                tr("This instance has no shader loader: install Iris or OptiFine for shader packs.")
+                    .to_string()
             } else if m.searching || !m.searched {
                 tr("Searching…").to_string()
             } else if !m.results.is_empty() {

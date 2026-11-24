@@ -42,7 +42,7 @@ pub enum How {
     Downloaded,
     /// Copied from the player's folder.
     Local,
-    /// Only on CurseForge, whose downloads are coming soon (its API needs a paid key).
+    /// Only on CurseForge, and no API key is set to fetch it (HORIZON_CURSEFORGE_API_KEY).
     NeedsKey,
     NotFound,
     Failed,
@@ -54,7 +54,7 @@ impl How {
             How::Present => "already here",
             How::Downloaded => "downloaded",
             How::Local => "copied from your folder",
-            How::NeedsKey => "CurseForge downloads coming soon",
+            How::NeedsKey => "CurseForge needs its API key",
             How::NotFound => "not found",
             How::Failed => "failed",
         }
@@ -141,10 +141,17 @@ pub fn fetch(
                 Ok(()) => outcome(How::Downloaded, url),
                 Err(e) => outcome(How::Failed, e),
             }
+        } else if let (Some((_, file_id)), Some(key)) = (file.curseforge, curseforge_key()) {
+            log(format!("{}/{} {name} (curseforge)", i + 1, wanted.len()));
+            match curseforge_download(file_id, &key, sha1, &dest) {
+                Ok(url) => outcome(How::Downloaded, url),
+                Err(e) => outcome(How::Failed, e),
+            }
         } else if pack.format == "curseforge" || file.curseforge.is_some() {
             outcome(
                 How::NeedsKey,
-                "on CurseForge only: choose your installed instance, or put the jar in jars/"
+                "on CurseForge only: set HORIZON_CURSEFORGE_API_KEY, choose your installed \
+                 instance, or put the jar in jars/"
                     .into(),
             )
         } else {
@@ -187,7 +194,7 @@ pub fn fetch(
     }
     write_json(&work.join("fetch.json"), &fetched)?;
     log(format!(
-        "jars: {} downloaded, {} copied, {} already here, {} on CurseForge only (CurseForge downloads coming soon), {} not found, {} failed",
+        "jars: {} downloaded, {} copied, {} already here, {} on CurseForge only (its API key isn't set), {} not found, {} failed",
         fetched.count(How::Downloaded),
         fetched.count(How::Local),
         fetched.count(How::Present),
@@ -221,6 +228,52 @@ pub fn url_of(file: &PackFile, cache: &Cache) -> Option<String> {
         .as_str()
         .filter(allowed)
         .map(str::to_owned)
+}
+
+/// The CurseForge API key: the environment's, else the one built in. Empty counts as none.
+/// Without a key, files only CurseForge serves stay `NeedsKey` (nothing is fetched from it).
+pub fn curseforge_key() -> Option<String> {
+    std::env::var("HORIZON_CURSEFORGE_API_KEY")
+        .ok()
+        .or_else(|| option_env!("HORIZON_CURSEFORGE_API_KEY").map(str::to_owned))
+        .map(|key| key.trim().to_owned())
+        .filter(|key| !key.is_empty())
+}
+
+/// The CDN hosts CurseForge's signed download URLs use.
+const CURSEFORGE_HOSTS: &[&str] = &["edge.forgecdn.net", "mediafilez.forgecdn.net"];
+
+/// Asks CurseForge's API for a file's download URL (its CDN links are signed and short-lived)
+/// and downloads it, kept only if its SHA-1 is `sha1`.
+fn curseforge_download(
+    file_id: u64,
+    key: &str,
+    sha1: Option<&str>,
+    dest: &Path,
+) -> Result<String, String> {
+    let api = format!("https://api.curseforge.com/v1/mods/files/{file_id}/download-url");
+    let response = crate::net::agent(&api)
+        .get(&api)
+        .set("x-api-key", key)
+        .set("Accept", "application/json")
+        .set("User-Agent", crate::modrinth::AGENT)
+        .call()
+        .map_err(|e| match e {
+            ureq::Error::Status(403, _) => "CurseForge refused the API key".to_owned(),
+            ureq::Error::Status(code, _) => format!("CurseForge answered {code}"),
+            ureq::Error::Transport(t) => format!("No connection to CurseForge: {t}"),
+        })?;
+    let text = response
+        .into_string()
+        .map_err(|e| format!("CurseForge: {e}"))?;
+    let url = serde_json::from_str::<serde_json::Value>(&text)
+        .map_err(|e| format!("CurseForge: {e}"))?
+        .get("data")
+        .and_then(|data| data.as_str())
+        .ok_or("CurseForge: no download URL in the answer")?
+        .to_owned();
+    download(&url, sha1, dest, true, CURSEFORGE_HOSTS)?;
+    Ok(url)
 }
 
 /// Downloads `url` to `dest`, kept only if its SHA-1 is `sha1`.

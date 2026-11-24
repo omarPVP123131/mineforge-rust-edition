@@ -693,7 +693,7 @@ enum KindArg {
 #[derive(Clone, Copy, clap::ValueEnum)]
 enum SourceArg {
     Modrinth,
-    /// CurseForge support is coming soon
+    /// CurseForge, when an API key is set (HORIZON_CURSEFORGE_API_KEY)
     Curseforge,
     /// Horizon's own registry: mods, modpacks and resource packs made for Horizon, reviewed
     Horizon,
@@ -707,7 +707,7 @@ impl SourceArg {
             SourceArg::Curseforge => SourceId::CurseForge,
             SourceArg::Horizon => SourceId::Horizon,
         };
-        browser::source(id).ok_or_else(|| browser::CURSEFORGE_SOON.into())
+        browser::source(id).ok_or_else(|| browser::CURSEFORGE_NEEDS_KEY.into())
     }
 }
 
@@ -1013,7 +1013,7 @@ enum Cmd {
         action: Option<ModpackCmd>,
     },
     /// The mod browser: Java mods, resource packs and modpacks from Modrinth
-    /// (CurseForge support is coming soon), each file checked against its checksum
+    /// (CurseForge too when its API key is set), each file checked against its checksum
     /// (docs/mod-browser.md)
     Mods {
         #[command(subcommand)]
