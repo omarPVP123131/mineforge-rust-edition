@@ -2,8 +2,9 @@
 //! the profile's head is drawn from: `skins/<name>.png` and `skins/<name>.cape.png` under the
 //! data dir, `<name>` the profile's name in lower case (the same files `Accounts::remove`
 //! deletes with the profile). Nothing here touches the network — an offline profile never asks
-//! Mojang's services for a look. The game itself draws its own players with the default skins
-//! for now; giving these files to the game is the next step (ROADMAP phase 7).
+//! Mojang's services for a look. The game wears these files in game: the launcher
+//! starts it with `MFRE_SKINS_DIR` pointing here, and an offline profile's own player is
+//! drawn from its `<name>.png`/`<name>.cape.png` (game/network/remote/skins.rs).
 
 use std::path::{Path, PathBuf};
 

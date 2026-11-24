@@ -1507,6 +1507,11 @@ impl SkinSlots {
 /// A GET over HTTP or HTTPS (textures.minecraft.net serves both; vanilla
 /// uses https): the body of a 2xx answer, 16 MiB at most, after redirects.
 fn http_get(url: &str) -> Option<Vec<u8>> {
+    // MFRE: a local texture for an offline profile: the launcher points the game at its
+    // skins folder and the own profile's `file://` location reads straight off disk.
+    if let Some(path) = url.strip_prefix("file://") {
+        return std::fs::read(path).ok();
+    }
     use std::io::Read;
     let response = ureq::AgentBuilder::new()
         .timeout(std::time::Duration::from_secs(15))
@@ -2232,6 +2237,22 @@ mod tests {
         let bad = serde_json::json!({"properties": [{"name": "textures", "value": "not base64"}]});
         assert_eq!(super::profile_skin_url(&bad), None);
         assert_eq!(super::profile_skin_url(&serde_json::json!({})), None);
+    }
+
+    #[test]
+    fn http_get_reads_local_file_textures() {
+        let dir = std::env::temp_dir().join(format!("mfre-file-get-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("s.png"), b"pixels").unwrap();
+        assert_eq!(
+            http_get(&format!("file://{}", dir.join("s.png").display())).as_deref(),
+            Some(&b"pixels"[..])
+        );
+        assert_eq!(
+            http_get(&format!("file://{}", dir.join("nope.png").display())),
+            None
+        );
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// Textures come over plain HTTP too (a local server here; https is the

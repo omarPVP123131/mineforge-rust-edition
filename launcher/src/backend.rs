@@ -3208,6 +3208,9 @@ pub fn client_command(tag: &str) -> Command {
     crate::telemetry::ping_only_if_allowed(&mut cmd, !Settings::load().ping_off && !heartbeat_off);
     cmd.current_dir(&home)
         .env("HORIZON_HOME", &home)
+        // MFRE: the game draws an offline profile's kept skin and cape from here; the game
+        // process has no other way to find the launcher's data folder.
+        .env("MFRE_SKINS_DIR", crate::skins::dir(&data_dir()))
         .env_remove("HORIZON_ACCOUNT_SESSIONS")
         .arg("--resources")
         .arg(resources(tag));
@@ -5744,6 +5747,16 @@ pub fn {f}("
                 "nightly-build.yml must sign and publish {game} ({os} {arch})"
             );
         }
+    }
+
+    #[test]
+    fn the_game_knows_where_the_offline_skins_live() {
+        let cmd = client_command("v2026.10.13");
+        let dir = cmd
+            .get_envs()
+            .find(|(k, _)| *k == "MFRE_SKINS_DIR")
+            .and_then(|(_, v)| v);
+        assert!(dir.is_some_and(|v| std::path::Path::new(v).ends_with("skins")));
     }
 
     #[test]

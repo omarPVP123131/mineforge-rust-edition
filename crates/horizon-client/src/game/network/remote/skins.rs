@@ -124,7 +124,10 @@ impl Game<'_> {
         match &mut r.own_profile {
             OwnProfile::Idle => {
                 let Some(auth) = auth else {
-                    r.own_profile = OwnProfile::Done(None);
+                    // MFRE: no account, no services: the offline profile wears the skin and
+                    // cape the launcher keeps for its name, if it has any.
+                    r.own_profile =
+                        OwnProfile::Done(mfre_local_own(&self.options.player_name()));
                     return;
                 };
                 let (send, recv) = std::sync::mpsc::channel();
@@ -482,5 +485,79 @@ impl Game<'_> {
         };
         let chat_type = r.registries.data("minecraft:chat_type", bound.chat_type);
         comp_text(&chat_type_decorate(chat_type, decoration, bound, content))
+    }
+}
+
+/// MFRE: an offline profile's kept look — the skin and cape PNGs the launcher keeps under
+/// `MFRE_SKINS_DIR` (which the launcher sets to its skins folder) or `skins/` in the game
+/// folder, named `<name>.png` and `<name>.cape.png` in lower case. The files become `file://`
+/// textures the Downloader reads off disk; nothing here touches a network, and a profile with
+/// nothing kept keeps the default look (`None`).
+fn mfre_local_own_in(
+    name: &str,
+    dirs: impl IntoIterator<Item = std::path::PathBuf>,
+) -> Option<horizon_client::skins::Textures> {
+    let key = name.to_ascii_lowercase();
+    let (mut skin, mut cape) = (None, None);
+    for dir in dirs {
+        if skin.is_none() {
+            let path = dir.join(format!("{key}.png"));
+            if path.is_file() {
+                skin = Some(format!("file://{}", path.display()));
+            }
+        }
+        if cape.is_none() {
+            let path = dir.join(format!("{key}.cape.png"));
+            if path.is_file() {
+                cape = Some(format!("file://{}", path.display()));
+            }
+        }
+    }
+    if skin.is_none() && cape.is_none() {
+        return None;
+    }
+    Some(horizon_client::skins::Textures {
+        skin,
+        slim: false,
+        cape,
+        elytra: None,
+        signed: false,
+    })
+}
+
+/// [`mfre_local_own_in`] over the folders the game looks in: the launcher's skins folder,
+/// then `skins/` in the game folder (a hand-placed look, and QA's).
+fn mfre_local_own(name: &str) -> Option<horizon_client::skins::Textures> {
+    let dirs = std::env::var_os("MFRE_SKINS_DIR")
+        .filter(|dir| !dir.is_empty())
+        .map(std::path::PathBuf::from)
+        .into_iter()
+        .chain(std::env::current_dir().ok().map(|dir| dir.join("skins")));
+    mfre_local_own_in(name, dirs)
+}
+
+#[cfg(test)]
+mod mfre_tests {
+    use super::*;
+
+    #[test]
+    fn an_offline_profile_wears_its_kept_skin_and_cape() {
+        let dir = std::env::temp_dir().join(format!("mfre-skins-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("steve.png"), b"skin").unwrap();
+        std::fs::write(dir.join("steve.cape.png"), b"cape").unwrap();
+        let own = mfre_local_own_in("Steve", [dir.clone()]).expect("the kept look");
+        assert_eq!(
+            own.skin.as_deref(),
+            Some(format!("file://{}", dir.join("steve.png").display()).as_str())
+        );
+        assert_eq!(
+            own.cape.as_deref(),
+            Some(format!("file://{}", dir.join("steve.cape.png").display()).as_str())
+        );
+        assert!(!own.slim && !own.signed && own.elytra.is_none());
+        // A profile with nothing kept keeps the default look.
+        assert!(mfre_local_own_in("Nobody", [dir.clone()]).is_none());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
