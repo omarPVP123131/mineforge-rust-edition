@@ -17,6 +17,13 @@ use std::time::{Duration, Instant};
 
 /// Where the registry publishes its index (GitHub Pages of horizon-rust/horizon-mods).
 pub const INDEX_URL: &str = "https://horizon-rust.github.io/horizon-mods/index.json";
+/// MFRE: where the fork publishes its own catalog; [`merge_mfre`] folds it into Horizon's
+/// index, so both catalogs show. `MFRE_MOD_INDEX` overrides it (a file or an `https://`
+/// address, for tests); the merge never runs against a local test registry ([`local`]).
+pub const MFRE_INDEX_URL: &str =
+    "https://raw.githubusercontent.com/omarPVP123131/mineforge-rust-edition/main/registry/index.json";
+/// MFRE: where a player reports a project that came from the fork's own index.
+const MFRE_REPORT: &str = "https://github.com/omarPVP123131/mineforge-rust-edition/issues/new";
 /// The registry's pages on the website, `<SITE>/<id>`.
 const SITE: &str = "https://playhorizon.dev/mods";
 /// The report form of a project.
@@ -51,6 +58,14 @@ pub fn local() -> bool {
 }
 
 static LOADED: Mutex<Option<(Instant, Arc<Index>)>> = Mutex::new(None);
+
+/// MFRE: the ids that came from the fork's index: their page and report links go to the
+/// fork, not to Horizon's website.
+static MFRE_IDS: Mutex<Option<Arc<std::collections::HashSet<String>>>> = Mutex::new(None);
+
+fn mfre_ids() -> Arc<std::collections::HashSet<String>> {
+    MFRE_IDS.lock().unwrap().clone().unwrap_or_default()
+}
 
 /// The index read last in this run, without asking the network: for what must not wait.
 pub fn known_index() -> Option<Arc<Index>> {
@@ -152,11 +167,78 @@ fn fetch_index() -> Result<(Index, String), String> {
     } else {
         fs::read_to_string(&at).map_err(|e| format!("{at}: {e}"))?
     };
-    let index = match local() {
+    let mut index = match local() {
         true => Index::parse_local(&text)?,
         false => Index::parse(&text)?,
     };
+    // MFRE: both catalogs at once — the fork's own index folds into Horizon's.
+    if !local() {
+        merge_mfre(&mut index);
+    }
     Ok((index, text))
+}
+
+/// MFRE: fetch the fork's own index and [`merge_index`] it into `index`. Every failure is
+/// silent: Horizon's catalog alone is complete, and the fork's only adds to it.
+fn merge_mfre(index: &mut Index) {
+    use std::io::Read;
+    let at = std::env::var("MFRE_MOD_INDEX")
+        .ok()
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| MFRE_INDEX_URL.to_owned());
+    let remote = at.starts_with("https://");
+    let text = if remote {
+        let Ok(response) = download::agent(&at).get(&at).call() else {
+            return;
+        };
+        let mut text = String::new();
+        if response
+            .into_reader()
+            .take(MAX_INDEX)
+            .read_to_string(&mut text)
+            .is_err()
+        {
+            return;
+        }
+        text
+    } else {
+        let Ok(text) = fs::read_to_string(&at) else {
+            return;
+        };
+        text
+    };
+    let parsed = if remote {
+        Index::parse(&text)
+    } else {
+        Index::parse_local(&text)
+    };
+    if let Ok(extra) = parsed {
+        merge_index(index, extra);
+    }
+}
+
+/// MFRE: add `extra`'s projects and revocations to `index`. An id `index` already has keeps
+/// `index`'s project (one index's own rule: an id listed twice voids both). The ids that came
+/// over are remembered in [`mfre_ids`].
+fn merge_index(index: &mut Index, extra: Index) {
+    let mut ids = std::collections::HashSet::new();
+    for project in extra.projects {
+        if index.projects.iter().any(|p| p.id == project.id) {
+            continue;
+        }
+        ids.insert(project.id.clone());
+        index.projects.push(project);
+    }
+    for revoked in extra.revoked {
+        if !index
+            .revoked
+            .iter()
+            .any(|r| r.id == revoked.id && r.sha256 == revoked.sha256)
+        {
+            index.revoked.push(revoked);
+        }
+    }
+    *MFRE_IDS.lock().unwrap() = Some(Arc::new(ids));
 }
 
 /// A project's ratings: 1 to 5 stars, their mean and how many.
@@ -474,7 +556,13 @@ fn project_of(index: &Index, p: &index::Project) -> Option<Project> {
         summary: summary(&p.summary),
         author: p.authors.join(", "),
         downloads: p.downloads,
-        page: format!("{SITE}/{}", p.id),
+        page: if mfre_ids().contains(&p.id) {
+            // MFRE: the fork's projects have no page on Horizon's website; their source
+            // repository is their page.
+            p.source.clone()
+        } else {
+            format!("{SITE}/{}", p.id)
+        },
         icon: p.icon.clone(),
         license: p.license.clone(),
         kind: kind_of(&p.kind)?,
@@ -753,7 +841,11 @@ impl Source for Registry {
                 },
                 Link {
                     label: "Report".into(),
-                    url: format!("{REPORT}&title={}", p.id),
+                    url: if mfre_ids().contains(&p.id) {
+                        format!("{MFRE_REPORT}?title={}", p.id)
+                    } else {
+                        format!("{REPORT}&title={}", p.id)
+                    },
                 },
             ]
             .into_iter()

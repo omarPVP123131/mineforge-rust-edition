@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "generated": "2026-11-25T00:00:00Z",
+  "projects": [
+    {
+      "id": "mfre_ember",
+      "kind": "mod",
+      "name": "MFRE Ember",
+      "summary": "El bloque de brasas y el núcleo de brasas: el primer contenido propio de MineForge Rust Edition, con la paleta ember del fork.",
+      "description": "MFRE Ember es el primer pack de contenido propio de MineForge Rust Edition: añade el **bloque de brasas** y el **núcleo de brasas**, con texturas generadas para el fork y la paleta ember. Se instala desde la página Mods del launcher y funciona en cliente y servidor, sobre la Mod API 0.2 de Horizon y Minecraft 26.3. Fuente y reportes: el repositorio del fork.",
+      "authors": [
+        "MineForge Rust Edition"
+      ],
+      "owners": [
+        "omarPVP123131"
+      ],
+      "license": "MIT",
+      "source": "https://github.com/omarPVP123131/mineforge-rust-edition",
+      "icon": "https://raw.githubusercontent.com/omarPVP123131/mineforge-rust-edition/main/registry/icons/mfre_ember.png",
+      "categories": [
+        "decoration"
+      ],
+      "tags": [
+        "ember",
+        "mfre"
+      ],
+      "versions": [
+        {
+          "version": "0.1.0",
+          "published": "2026-11-25",
+          "changelog": "Primera publicación: bloque de brasas y núcleo de brasas.",
+          "api": "0.2",
+          "side": "both",
+          "capabilities": [
+            "registries"
+          ],
+          "game": "26.3",
+          "file": {
+            "name": "mfre_ember-0.1.0.hmod",
+            "url": "https://github.com/omarPVP123131/mineforge-rust-edition/releases/download/mods-26.3.0/mfre_ember-0.1.0.hmod",
+            "size": 6335,
+            "sha256": "e97416fdf047b5ab482cff61b2c74fc7c8a31faf0b461c6d388efe7b8a4786ef"
+          }
+        }
+      ]
+    }
+  ],
+  "revoked": []
+}

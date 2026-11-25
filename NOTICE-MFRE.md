@@ -41,8 +41,9 @@ unchanged with every source and binary distribution of the fork.
 
 The complete corresponding source of any distributed MFRE binary is the
 fork's repository: the base snapshot plus the patch series (the git bundle
-and the numbered patches). Those materials travel with every release
-artifact; public publication is scheduled for Fase 26 of the fork's roadmap.
+and the numbered patches). The repository is public at
+<https://github.com/omarPVP123131/mineforge-rust-edition> (D27), and those
+materials travel with every release artifact.
 
 ## What MFRE does not carry
 
@@ -53,7 +54,9 @@ artifact; public publication is scheduled for Fase 26 of the fork's roadmap.
   player's own Minecraft install on their own computer, and the fork's title
   panorama is its own art (Fase 12).
 - **No Horizon signed self-update.** A fork binary never replaces itself
-  (D6): `self_update_allowed()` is off outside development, and a test
-  asserts it. Upstream's release-sign keys verify only upstream's own engine
-  release artifacts when the launcher installs an engine build; they are
-  never applied to the fork's binary.
+  with a Horizon build (D6). Since F39 the fork's launcher updates itself
+  only from the fork's own `launcher@X.Y.Z` releases, signed with the fork's
+  own key (published in `release-keys.txt`); `self_update_allowed()` accepts
+  no other feed, and tests assert it. Upstream's release-sign keys verify
+  only upstream's own engine release artifacts when the launcher installs an
+  engine build; they are never applied to the fork's binary.

@@ -1493,3 +1493,34 @@ fn an_old_native_path_that_is_not_a_file_is_left_alone() {
     assert!(!home.join("horizon-mods/coords_hud.hmod").exists());
     fs::remove_dir_all(&home).unwrap();
 }
+
+/// MFRE: the fork's index folds into Horizon's; a duplicate id keeps Horizon's project.
+#[test]
+fn mfre_index_merges_beside_horizons() {
+    let mut base = sample();
+    let extra = {
+        let mut x = sample();
+        let mut p = x.projects.pop().unwrap();
+        p.id = "mfre_test_mod".into();
+        x.projects = vec![p];
+        x
+    };
+    let before = base.projects.len();
+    merge_index(&mut base, extra);
+    assert_eq!(base.projects.len(), before + 1);
+    assert!(base.project("mfre_test_mod").is_some());
+    assert!(mfre_ids().contains("mfre_test_mod"));
+
+    // An id Horizon's index already has keeps Horizon's project, and is not marked as the
+    // fork's.
+    let dup = {
+        let mut x = sample();
+        x.projects.truncate(1);
+        x
+    };
+    let dup_id = dup.projects[0].id.clone();
+    let before = base.projects.len();
+    merge_index(&mut base, dup);
+    assert_eq!(base.projects.len(), before);
+    assert!(!mfre_ids().contains(&dup_id));
+}
