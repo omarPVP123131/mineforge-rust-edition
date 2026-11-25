@@ -26,6 +26,11 @@ pub const OFFICIAL_SERVER_STATUS: &str = "play.playhorizon.dev:24454";
 /// Horizon's website, where the launcher is downloaded: the game started without its prepared
 /// files sends the player there.
 pub const WEBSITE: &str = "https://playhorizon.dev";
+/// MFRE: the fork's release page, where the fork's launcher is downloaded. A game started
+/// without its prepared files sends the player here instead of Horizon's website: the
+/// official build's "get the launcher" screen names the fork's own releases, the one place
+/// a MineForge launcher is published.
+pub const MFRE_RELEASES: &str = "https://github.com/omarPVP123131/mineforge-rust-edition/releases";
 
 /// Minecraft's product links, offered by the official build's Mods screen.
 pub const MINECRAFT_WEBSITE: &str = "https://minecraft.net";

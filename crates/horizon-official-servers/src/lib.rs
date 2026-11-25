@@ -1,6 +1,7 @@
 //! Horizon's own entries in the multiplayer list: the official server, added once at the top,
 //! and the withdrawn partner server, taken back out once. And where the game started without its
-//! prepared files sends the player: Horizon's launcher, on its website ([`GET_THE_GAME`]).
+//! prepared files sends the player: the fork's launcher, on the fork's release page
+//! ([`GET_THE_GAME`], at [`horizon_addresses::MFRE_RELEASES`]).
 //!
 //! A Horizon crate (docs/layers.md): it plugs into the game through the platform's hooks
 //! ([`HOOKS`], when the game starts), which the official executable (`horizon-official`)
@@ -28,10 +29,11 @@ impl Hooks for OfficialServers {
     }
 }
 
-/// The game started by hand without its prepared files: start it from the launcher, downloaded
-/// from Horizon's website.
+/// The game started by hand without its prepared files: start it from the fork's launcher,
+/// downloaded from the fork's release page (never Horizon's website: no MineForge launcher
+/// is published there).
 pub const GET_THE_GAME: GetTheGame = GetTheGame {
-    address: horizon_addresses::WEBSITE,
+    address: horizon_addresses::MFRE_RELEASES,
     title: "horizon.get_the_game.title",
     paragraphs: &[
         "horizon.get_the_game.about",
