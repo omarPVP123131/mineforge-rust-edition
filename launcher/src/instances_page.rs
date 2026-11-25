@@ -494,6 +494,12 @@ impl Launcher {
         };
         let download =
             download.filter(|release| plays_horizon && !self.removing.contains(&release.tag));
+        // MFRE (D27): the Mojang download is gated on the Minecraft EULA consent, asked in the
+        // dialog's own foot (glass_instance.rs, instance_foot) — never on a command line.
+        if download.is_some() && !backend::mfre_eula_accepted() {
+            d.error = Some(tr("Tick the EULA box to install MineForge.").into());
+            return;
+        }
         let (java, name) = match (java, minecraft) {
             (Some(_), Some(None)) => {
                 d.error = Some(tr("Mojang's version list isn't here yet.").into());

@@ -92,7 +92,69 @@ impl Launcher {
                         )
                         .child(actions),
                 ),
-                None => centered(&waiting, &t).child(actions),
+                None => {
+                    // MFRE (D27): the first run resolves itself here — the Minecraft EULA
+                    // checkbox and one button that makes the default instance, installs the
+                    // newest stable build and shows the download on this page.
+                    let mut wizard = div().flex().flex_col().items_center().gap(px(12.));
+                    if !backend::mfre_eula_accepted() {
+                        let accept = cx.listener(|_: &mut Self, _: &ClickEvent, _, cx| {
+                            let _ = backend::mfre_accept_eula();
+                            cx.notify();
+                        });
+                        wizard = wizard.child(
+                            div()
+                                .flex()
+                                .items_center()
+                                .gap(px(10.))
+                                .child(switch("first-run-eula", false, &t).on_click(accept))
+                                .child(
+                                    div()
+                                        .id("first-run-eula-label")
+                                        .cursor_pointer()
+                                        .child(
+                                            text(theme::UI)
+                                                .text_color(t.ink)
+                                                .child(tr("I agree to the Minecraft EULA")),
+                                        )
+                                        .on_click(cx.listener(
+                                            |_: &mut Self, _: &ClickEvent, _, cx| {
+                                                let _ = backend::mfre_accept_eula();
+                                                cx.notify();
+                                            },
+                                        )),
+                                )
+                                .child(
+                                    div()
+                                        .id("first-run-eula-read")
+                                        .cursor_pointer()
+                                        .child(
+                                            text(theme::UI)
+                                                .text_color(t.accent)
+                                                .child(tr("Read it")),
+                                        )
+                                        .on_click(|_, _, cx| cx.open_url(backend::MFRE_EULA_URL)),
+                                ),
+                        );
+                    }
+                    let offer = self
+                        .stable_builds()
+                        .into_iter()
+                        .next()
+                        .and_then(|b| self.release_to_install(&b.tag));
+                    if offer.is_some() && self.installing.is_none() {
+                        wizard = wizard.child(
+                            button("install-and-play", "Install and play", Kind::Primary, &t)
+                                .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                                    if let Err(e) = this.install_and_play() {
+                                        crate::glass_toast::say(e);
+                                    }
+                                    cx.notify();
+                                })),
+                        );
+                    }
+                    centered(&waiting, &t).child(wizard).child(actions)
+                }
             };
             return div()
                 .flex()

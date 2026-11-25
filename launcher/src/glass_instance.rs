@@ -1006,6 +1006,61 @@ impl Launcher {
                     cx.notify();
                 })))
         };
+        // MFRE (D27): a new Horizon instance whose build isn't installed downloads from Mojang,
+        // which needs the Minecraft EULA consent — asked here, in the GUI, never on a command
+        // line. Ticking records the consent (backend::mfre_accept_eula) and Create goes through.
+        let needs_eula = editing.is_none()
+            && self
+                .instances
+                .dialog
+                .as_ref()
+                .is_some_and(|d| d.java.kind == NewKind::Horizon)
+            && self.draft_download().is_some()
+            && !backend::mfre_eula_accepted();
+        let look = self.look;
+        let eula = needs_eula.then(|| {
+            let tickbox = div()
+                .flex()
+                .flex_none()
+                .items_center()
+                .justify_center()
+                .size(px(22.))
+                .rounded(px(7.))
+                .bg(white(fill::SELECTED));
+            keyboard(
+                div()
+                    .id("instance-eula")
+                    .flex()
+                    .items_center()
+                    .gap(px(10.))
+                    .flex_none()
+                    .cursor_pointer()
+                    .child(tickbox)
+                    .child(
+                        ui::text(14., FontWeight::NORMAL, ink::FULL)
+                            .truncate()
+                            .child(tr("I agree to the Minecraft EULA")),
+                    ),
+                &t,
+            )
+            .on_click(cx.listener(|_: &mut Self, _: &ClickEvent, _, cx| {
+                let _ = backend::mfre_accept_eula();
+                cx.notify();
+            }))
+        });
+        let read_eula = needs_eula.then(|| {
+            div()
+                .id("instance-eula-read")
+                .flex_none()
+                .font_family(horizon_theme::glass::FONT)
+                .text_size(px(14.))
+                .font_weight(FontWeight::MEDIUM)
+                .text_color(ui::color(look.accent_soft))
+                .cursor_pointer()
+                .hover(|s| s.text_color(white(ink::FULL)))
+                .child(tr("Read it"))
+                .on_click(|_, _, cx| cx.open_url(backend::MFRE_EULA_URL))
+        });
         div()
             .flex()
             .flex_none()
@@ -1027,6 +1082,8 @@ impl Launcher {
                     .truncate()
                     .child(place),
             })
+            .children(eula)
+            .children(read_eula)
             .child(buttons.flex_none())
     }
 

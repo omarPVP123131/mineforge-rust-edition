@@ -51,6 +51,36 @@ impl Launcher {
         self.start_next_instance_install();
     }
 
+    /// MFRE (D27): the first run's one click — records the Minecraft EULA consent (the gate for
+    /// the Mojang download), makes the default Stable instance, queues the newest stable build's
+    /// install and leaves the player on Play, where the download shows its progress. The Err says
+    /// why nothing could start.
+    pub(crate) fn install_and_play(&mut self) -> Result<(), String> {
+        let release = self
+            .stable_builds()
+            .into_iter()
+            .next()
+            .and_then(|b| self.release_to_install(&b.tag))
+            .ok_or_else(|| tr("There is no MineForge version to install yet.").to_string())?;
+        if !backend::mfre_eula_accepted() {
+            backend::mfre_accept_eula()?;
+        }
+        let taken: Vec<String> = instances::list().iter().map(|i| i.name.clone()).collect();
+        let taken: Vec<&str> = taken.iter().map(String::as_str).collect();
+        let name = new_instance::free_name(tr("My MineForge").to_string(), &taken);
+        let instance = horizon_launcher::instances::create_with_installation(
+            &name,
+            None,
+            None,
+            horizon_launcher::instances::Channel::Stable,
+            Some(&release.tag),
+        )?;
+        self.select_instance(&instance);
+        self.reload_instances();
+        self.install_for_instance(release);
+        Ok(())
+    }
+
     pub(super) fn start_next_instance_install(&mut self) {
         if self.installing.is_some() {
             return;

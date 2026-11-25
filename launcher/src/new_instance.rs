@@ -91,7 +91,7 @@ impl JavaChoice {
 
 /// `base`, or "base 2", "base 3"… when an instance already has it (names ignore case, as
 /// `instances::create` does).
-fn free_name(base: String, taken: &[&str]) -> String {
+pub(super) fn free_name(base: String, taken: &[&str]) -> String {
     let free = |n: &String| !taken.iter().any(|t| t.eq_ignore_ascii_case(n));
     if free(&base) {
         return base;
