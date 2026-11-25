@@ -150,11 +150,25 @@ def main() -> None:
     index_entry = document.get("assetIndex") or {}
     index_path = dest / "assets" / "indexes" / f"{index_entry.get('id', version)}.json"
     accepted_indexes = set(lock.get("accepted_asset_index_sha1", []))
-    if not (index_path.is_file() and sha1(index_path.read_bytes()) in accepted_indexes):
+    index_sha = index_entry.get("sha1")
+
+    def index_ok(path: pathlib.Path) -> bool:
+        # As horizon-prepare accepts it (sounds.rs): the SHA-1 the version JSON lists, or one of
+        # the republished indexes research-lock accepts.
+        if not path.is_file():
+            return False
+        digest = sha1(path.read_bytes())
+        return digest == index_sha or digest in accepted_indexes
+
+    if not index_ok(index_path):
         data = read(index_entry["url"])
-        if accepted_indexes and sha1(data) not in accepted_indexes:
-            fail(f"asset index: SHA-1 {sha1(data)} is none research-lock accepts")
-        put_verified(index_path, data, sha1(data), f"asset index {index_entry.get('id')}")
+        digest = sha1(data)
+        if digest != index_sha and digest not in accepted_indexes:
+            fail(f"asset index: SHA-1 {digest} is neither the version JSON's {index_sha} "
+                 "nor one research-lock accepts")
+        index_path.parent.mkdir(parents=True, exist_ok=True)
+        index_path.write_bytes(data)
+        print(f"  fetched asset index: {index_path} ({digest[:8]})")
     index = json.loads(index_path.read_bytes())
     objects = dest / "assets" / "objects"
 
