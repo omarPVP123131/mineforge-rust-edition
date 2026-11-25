@@ -521,6 +521,76 @@ PORTUGUESE = {
     '{version}, with your mods': '{version}, com seus mods',
 }
 
+# Upstream wrote dummy English values (value == key) into this catalog; the fork's
+# philosophy (patch 0006) is no dummy English, so they are translated here too.
+DUMMY_FIXES = {
+    "Allow executing this checkout's build code and unsigned game with your rights": 'Permite executar o código de compilação deste checkout e um jogo sem assinatura com os seus direitos',
+    "An imported build is unsigned: Horizon can't check where it came from. If you trust it, pass --trust-unsigned.": 'Uma compilação importada não tem assinatura: o Horizon não consegue verificar sua origem. Se você confia nela, passe --trust-unsigned.',
+    'Another build is running': 'Outra compilação está em andamento',
+    "At start and before you play, content installed from Horizon's registry moves to its newest version for this game. Never inside a modpack. Code mods and updates that would remove blocks or items wait for you.": 'Na inicialização e antes de jogar, o conteúdo instalado do registro do Horizon passa para sua versão mais nova para este jogo. Nunca dentro de um modpack. Mods de código e atualizações que removeriam blocos ou itens esperam por você.',
+    'Builds the game with your mods': 'Compila o jogo com seus mods',
+    'Choose a real horizon-client executable built for this computer.': 'Escolha um executável horizon-client real compilado para este computador.',
+    'Compiling the mods against the prebuilt game': 'Compilando os mods contra o jogo pré-compilado',
+    "Compiling {mod}'s declared internals": 'Compilando os internos declarados de {mod}',
+    "Could not snapshot the developer checkout's committed source.": 'Não foi possível fazer o snapshot da fonte commitada do checkout de desenvolvedor.',
+    'Could not unpack the source: {error}': 'Não foi possível desempacotar a fonte: {error}',
+    "Developer installation runs the checkout's build code and an unsigned game with your rights. Pass --trust-unsigned only if you trust both.": 'A instalação de desenvolvedor executa o código de compilação do checkout e um jogo sem assinatura com os seus direitos. Passe --trust-unsigned somente se confiar em ambos.',
+    'Developer package contains an invalid file name.': 'O pacote de desenvolvedor contém um nome de arquivo inválido.',
+    'Developer package must contain only regular files and directories.': 'O pacote de desenvolvedor deve conter apenas arquivos e diretórios comuns.',
+    'E_GAME_DEPENDENCY: {mod}: Cargo.toml depends on the game ({key}). Declare game internals through horizon-internals instead.': 'E_GAME_DEPENDENCY: {mod}: Cargo.toml depende do jogo ({key}). Declare os internos do jogo via horizon-internals.',
+    'E_INTERNAL_AMBIGUOUS: {mod} uses {path}, which has multiple kinds; choose a kind from: {kinds}.': 'E_INTERNAL_AMBIGUOUS: {mod} usa {path}, que tem vários gêneros; escolha um entre: {kinds}.',
+    'E_INTERNAL_CHANGED: {mod} uses {path}, whose signature is now {signature}; run cargo horizon-mod update to see what changed.': 'E_INTERNAL_CHANGED: {mod} usa {path}, cuja assinatura agora é {signature}; rode cargo horizon-mod update para ver o que mudou.',
+    "E_INTERNAL_GATED: {mod} uses {path}, which exists only under a cfg; target-specific internals aren't supported.": 'E_INTERNAL_GATED: {mod} usa {path}, que existe só sob um cfg; internos específicos de alvo não são suportados.',
+    "E_INTERNAL_MISSING: {mod} uses {path}, which this game doesn't have; run cargo horizon-mod internals sync to discover this pin's used internals.": 'E_INTERNAL_MISSING: {mod} usa {path}, que este jogo não tem; rode cargo horizon-mod internals sync para descobrir os internos usados deste pin.',
+    'E_INTERNAL_PATH: {path} cannot be re-exported as a declared internal; declare its types or free functions instead.': 'E_INTERNAL_PATH: {path} não pode ser reexportado como interno declarado; declare seus tipos ou funções livres.',
+    'E_INTERNAL_SOURCE_UNAVAILABLE: internals sync needs the source for {revision}. It is not cached and could not be downloaded: {error}': 'E_INTERNAL_SOURCE_UNAVAILABLE: o sync de internos precisa da fonte para {revision}. Ela não está em cache e não pôde ser baixada: {error}',
+    "Example: horizon-launcher developer-install CHECKOUT --program CHECKOUT/target/debug/horizon-client --trust-unsigned\nThis executes the checkout's build code and an unsigned game with your rights. Trust both before continuing.": 'Exemplo: horizon-launcher developer-install CHECKOUT --program CHECKOUT/target/debug/horizon-client --trust-unsigned\nIsso executa o código de compilação do checkout e um jogo sem assinatura com os seus direitos. Confie em ambos antes de continuar.',
+    "Game internals must be declared: run cargo horizon-mod internals sync in the mod's folder, then build again.": 'Os internos do jogo devem ser declarados: rode cargo horizon-mod internals sync na pasta do mod e compile de novo.',
+    'Imported {version} and selected it. It is prepared already, from another installed version.': '{version} importado e selecionado. Já está preparado, a partir de outra versão instalada.',
+    'Imported {version} and selected it. Prepare it next: horizon-launcher prepare --version {version}': '{version} importado e selecionado. Prepare-o a seguir: horizon-launcher prepare --version {version}',
+    'Install a local unsigned developer build from a trusted checkout': 'Instale uma compilação local de desenvolvedor sem assinatura a partir de um checkout confiável',
+    'Install a release or Nightly, or explicitly select a local unsigned developer base first: an imported build reuses its game files.': 'Instale uma release ou Nightly, ou selecione explicitamente primeiro uma base local de desenvolvedor sem assinatura: uma compilação importada reusa os arquivos de jogo dela.',
+    'Internals discovery failed; the manifest was not changed. {error}': 'A descoberta de internos falhou; o manifesto não foi alterado. {error}',
+    'Invalid developer build revision.': 'Revisão de compilação de desenvolvedor inválida.',
+    'Keeps the file, leaves it out of the game': 'Mantém o arquivo, deixa-o fora do jogo',
+    'Local unsigned developer build · {commit} · {id}': 'Compilação local de desenvolvedor sem assinatura · {commit} · {id}',
+    'Missing developer packaging inputs: {files}. Build companions with cargo build -p horizon-client-lib --bin horizon-ctl -p horizon-prepare -p horizon-server. Run horizon-prepare compile-exporters --root CHECKOUT, then copy its server, client and manifest.json into CHECKOUT/exporters/.': 'Entradas de empacotamento de desenvolvedor ausentes: {files}. Compile os acompanhantes com cargo build -p horizon-client-lib --bin horizon-ctl -p horizon-prepare -p horizon-server. Rode horizon-prepare compile-exporters --root CHECKOUT e copie server, client e manifest.json para CHECKOUT/exporters/.',
+    'Native mods route: {route}.': 'Rota de mods nativos: {route}.',
+    'Nothing to build': 'Nada para compilar',
+    'Offline developer session: single-player only; no account features.': 'Sessão de desenvolvedor offline: só um jogador; sem recursos de conta.',
+    'Prebuilt game: only the mods compile': 'Jogo pré-compilado: só os mods compilam',
+    'Show last log': 'Mostrar último log',
+    'Source interrupted: {error}': 'Fonte interrompida: {error}',
+    'The build is running. Cancel it from the card above.': 'A compilação está em andamento. Cancele-a no cartão acima.',
+    "The checkout's release packager failed; no developer build was installed.": 'O empacotador de release do checkout falhou; nenhuma compilação de desenvolvedor foi instalada.',
+    'The developer checkout has dirty tracked inputs. Commit your changes first, then rebuild the game and retry.': 'O checkout de desenvolvedor tem entradas rastreadas não commitadas. Commite suas alterações primeiro, recompile o jogo e tente de novo.',
+    'The developer checkout has no HEAD commit.': 'O checkout de desenvolvedor não tem commit HEAD.',
+    'The packaged exporters are missing, changed or do not match the checkout sources. Recompile the exporters before installing.': 'Os exportadores empacotados estão ausentes, alterados ou não correspondem às fontes do checkout. Recompile os exportadores antes de instalar.',
+    'The prebuilt game cannot expose {crate}: it is build-only or has ambiguous metadata.': 'O jogo pré-compilado não pode expor {crate}: é só de compilação ou tem metadados ambíguos.',
+    'The prebuilt game for {revision} was made for another build ({commit}, {target}, {side}, {rustc}).': 'O jogo pré-compilado para {revision} foi feito para outra compilação ({commit}, {target}, {side}, {rustc}).',
+    'The prebuilt game has no {crate}.': 'O jogo pré-compilado não tem {crate}.',
+    'The real horizon-client executable built from that committed checkout': 'O executável horizon-client real compilado daquele checkout commitado',
+    'The server gets a copy: your single-player world stays as it is.': 'O servidor recebe uma cópia: seu mundo de um jogador fica como está.',
+    'The source archive contains a path outside its folder.': 'O arquivo de fonte contém um caminho fora da sua pasta.',
+    'The trusted clean Horizon checkout to package': 'O checkout limpo e confiável do Horizon a empacotar',
+    'This game cannot enforce offline developer single-player. Rebuild and reinstall the developer game and its native mods.': 'Este jogo não consegue impor o um-jogador offline de desenvolvedor. Recompile e reinstale o jogo de desenvolvedor e seus mods nativos.',
+    "This instance's build waits until it finishes.": 'A compilação desta instância espera até terminar.',
+    'Turn off {mod}': 'Desativar {mod}',
+    'Uses game internals ({count})': 'Usa internos do jogo ({count})',
+    'What the last build printed': 'O que a última compilação imprimiu',
+    'You have no single-player world yet: play one first, or choose New world.': 'Você ainda não tem mundo de um jogador: jogue um primeiro, ou escolha Novo mundo.',
+    'Your game already has this mod.': 'Seu jogo já tem este mod.',
+    '{build} built and selected for its instance.': '{build} compilado e selecionado para sua instância.',
+    "{error} Run `cargo horizon-mod update --horizon {commit}` in each mod's folder to pin it to this game, then build again.": '{error} Rode `cargo horizon-mod update --horizon {commit}` na pasta de cada mod para fixá-lo neste jogo e compile de novo.',
+    "{library} is a wasm mod; native mod {mod} depends on it: mixed native and wasm dependencies aren't supported yet": '{library} é um mod wasm; o mod nativo {mod} depende dele: dependências mistas nativas e wasm ainda não são suportadas',
+    '{mod} uses {count} game internals: {paths}': '{mod} usa {count} internos do jogo: {paths}',
+    '{mod}: layout mismatch in library {library} for type {type}': '{mod}: layout incompatível na biblioteca {library} para o tipo {type}',
+    '{path} is not a native mod project.': '{path} não é um projeto de mod nativo.',
+    '{support} in Horizon': '{support} no Horizon',
+    '{title} {version} waits for you: code mods update only when you choose to update them.': '{title} {version} espera por você: mods de código atualizam só quando você escolhe atualizá-los.',
+    '{version} is not an installed base. Choose an installed release, Nightly or local unsigned developer build.': '{version} não é uma base instalada. Escolha uma release instalada, Nightly ou compilação local de desenvolvedor sem assinatura.',
+}
+
 
 def holes(s: str) -> list[str]:
     return sorted(re.findall(r"\{(\w+)\}", s))
@@ -533,8 +603,10 @@ def main() -> int:
     args = ap.parse_args()
     table = json.loads(PT_BR.read_text(encoding="utf-8"))
     missing = [k for k in PORTUGUESE if k not in table]
+    dummy_missing = [k for k in DUMMY_FIXES if k not in table]
+    assert not dummy_missing, f"dummy fixes absent: {dummy_missing[:3]}"
     dupes = [k for k in PORTUGUESE if k in table]
-    for en, pt in PORTUGUESE.items():
+    for en, pt in list(PORTUGUESE.items()) + list(DUMMY_FIXES.items()):
         assert holes(en) == holes(pt), f"holes differ: {en!r}"
         assert pt.strip(), f"empty value: {en!r}"
     print(f"pt-br.json: {len(table)} keys; PORTUGUESE holds {len(PORTUGUESE)}; "
@@ -545,6 +617,7 @@ def main() -> int:
     if args.report or not args.apply:
         return 0
     table.update(PORTUGUESE)
+    table.update({k: v for k, v in DUMMY_FIXES.items() if k in table})
     PT_BR.write_text(json.dumps(table, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {PT_BR} with {len(table)} keys")
     return 0
