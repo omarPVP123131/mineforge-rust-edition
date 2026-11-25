@@ -164,9 +164,9 @@ fn empty_or_prebuilt_only_fork_has_no_game_or_launcher_update() {
                 Vec::new,
                 |list| {
                     launcher_releases_in_with(list, |url| {
-                        assert!(
-                            url.starts_with("https://api.github.com/repos/horizon-rust/horizon/")
-                        );
+                        assert!(url.starts_with(
+                            "https://api.github.com/repos/omarPVP123131/mineforge-rust-edition/"
+                        ));
                         Ok(missing.clone())
                     })
                 },
@@ -204,7 +204,7 @@ fn each_platform_download_is_bound_to_the_fork_not_the_provider_url() {
     ];
     let assets: Vec<_> = platforms.iter().flat_map(|(_, _, game, launcher)| [game, launcher])
         .map(|name| serde_json::json!({"name": name, "size": 9,
-            "browser_download_url": "https://github.com/horizon-rust/horizon/releases/download/wrong/file"}))
+            "browser_download_url": "https://github.com/omarPVP123131/mineforge-rust-edition/releases/download/wrong/file"}))
         .collect();
     let list = serde_json::json!([
         {"tag_name": "v0.9.9", "assets": assets},
@@ -227,7 +227,7 @@ fn each_platform_download_is_bound_to_the_fork_not_the_provider_url() {
                 parsed[0].asset,
                 Some((
                     format!(
-                        "https://github.com/horizon-rust/horizon/releases/download/{tag}/{expected}"
+                        "https://github.com/omarPVP123131/mineforge-rust-edition/releases/download/{tag}/{expected}"
                     ),
                     9
                 ))
@@ -257,7 +257,7 @@ fn decoy_asset_names_never_replace_the_exact_platform_asset() {
                 got[0].asset,
                 Some((
                     format!(
-                        "https://github.com/horizon-rust/horizon/releases/download/{encoded}/{asset}"
+                        "https://github.com/omarPVP123131/mineforge-rust-edition/releases/download/{encoded}/{asset}"
                     ),
                     2
                 ))
@@ -280,7 +280,7 @@ fn decoy_asset_names_never_replace_the_exact_platform_asset() {
     assert!(draft.is_empty());
     assert_eq!(
         crate::signed::asset_url("../../x", "../evil.zip"),
-        "https://github.com/horizon-rust/horizon/releases/download/..%2F..%2Fx/..%2Fevil.zip"
+        "https://github.com/omarPVP123131/mineforge-rust-edition/releases/download/..%2F..%2Fx/..%2Fevil.zip"
     );
 }
 

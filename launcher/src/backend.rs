@@ -11,7 +11,7 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 
 /// Authority for game, launcher and native SDK release reads on this fork.
-pub const REPO: &str = "horizon-rust/horizon";
+pub const REPO: &str = "omarPVP123131/mineforge-rust-edition";
 
 /// Where a crash is reported.
 pub fn issues_url() -> String {

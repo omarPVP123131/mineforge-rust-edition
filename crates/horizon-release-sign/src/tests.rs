@@ -6,7 +6,7 @@ fn repository_trust_is_isolated_and_unknown_repositories_fail_closed() {
     let keys = |repo| parse_keys(repository_keys(repo, &upstream_text)).unwrap();
     let sums = sums_file(&[("game.tar.gz".into(), "ab".repeat(32))]);
     let tag = "nightly-2026-11-10-abcdef0";
-    let repository = "horizon-rust/horizon";
+    let repository = "omarPVP123131/mineforge-rust-edition";
     assert!(
         verify(
             tag,
@@ -38,7 +38,7 @@ fn repository_trust_is_isolated_and_unknown_repositories_fail_closed() {
     assert!(keys("unknown/horizon").is_empty());
     assert!(trusted_keys_for("unknown/horizon").is_empty());
     assert_eq!(
-        trusted_keys_for("horizon-rust/horizon"),
+        trusted_keys_for("omarPVP123131/mineforge-rust-edition"),
         parse_keys(KEYS).unwrap()
     );
 }
@@ -51,7 +51,7 @@ fn sdk_key_variable_is_honoured_only_with_debug_assertions() {
     let public = parse_keys(&signer.public_base64()).unwrap()[0];
     // SAFETY: this is the only test that touches the variable, and nothing else here reads it.
     unsafe { std::env::set_var(SDK_KEY_VAR, signer.public_base64()) };
-    let repository = "horizon-rust/horizon";
+    let repository = "omarPVP123131/mineforge-rust-edition";
     let trusted = sdk_keys_for(repository).contains(&public);
     assert_eq!(trusted, cfg!(debug_assertions));
     assert_eq!(

@@ -82,7 +82,7 @@ fn check_folder(args: &[String]) -> Result<(), String> {
     let repository = repositories
         .first()
         .map(String::as_str)
-        .unwrap_or("horizon-rust/horizon");
+        .unwrap_or("omarPVP123131/mineforge-rust-edition");
     let (only, rest) = options(&rest, "--only");
     let (signature_file, rest) = options(&rest, "--signature");
     let signature_file = signature_file
@@ -108,13 +108,17 @@ fn check_folder(args: &[String]) -> Result<(), String> {
     let sums = std::fs::read(folder.join(SUMS)).map_err(|e| format!("{SUMS}: {e}"))?;
     let listed = match std::fs::read_to_string(folder.join(&signature_file)) {
         Ok(signature) if !keys.is_empty() => verify(&tag, &sums, &signature, &keys)?,
-        Ok(_) if publishing && repository == "horizon-rust/horizon" => {
+        Ok(_) if publishing && repository == "omarPVP123131/mineforge-rust-edition" => {
             println!(
                 "::warning::{tag}: signed, but release-keys.txt lists no key yet, so launchers can't check it"
             );
             horizon_release_sign::parse_sums(&String::from_utf8_lossy(&sums))?
         }
-        Err(_) if publishing && keys.is_empty() && repository == "horizon-rust/horizon" => {
+        Err(_)
+            if publishing
+                && keys.is_empty()
+                && repository == "omarPVP123131/mineforge-rust-edition" =>
+        {
             println!(
                 "::warning::{tag}: published with {SUMS} but unsigned: release-keys.txt lists no key yet"
             );

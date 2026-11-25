@@ -37,10 +37,10 @@ pub type PublicKey = [u8; 32];
 /// The public keys built in: those in `release-keys.txt`. A file that doesn't parse gives none,
 /// so every download is refused rather than trusted (a test keeps the file valid).
 pub fn trusted_keys() -> Vec<PublicKey> {
-    trusted_keys_for("horizon-rust/horizon")
+    trusted_keys_for("omarPVP123131/mineforge-rust-edition")
 }
 
-/// Repository-scoped release trust: `release-keys.txt` for horizon-rust/horizon. Any other repository has no
+/// Repository-scoped release trust: `release-keys.txt` for omarPVP123131/mineforge-rust-edition. Any other repository has no
 /// trusted keys, so its downloads fail closed.
 pub fn trusted_keys_for(repository: &str) -> Vec<PublicKey> {
     parse_keys(repository_keys(repository, KEYS)).unwrap_or_default()
@@ -91,7 +91,7 @@ fn extra_sdk_keys() -> Vec<PublicKey> {
 
 fn repository_keys<'a>(repository: &str, keys: &'a str) -> &'a str {
     match repository {
-        "horizon-rust/horizon" => keys,
+        "omarPVP123131/mineforge-rust-edition" => keys,
         _ => "",
     }
 }

@@ -1,0 +1,254 @@
+name: mfre game build
+# MineForge Rust Edition (MFRE): builds the game for the platforms the fork ships — Linux x86_64
+# (game and server) and Windows x64 — from `ref`, entirely on GitHub-hosted runners. Adapted from
+# upstream's game-build.yml: no self-hosted Mac (no macOS legs, no compile turns, no smoke test on
+# a Mac mini), and the exporters job downloads the pinned Minecraft itself from Mojang's public
+# CDN with every SHA-1 checked (tools/ci/mfre_fetch_minecraft.py) instead of reading the
+# maintainer's imported copy — the fork's policy since D26: Mojang files are downloaded internally
+# once the EULA is accepted, never redistributed. Holds no secrets: signing is the caller's job
+# (mfre-release.yml). Called with the caller's commit; see docs/release-flow.md for the original
+# design this follows.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: The commit to build
+        type: string
+        required: true
+      version:
+        description: The version built in (HORIZON_VERSION), e.g. 26.3.0
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  wasm-std:
+    # The one shared std member for wasm mods, host-free (as upstream).
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - id: rust
+        run: echo "version=$(cat tools/ci/rust-version)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: ${{ steps.rust.outputs.version }}
+          components: rust-src
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: mfre-wasm-std
+      - name: Build the shared wasm standard library
+        run: |
+          mkdir -p wasm-std
+          cargo run --locked -p cargo-horizon-mod -- wasm-std wasm-std/horizon-wasm-std.wasm
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wasm-std
+          path: wasm-std/horizon-wasm-std.wasm
+          if-no-files-found: error
+          retention-days: 3
+
+  exporters:
+    # The original exporters, compiled and validated against the pinned Minecraft. A hosted
+    # runner has no imported copy: tools/ci/mfre_fetch_minecraft.py downloads the pinned version
+    # JSON, both jars, every library and the asset store from Mojang's public CDN, checking each
+    # SHA-1 against research-lock.json and the version JSON, and horizon-prepare imports that.
+    # Only our compiled classes and their manifest leave the job, as upstream.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+          clean: true
+      - id: rust
+        run: echo "version=$(cat tools/ci/rust-version)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: ${{ steps.rust.outputs.version }}
+      - name: The Java the pinned Minecraft needs (research-lock's java_major), a JDK for javac
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: |
+            25
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: mfre-exporters
+      - name: The pinned Minecraft, downloaded from Mojang and verified
+        run: python3 tools/ci/mfre_fetch_minecraft.py --dest .local/ci-minecraft
+      - name: The preparer
+        run: cargo build --release --locked -p horizon-prepare
+      - name: Import and prepare the pinned version
+        run: |
+          set -euo pipefail
+          version=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' research-lock.json | head -1)
+          mc="$PWD/.local/ci-minecraft"
+          target/release/horizon-prepare --prepare --root "$PWD" \
+            --version-json "$mc/$version.json" --client-jar "$mc/client.jar" \
+            --server-jar "$mc/server.jar" --libraries-dir "$mc/libraries" \
+            --assets-dir "$mc/assets"
+      - name: Compile and validate original exporters against the pinned jars
+        run: |
+          set -euo pipefail
+          rm -rf .local/exporters
+          bundle=$(target/release/horizon-prepare compile-exporters --root "$PWD" | tail -1)
+          mkdir -p exporters
+          cp -R "$bundle/server" "$bundle/client" "$bundle/manifest.json" exporters/
+          stray=$(find exporters -type f ! -path exporters/manifest.json \
+            ! \( -name '*.class' \( -path 'exporters/server/dev/horizonlab/parity/*' -o -path 'exporters/client/dev/horizonlab/parity/*' \) \))
+          [ -z "$stray" ] || { echo "::error::not one of our classes: $stray"; exit 1; }
+          python3 tools/check_prepare_exporters.py --binary target/release/horizon-prepare
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: original-exporters
+          path: exporters/
+          if-no-files-found: error
+          retention-days: 3
+
+  build:
+    needs: [exporters, wasm-std]
+    name: build ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux
+            os: ubuntu-22.04
+            dir: horizon-linux-x86_64
+            asset: horizon-linux-x86_64.tar.gz
+            server_dir: horizon-server-linux-x86_64
+            server_asset: horizon-server-linux-x86_64.tar.gz
+          - name: windows
+            os: windows-latest
+            dir: horizon-windows-x64
+            asset: horizon-windows-x64.zip
+            exe: .exe
+            pe_arch: x64
+            # The C runtime linked in, so the game runs without the Visual C++ redistributable.
+            rustflags: -C target-feature=+crt-static
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ startsWith(matrix.name, 'windows') && 90 || 75 }}
+    env:
+      RUSTFLAGS: ${{ matrix.rustflags }}
+      HORIZON_VERSION: ${{ inputs.version }}
+      BIN: target/release
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+          clean: true
+      - id: rust
+        run: echo "version=$(cat tools/ci/rust-version)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: ${{ steps.rust.outputs.version }}
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: mfre-${{ matrix.name }}
+      - name: ALSA and udev headers
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libasound2-dev libudev-dev
+      - name: Build the official game, horizon-ctl, horizon-prepare and horizon-server
+        run: |
+          cargo build --release --locked -p horizon-official --bin horizon-official \
+            -p horizon-client-lib --bin horizon-ctl -p horizon-prepare --bin horizon-prepare \
+            -p horizon-server --bin horizon-server
+      - name: The official game is the game players get, under its name
+        run: cp -f "$BIN/horizon-official${{ matrix.exe }}" "$BIN/horizon-client${{ matrix.exe }}"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: wasm-std
+          path: wasm-std
+      - name: Install the shared wasm standard library beside the game
+        run: cp wasm-std/horizon-wasm-std.wasm "$BIN/horizon-wasm-std.wasm"
+      - name: Every program the release folder takes was built
+        run: |
+          for binary in horizon-client horizon-ctl horizon-prepare horizon-server; do
+            test -f "$BIN/$binary${{ matrix.exe }}" || { echo "::error::$BIN/$binary${{ matrix.exe }} is missing"; exit 1; }
+          done
+      - name: Verify Windows executable architecture
+        if: runner.os == 'Windows'
+        run: |
+          python tools/check_pe_arch.py "${{ matrix.pe_arch }}" \
+            "$BIN/horizon-client${{ matrix.exe }}" "$BIN/horizon-ctl${{ matrix.exe }}" \
+            "$BIN/horizon-prepare${{ matrix.exe }}" "$BIN/horizon-server${{ matrix.exe }}"
+      - name: Only system libraries
+        run: |
+          for binary in horizon-client horizon-ctl horizon-prepare horizon-server; do
+            file="$BIN/$binary${{ matrix.exe }}"
+            ${{ runner.os == 'Windows' && 'python' || 'python3' }} tools/check_imports.py "$file"
+          done
+      - name: Baseline x86-64 CPUs only
+        run: |
+          set -euo pipefail
+          rustup component add llvm-tools
+          ${{ runner.os == 'Windows' && 'python' || 'python3' }} tools/check_cpu_baseline.py \
+            $(for binary in horizon-client horizon-ctl horizon-prepare horizon-server; do echo "$BIN/$binary${{ matrix.exe }}"; done)
+      - name: Every program starts
+        run: |
+          set -euo pipefail
+          bin=$BIN
+          "$bin/horizon-client${{ matrix.exe }}" --help | grep -q -- '--resources'
+          "$bin/horizon-ctl${{ matrix.exe }}" --help > /dev/null
+          "$bin/horizon-prepare${{ matrix.exe }}" --help | grep -q -- '--minecraft-dir'
+          for binary in horizon-prepare horizon-server; do
+            out=$("$bin/$binary${{ matrix.exe }}" --version | tr -d '\r')
+            echo "$out"
+            [[ "$out" == "$binary $HORIZON_VERSION" ]] || { echo "::error::expected $binary $HORIZON_VERSION"; exit 1; }
+          done
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: original-exporters
+          path: exporters
+      - name: Package
+        run: |
+          set -euo pipefail
+          cargo run --locked -p xtask -- package "$BIN/horizon-client${{ matrix.exe }}" "dist/${{ matrix.dir }}"
+          if [[ "${{ matrix.name }}" == windows ]]; then
+            # Microsoft's DXC, pinned and checksummed, which DirectX 12 uses on integrated GPUs.
+            python tools/ci/fetch_dxc.py "dist/${{ matrix.dir }}"
+          fi
+          cd dist
+          rm -f "${{ matrix.asset }}"
+          case "${{ matrix.asset }}" in
+            *.tar.gz) tar czf "${{ matrix.asset }}" "${{ matrix.dir }}" ;;
+            *) 7z a -tzip "${{ matrix.asset }}" "${{ matrix.dir }}" > /dev/null ;;
+          esac
+          ls -l "${{ matrix.asset }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ matrix.asset }}
+          path: dist/${{ matrix.asset }}
+          if-no-files-found: error
+          retention-days: 3
+      - name: The server build (the game without sound or controllers, as horizon-engine)
+        if: matrix.server_asset
+        run: |
+          set -euo pipefail
+          cargo build --release --locked -p horizon-game --no-default-features --bin horizon-client
+          cargo run --locked -p xtask -- package-server target/release/horizon-client "dist/${{ matrix.server_dir }}"
+          folder="dist/${{ matrix.server_dir }}"
+          python3 tools/check_imports.py --server "$folder/horizon-engine" "$folder/horizon-server" "$folder/horizon-prepare"
+          "$folder/horizon-engine" --help | grep -q -- '--resources'
+          [[ "$("$folder/horizon-server" --version)" == "horizon-server $HORIZON_VERSION" ]]
+          cd dist
+          rm -f "${{ matrix.server_asset }}"
+          tar czf "${{ matrix.server_asset }}" "${{ matrix.server_dir }}"
+          ls -l "${{ matrix.server_asset }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: matrix.server_asset
+        with:
+          name: ${{ matrix.server_asset }}
+          path: dist/${{ matrix.server_asset }}
+          if-no-files-found: error
+          retention-days: 3

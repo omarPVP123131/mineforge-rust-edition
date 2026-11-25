@@ -1,0 +1,131 @@
+name: mfre release
+# MineForge Rust Edition: publishes one signed game release. Push a `v*` tag (v26.3.0) or run
+# this by hand with a version. The build (mfre-game-build.yml) makes the Linux and Windows x64
+# archives and the Linux server; `sign` hashes them and signs the list with the repository's
+# RELEASE_SIGNING_KEY (base64 PKCS#8 Ed25519, tools/ci/sign_release.sh — the SHA256SUMS.sig the
+# launcher verifies against crates/horizon-release-sign/release-keys.txt); `publish` checks the
+# signature exactly as a launcher does, then creates the release. A `v*` release that is not a
+# pre-release is the fork's Stable channel (launcher/src/nightly.rs, stable_builds).
+on:
+  push:
+    tags: ['v[0-9]*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The version to build and publish (the tag is v<version>)
+        required: true
+        default: '26.3.0'
+permissions:
+  contents: read
+concurrency:
+  group: mfre-release
+  cancel-in-progress: false
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - id: meta
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            tag="${GITHUB_REF#refs/tags/}"
+          else
+            tag="v${{ inputs.version }}"
+          fi
+          version="${tag#v}"
+          [[ "$tag" =~ ^v[0-9]+(\.[0-9]+)*$ ]] || { echo "::error::$tag is not v<digits>[.<digits>…]"; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: meta
+    uses: ./.github/workflows/mfre-game-build.yml
+    with:
+      ref: ${{ github.sha }}
+      version: ${{ needs.meta.outputs.version }}
+
+  sign:
+    needs: [meta, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The key's only job: hash the archives and sign with the runner's OpenSSL, as upstream.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: tools/ci/sign_release.sh
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          pattern: horizon-*
+          merge-multiple: true
+      - name: Sign the checksums for this release (SHA256SUMS.sig)
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+        run: |
+          bash tools/ci/sign_release.sh "${{ needs.meta.outputs.tag }}" \
+            dist/horizon-linux-x86_64.tar.gz dist/horizon-windows-x64.zip \
+            dist/horizon-server-linux-x86_64.tar.gz
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: signature
+          path: dist/SHA256SUMS*
+          if-no-files-found: error
+          retention-days: 3
+
+  publish:
+    needs: [meta, build, sign]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: stable
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+          pattern: horizon-*
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: signature
+          path: dist
+      - name: The signature, checked as launchers check it
+        run: |
+          cargo run --locked --quiet -p horizon-release-sign -- verify \
+            --repository "$GITHUB_REPOSITORY" --tag "${{ needs.meta.outputs.tag }}" --publishing dist
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ needs.meta.outputs.tag }}"
+          version="${{ needs.meta.outputs.version }}"
+          cat > notes.md <<NOTES
+          MineForge Rust Edition ${version} — el juego (cliente Rust, Minecraft ${version%.*}) para
+          Linux x86_64 y Windows x64, más el servidor dedicado de Linux.
+
+          Instalación: desde el launcher (Inicio → la versión estable que aparece), que verifica
+          SHA256SUMS y su firma antes de descargar. Los archivos adjuntos:
+
+          - \`horizon-windows-x64.zip\` — el juego para Windows x64
+          - \`horizon-linux-x86_64.tar.gz\` — el juego para Linux x86_64
+          - \`horizon-server-linux-x86_64.tar.gz\` — el servidor dedicado (jugar con amigos)
+          - \`SHA256SUMS\` + \`SHA256SUMS.sig\` — las sumas y su firma Ed25519
+          NOTES
+          gh release create "$tag" \
+            dist/horizon-linux-x86_64.tar.gz dist/horizon-windows-x64.zip \
+            dist/horizon-server-linux-x86_64.tar.gz \
+            dist/SHA256SUMS dist/SHA256SUMS.sig \
+            --title "MineForge Rust Edition ${version}" --notes-file notes.md
