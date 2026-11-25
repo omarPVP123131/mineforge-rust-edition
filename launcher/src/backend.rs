@@ -3877,11 +3877,13 @@ fn launcher_asset_running_from(appimage: bool) -> Option<&'static str> {
 
 /// Development builds and `HORIZON_LAUNCHER_NO_SELF_UPDATE` never replace themselves.
 ///
-/// MFRE (D6): this fork never replaces itself — the release it would fetch is upstream's, so a
-/// self-update would silently swap the fork out for official Horizon. `HORIZON_SELF_UPDATE=1`
-/// stays for development against a release channel of our own.
+/// MFRE (D27): self-update is on again, as upstream — the feed it reads is now the fork's own
+/// repository and every launcher archive it stages is checked against the fork's release keys
+/// (`signed_digest`), so an update can only ever be another MineForge Rust Edition. D6 turned
+/// this off while the feed still pointed at upstream, where an update would have silently
+/// swapped the fork out for official Horizon.
 pub fn self_update_allowed() -> bool {
-    cfg!(debug_assertions) && std::env::var_os("HORIZON_SELF_UPDATE").is_some()
+    !cfg!(debug_assertions) && std::env::var_os("HORIZON_LAUNCHER_NO_SELF_UPDATE").is_none()
 }
 
 /// The version in `horizon-launcher --version`'s output (`horizon-launcher 0.1.5`).

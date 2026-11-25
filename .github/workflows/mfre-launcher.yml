@@ -1,0 +1,219 @@
+name: mfre launcher
+# MineForge Rust Edition: publishes the launcher itself. Push a `launcher@X.Y.Z` tag or run this
+# by hand with a version. Builds the launcher for Windows x64 and Linux x86-64 on GitHub-hosted
+# runners (adapted from upstream's launcher.yml: no macOS legs, no release train, no AppImage),
+# signs SHA256SUMS with RELEASE_SIGNING_KEY (as mfre-release.yml does for the game) and publishes
+# the release, never marked latest (the game release stays the repository's latest).
+# Assets, exactly what a launcher's self-update looks for (crates/horizon-addresses, PLATFORMS):
+#   horizon-launcher-windows-x64.zip      the launcher, zipped (updates itself from this)
+#   horizon-launcher-setup.exe            the same binary under its setup name: the per-user
+#                                         installer a player double-clicks (launcher/src/installer.rs)
+#   horizon-launcher-linux-x86_64.tar.gz  the launcher for Linux
+on:
+  push:
+    tags: ['launcher@*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The launcher version to build and publish (the tag is launcher@<version>)
+        required: true
+        default: '26.3.0'
+permissions:
+  contents: read
+concurrency:
+  group: mfre-launcher
+  cancel-in-progress: false
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - id: meta
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/launcher@* ]]; then
+            tag="${GITHUB_REF#refs/tags/}"
+          else
+            tag="launcher@${{ inputs.version }}"
+          fi
+          version="${tag#launcher@}"
+          [[ "$version" =~ ^[0-9]+(\.[0-9]+)*$ ]] || { echo "::error::$tag is not launcher@<digits>[.<digits>…]"; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: meta
+    name: build ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux
+            os: ubuntu-22.04
+            asset: horizon-launcher-linux-x86_64.tar.gz
+            binary: horizon-launcher
+          - name: windows
+            os: windows-latest
+            asset: horizon-launcher-windows-x64.zip
+            binary: horizon-launcher.exe
+            setup_asset: horizon-launcher-setup.exe
+            pe_arch: x64
+            # The C runtime linked in: without it the launcher asks for VCRUNTIME140.dll.
+            rustflags: -C target-feature=+crt-static
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      RUSTFLAGS: ${{ matrix.rustflags }}
+      BIN: target/release
+      # The release's version and tag, built in (launcher/src/backend.rs VERSION and own_tag).
+      HORIZON_LAUNCHER_VERSION: ${{ needs.meta.outputs.version }}
+      HORIZON_LAUNCHER_TAG: ${{ needs.meta.outputs.tag }}
+    defaults:
+      run:
+        working-directory: launcher
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          clean: true
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: launcher
+          shared-key: mfre-launcher-${{ matrix.name }}
+      - name: Linux libraries GPUI links to
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxkbcommon-x11-dev libwayland-dev libx11-xcb-dev libfontconfig-dev libvulkan-dev libasound2-dev patchelf
+      - run: cargo build --release --locked
+      - name: Verify Windows executable architecture
+        if: runner.os == 'Windows'
+        run: python ../tools/check_pe_arch.py "${{ matrix.pe_arch }}" "$BIN/${{ matrix.binary }}"
+      - name: Unrelated DLLs cannot intercept launcher or setup startup
+        if: runner.os == 'Windows'
+        run: python ../tools/test_launcher_dll_search.py "$BIN/${{ matrix.binary }}"
+      - name: The version is the release's
+        run: |
+          out=$("$BIN/${{ matrix.binary }}" --version)
+          echo "$out"
+          [[ "$out" == "horizon-launcher $HORIZON_LAUNCHER_VERSION" ]] || { echo "::error::expected horizon-launcher $HORIZON_LAUNCHER_VERSION"; exit 1; }
+      - name: Only system libraries
+        run: |
+          file="$BIN/${{ matrix.binary }}"
+          case "$RUNNER_OS" in
+            Windows) python ../tools/check_imports.py "$file" ;;
+          esac
+      - name: The feed it will read answers (the fork's own releases)
+        env:
+          HORIZON_LAUNCHER_HOME: ${{ runner.temp }}/mfre-launcher-smoke
+          HORIZON_HOME: ${{ runner.temp }}/mfre-launcher-smoke/game
+          HORIZON_LAUNCHER_NO_SELF_UPDATE: '1'
+          HORIZON_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          launcher="$PWD/$BIN/${{ matrix.binary }}"
+          retry() { for i in 1 2 3 4; do "$@" && return 0; sleep $((i * 15)); done; return 1; }
+          retry "$launcher" versions | head -20
+          "$launcher" links --json > /dev/null
+      - name: Package
+        run: |
+          set -euo pipefail
+          rm -rf dist out && mkdir -p dist out
+          cp "$BIN/${{ matrix.binary }}" dist/
+          if [[ "${{ matrix.asset }}" == *.tar.gz ]]; then
+            (cd dist && tar czf ../out/${{ matrix.asset }} ${{ matrix.binary }})
+          else
+            (cd dist && 7z a ../out/${{ matrix.asset }} ${{ matrix.binary }} > /dev/null)
+          fi
+          ls -l out
+      - name: Setup exe (Windows)
+        # The launcher's binary under another name: started with no arguments it shows the
+        # per-user installer instead of Home (launcher/src/installer.rs).
+        if: runner.os == 'Windows'
+        run: cp "$BIN/${{ matrix.binary }}" "out/${{ matrix.setup_asset }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ matrix.asset }}
+          path: launcher/out/*
+          if-no-files-found: error
+          retention-days: 3
+
+  sign:
+    needs: [meta, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: tools/ci/sign_release.sh
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          pattern: horizon-launcher-*
+          merge-multiple: true
+      - name: Sign the checksums (SHA256SUMS, SHA256SUMS.sig)
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+        run: bash tools/ci/sign_release.sh "${{ needs.meta.outputs.tag }}" dist/horizon-launcher-*
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: signature
+          path: dist/SHA256SUMS*
+          if-no-files-found: error
+          retention-days: 3
+
+  publish:
+    needs: [meta, build, sign]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: stable
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+          pattern: horizon-launcher-*
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: signature
+          path: dist
+      - name: The signature, checked as launchers check it
+        run: |
+          cargo run --locked --quiet -p horizon-release-sign -- verify \
+            --repository "$GITHUB_REPOSITORY" --tag "${{ needs.meta.outputs.tag }}" --publishing dist
+      - name: Publish ${{ needs.meta.outputs.tag }} (never latest)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ needs.meta.outputs.tag }}"
+          version="${{ needs.meta.outputs.version }}"
+          cat > notes.md <<NOTES
+          Launcher de MineForge Rust Edition ${version} para Windows x64 y Linux x86-64.
+
+          - \`horizon-launcher-setup.exe\` — instalador por usuario de Windows (doble clic)
+          - \`horizon-launcher-windows-x64.zip\` — el launcher suelto para Windows x64
+          - \`horizon-launcher-linux-x86_64.tar.gz\` — el launcher para Linux x86-64
+          - \`SHA256SUMS\` + \`SHA256SUMS.sig\` — sumas y firma Ed25519 (el launcher las verifica al actualizarse)
+          NOTES
+          gh release create "$tag" --target "${{ github.sha }}" --latest=false \
+            --title "Launcher MFRE ${version}" --notes-file notes.md \
+            dist/horizon-launcher-* dist/SHA256SUMS dist/SHA256SUMS.sig
