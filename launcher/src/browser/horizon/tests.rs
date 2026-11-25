@@ -1524,3 +1524,45 @@ fn mfre_index_merges_beside_horizons() {
     assert_eq!(base.projects.len(), before);
     assert!(!mfre_ids().contains(&dup_id));
 }
+
+/// MFRE: the catalog the fork publishes is an index the reader accepts, and its file and icon
+/// pass every check the browser makes before it shows or installs anything.
+#[test]
+fn mfre_catalog_passes_the_readers_checks() {
+    let at = Path::new(env!("CARGO_MANIFEST_DIR")).join("../registry/index.json");
+    let text = fs::read_to_string(at).unwrap();
+    let index = Index::parse(&text).unwrap();
+    let p = index.project("mfre_ember").expect("MFRE Ember is listed");
+    let v = index
+        .installable_for(p, GAME, &[] as &[String])
+        .expect("MFRE Ember installs for this game");
+    assert_eq!(
+        download::refuse(&FileRef {
+            url: v.file.url.clone(),
+            name: v.file.name.clone(),
+            size: v.file.size,
+            sha512: None,
+            sha256: Some(v.file.sha256.clone()),
+            sha1: None,
+            primary: true,
+        }),
+        None
+    );
+    let icon = p.icon.as_deref().expect("MFRE Ember has an icon");
+    assert_eq!(crate::browser::images::refuse(icon), None);
+    // The icon exists in the repository the index names, at the address it names.
+    let png = Path::new(env!("CARGO_MANIFEST_DIR")).join("../registry/icons/mfre_ember.png");
+    assert!(png.exists());
+    assert!(icon.ends_with("registry/icons/mfre_ember.png"));
+    // It folds into a real index, and its links go to the fork.
+    let mut merged = sample();
+    merge_index(&mut merged, index);
+    let merged_project = project_of(&merged, merged.project("mfre_ember").unwrap()).unwrap();
+    assert_eq!(
+        merged_project.page,
+        "https://github.com/omarPVP123131/mineforge-rust-edition"
+    );
+    // It is remembered as the fork's, so its report link goes to the fork's issues.
+    assert!(mfre_ids().contains("mfre_ember"));
+    assert!(MFRE_REPORT.contains("omarPVP123131/mineforge-rust-edition/issues"));
+}
