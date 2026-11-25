@@ -62,8 +62,10 @@ impl Launcher {
             .next()
             .and_then(|b| self.release_to_install(&b.tag))
             .ok_or_else(|| tr("There is no MineForge version to install yet.").to_string())?;
+        // MFRE: the consent is the checkbox's act on this page (or `eula accept` for the
+        // command line); the button never records it by itself.
         if !backend::mfre_eula_accepted() {
-            backend::mfre_accept_eula()?;
+            return Err(tr("Tick the EULA box to install MineForge.").to_string());
         }
         let taken: Vec<String> = instances::list().iter().map(|i| i.name.clone()).collect();
         let taken: Vec<&str> = taken.iter().map(String::as_str).collect();
@@ -100,6 +102,12 @@ impl Launcher {
     }
 
     pub(crate) fn install(&mut self, release: &Release) {
+        // MFRE: no install from the GUI before the Minecraft EULA consent is on record: the
+        // Mojang download that Play needs later would refuse it with command-line words.
+        if !backend::mfre_eula_accepted() {
+            crate::glass_toast::say(tr("Tick the EULA box to install MineForge.").to_string());
+            return;
+        }
         let id = self
             .selected_instance()
             .map_or_else(|| instances::DEFAULT.into(), |i| i.id.clone());

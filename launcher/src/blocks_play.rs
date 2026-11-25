@@ -136,13 +136,23 @@ impl Launcher {
                                         .on_click(|_, _, cx| cx.open_url(backend::MFRE_EULA_URL)),
                                 ),
                         );
+                        // MFRE: the box is the only way to consent, so say what it unlocks
+                        // (an existing key, translated) while it is unticked.
+                        wizard = wizard.child(
+                            text(theme::CAPTION)
+                                .text_color(t.muted)
+                                .child(tr("Tick the EULA box to install MineForge.")),
+                        );
                     }
                     let offer = self
                         .stable_builds()
                         .into_iter()
                         .next()
                         .and_then(|b| self.release_to_install(&b.tag));
-                    if offer.is_some() && self.installing.is_none() {
+                    // MFRE: the button appears once the box is ticked: consent is an explicit
+                    // act, never a side effect of asking for the install.
+                    if offer.is_some() && self.installing.is_none() && backend::mfre_eula_accepted()
+                    {
                         wizard = wizard.child(
                             button("install-and-play", "Install and play", Kind::Primary, &t)
                                 .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {

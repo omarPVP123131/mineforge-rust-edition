@@ -3,7 +3,9 @@ name: mfre launcher
 # by hand with a version. Builds the launcher for Windows x64 and Linux x86-64 on GitHub-hosted
 # runners (adapted from upstream's launcher.yml: no macOS legs, no release train, no AppImage),
 # signs SHA256SUMS with RELEASE_SIGNING_KEY (as mfre-release.yml does for the game) and publishes
-# the release, never marked latest (the game release stays the repository's latest).
+# the release as the repository's latest: the launcher is the release a visitor should download,
+# and nothing reads the latest flag for its feed (the game's offer comes from the releases list,
+# nightly.rs `stable_builds`; the self-update from the same list's launcher@ tags).
 # Assets, exactly what a launcher's self-update looks for (crates/horizon-addresses, PLATFORMS):
 #   horizon-launcher-windows-x64.zip      the launcher, zipped (updates itself from this)
 #   horizon-launcher-setup.exe            the same binary under its setup name: the per-user
@@ -129,7 +131,25 @@ jobs:
           rm -rf dist out && mkdir -p dist out
           cp "$BIN/${{ matrix.binary }}" dist/
           if [[ "${{ matrix.asset }}" == *.tar.gz ]]; then
-            (cd dist && tar czf ../out/${{ matrix.asset }} ${{ matrix.binary }})
+            # Linux's usual first failure is missing system libraries, before any window opens:
+            # the fix travels beside the binary.
+            cat > dist/LEEME-LINUX.txt <<'LEEME'
+          MineForge Rust Edition - launcher para Linux x86-64
+
+          Si al ejecutar ./horizon-launcher la terminal dice algo como
+          "error while loading shared libraries: libxkbcommon.so.0", faltan
+          librerias del sistema que el launcher necesita:
+
+            Debian/Ubuntu:  sudo apt install libxkbcommon0 libxkbcommon-x11-0 libwayland-client0 libfontconfig1 libvulkan1
+            Fedora:         sudo dnf install libxkbcommon libxkbcommon-x11 wayland-client fontconfig vulkan-loader
+            Arch:           sudo pacman -S libxkbcommon libxkbcommon-x11 wayland fontconfig vulkan-icd-loader
+
+          Despues: ./horizon-launcher -> pestana Jugar -> marca la casilla del EULA de
+          Minecraft -> "Instalar y jugar". El juego no arranca suelto: lo instala y lo
+          prepara el launcher con tu copia de Minecraft: Java Edition.
+          Codigos y avisos: https://github.com/omarPVP123131/mineforge-rust-edition
+          LEEME
+            (cd dist && tar czf ../out/${{ matrix.asset }} ${{ matrix.binary }} LEEME-LINUX.txt)
           else
             (cd dist && 7z a ../out/${{ matrix.asset }} ${{ matrix.binary }} > /dev/null)
           fi
@@ -213,7 +233,10 @@ jobs:
           - \`horizon-launcher-windows-x64.zip\` — el launcher suelto para Windows x64
           - \`horizon-launcher-linux-x86_64.tar.gz\` — el launcher para Linux x86-64
           - \`SHA256SUMS\` + \`SHA256SUMS.sig\` — sumas y firma Ed25519 (el launcher las verifica al actualizarse)
+
+          Esta es la unica release del launcher vigente: al publicar una nueva se borra la
+          anterior. Linux: si no abre, lean LEEME-LINUX.txt dentro del tar.gz.
           NOTES
-          gh release create "$tag" --target "${{ github.sha }}" --latest=false \
+          gh release create "$tag" --target "${{ github.sha }}" --latest=true \
             --title "Launcher MFRE ${version}" --notes-file notes.md \
             dist/horizon-launcher-* dist/SHA256SUMS dist/SHA256SUMS.sig
