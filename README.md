@@ -25,7 +25,17 @@
 launcher oficial). MFRE no distribuye ningún archivo de Mojang: el launcher los toma de tu copia o
 los descarga de Mojang con el EULA aceptado, verificando cada SHA-1.
 
-- **Plataformas:** Windows x64, Linux x86-64. (El juego Rust requiere GPU con Vulkan/DX12.)
+- **Plataformas:** Windows x64, Linux x86-64.
+
+## Requisitos (orientativos, en medición)
+
+- **GPU con Vulkan 1.1, DirectX 12 u OpenGL 3.3+** (integradas tipo Intel HD 4000 o mejores).
+  Sin eso el juego cae a **renderizado por software** (la CPU dibuja todo, muy lento) y lo avisa
+  con un toast al arrancar.
+- **RAM:** 4 GB mínimo, 8 GB recomendado. **Disco:** ~2 GB + las versiones instaladas.
+- **PC vieja:** dentro del juego, Opciones → Gráficos → preset **Retro** (distancia 4, nubes
+  apagadas, escala de resolución 50 %) es lo que más FPS da; detalle completo en
+  [el sitio del fork](https://omarPVP123131.github.io/mineforge-rust-edition/#requisitos).
 
 ## Compilar desde la fuente
 

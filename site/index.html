@@ -168,6 +168,7 @@
   </a>
   <a class="nl" href="#descargas">Descargas</a>
   <a class="nl" href="#instalar">Instalar</a>
+  <a class="nl" href="#requisitos">Requisitos</a>
   <a class="nl" href="#mods">Mods</a>
   <a class="nl" href="#faq">FAQ</a>
   <span class="sp"></span>
@@ -262,6 +263,44 @@
   </div>
 </div></section>
 
+<section id="requisitos"><div class="wrap">
+  <p class="kicker">Antes de instalar</p>
+  <h2>Requisitos del sistema</h2>
+  <p class="sub">El motor dibuja con <b>Vulkan, DirectX 12 u OpenGL 3.3+</b>. Si tu GPU no
+     soporta ninguno (típico en integradas anteriores a ~2012), el juego cae a <b>renderizado
+     por software</b>: la CPU dibuja todo y va muy lento — lo verás avisado en pantalla al
+     arrancar. Estos requisitos son orientativos y se están midiendo en hardware real.</p>
+  <div class="trust" style="margin-top:18px">
+    <div class="tcard">
+      <h3>Mínimo</h3>
+      <ul style="margin:8px 0 0;padding-left:18px;line-height:1.9">
+        <li>Windows 10 64-bit o Linux (glibc)</li>
+        <li>GPU con Vulkan 1.1 / DX12 / OpenGL 3.3 (Intel HD 4000 o mejor)</li>
+        <li>4 GB de RAM</li>
+        <li>~2 GB de disco + las versiones que instales</li>
+      </ul>
+    </div>
+    <div class="tcard">
+      <h3>Recomendado</h3>
+      <ul style="margin:8px 0 0;padding-left:18px;line-height:1.9">
+        <li>Windows 10/11 64-bit o Linux reciente</li>
+        <li>GPU dedicada o integrada moderna (2015+) con Vulkan</li>
+        <li>8 GB de RAM</li>
+        <li>SSD con ~5 GB libres</li>
+      </ul>
+    </div>
+    <div class="tcard">
+      <h3>PC vieja (guía rápida)</h3>
+      <ul style="margin:8px 0 0;padding-left:18px;line-height:1.9">
+        <li>En el juego: Opciones → Gráficos → preset <b>Retro</b></li>
+        <li>Escala de resolución al 50 % y ventana más pequeña</li>
+        <li>Cierra todo lo demás: con 4 GB de RAM no sobra nada</li>
+        <li>Si el aviso dice “Software rendering”, tu GPU quedó fuera: mejora modesta, milagros no</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
 <section id="mods"><div class="wrap">
   <p class="kicker">Catálogo propio</p>
   <h2>Mods del fork, dentro del launcher</h2>
@@ -285,6 +324,12 @@
   <details><summary>En Linux el launcher no abre</summary>
     <p class="a">Casi siempre faltan librerías del sistema. Dentro del tar.gz viene
     <code>LEEME-LINUX.txt</code> con el comando exacto para Debian/Ubuntu, Fedora y Arch.</p></details>
+  <details><summary>Me va a muy pocos FPS en una PC vieja</summary>
+    <p class="a">Mira la sección <a href="#requisitos" style="color:var(--ember2)">Requisitos</a>:
+    si al arrancar aparece el aviso <b>“Software rendering”</b>, tu tarjeta gráfica no soporta
+    Vulkan/DX12/OpenGL 3.3 y la CPU está dibujando el juego — ahí el techo lo pone el procesador.
+    Usa el preset <b>Retro</b> y la escala de resolución al 50 %: es lo que más FPS da en esas
+    máquinas.</p></details>
   <details><summary>¿De dónde salen los mods y cómo se verifican?</summary>
     <p class="a">De la release <code>mods-26.3.0</code> del repositorio, listados en
     <code>registry/index.json</code> con su SHA-256: el launcher no instala nada cuya suma no cuadre.</p></details>
