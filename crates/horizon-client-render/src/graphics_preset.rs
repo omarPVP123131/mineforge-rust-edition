@@ -36,6 +36,25 @@ struct Table {
 
 fn table(preset: Preset) -> Option<Table> {
     Some(match preset {
+        // Below Full Performance there is only drawing fewer pixels: the
+        // shortest distances the options allow and half the resolution.
+        Preset::Retro => Table {
+            render_distance: 4,
+            simulation_distance: 5,
+            clouds: "false",
+            particles: 2,
+            entity_shadows: false,
+            biome_blend: 0,
+            mipmap_levels: 0,
+            entity_distance: 0.5,
+            cutout_leaves: false,
+            weather_radius: 3,
+            lod_distance: 0,
+            opaque_ice: true,
+            resolution_scale: 50,
+            fxaa: false,
+            dither_cutout_mips: false,
+        },
         Preset::FullPerformance => Table {
             render_distance: 6,
             simulation_distance: 5,

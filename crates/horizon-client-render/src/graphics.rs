@@ -90,6 +90,9 @@ fn nits_setting(nits: u32) -> u32 {
 /// Simple-level presets. `Custom` leaves every option as the player set it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum Preset {
+    /// Every saving on, over the lowest settings (`preset::table`), for machines
+    /// with no usable GPU or very little of everything else (MFRE, F23).
+    Retro,
     /// Every saving on, over the lowest settings (`preset::table`).
     FullPerformance,
     Performance,
@@ -100,7 +103,8 @@ pub enum Preset {
     Custom,
 }
 impl Preset {
-    pub const ALL: [Preset; 6] = [
+    pub const ALL: [Preset; 7] = [
+        Preset::Retro,
         Preset::FullPerformance,
         Preset::Performance,
         Preset::Balanced,
@@ -110,6 +114,7 @@ impl Preset {
     ];
     pub fn name(self) -> &'static str {
         match self {
+            Preset::Retro => "retro",
             Preset::FullPerformance => "full_performance",
             Preset::Performance => "performance",
             Preset::Balanced => "balanced",
@@ -120,6 +125,7 @@ impl Preset {
     }
     pub fn label(self) -> &'static str {
         match self {
+            Preset::Retro => "Retro",
             Preset::FullPerformance => "Full Performance",
             Preset::Performance => "Performance",
             Preset::Balanced => "Balanced",

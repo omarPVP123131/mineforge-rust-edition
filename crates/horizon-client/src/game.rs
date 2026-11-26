@@ -1404,6 +1404,9 @@ struct Game<'a> {
     tutorial_toasts: Vec<tutorial::HintToast>,
     /// The `SystemToastId.NARRATOR_TOGGLE` toast, wherever the player is.
     narrator_toast: Option<horizon_client::toasts::SystemToast>,
+    /// Whether the one-time software-rendering warning was already queued
+    /// (MFRE, F23): the CPU draws the game when no usable GPU was found.
+    software_toast_done: bool,
     /// The open screen's narration (`Screen`'s narration state and timing).
     narration: horizon_client::screen_narrator::ScreenNarrator,
     /// Where the options screen returns: true = title, false = pause menu.
@@ -4773,6 +4776,34 @@ impl Game<'_> {
         self.draw_pad_over_hud(&mut batch);
         batch
     }
+    /// Queues the one-time software-rendering warning (MFRE, F23): when no
+    /// usable GPU was found the CPU draws the game (WARP, llvmpipe), frames
+    /// are slow whatever the settings say, and the player deserves to know
+    /// why plus the two levers that help most on such a machine.
+    fn warn_software_rendering_once(&mut self) {
+        if self.software_toast_done {
+            return;
+        }
+        let Some(renderer) = self.renderer.as_ref() else {
+            return;
+        };
+        if !renderer.software_rendering() {
+            return;
+        }
+        self.software_toast_done = true;
+        if self.narrator_toast.is_some() {
+            return;
+        }
+        let toast = horizon_client::toasts::SystemToast::new(
+            horizon_client::text::Text::literal("Software rendering"),
+            Some(horizon_client::text::Text::literal(
+                "No compatible GPU was found: the CPU is drawing the game and frames will be slow. The Retro preset and a low Resolution Scale help.",
+            )),
+        )
+        .with_display_time(horizon_client::toasts::SystemToast::LONG_DISPLAY_TIME);
+        let admitted = self.add_system_toast(toast);
+        self.narrator_toast = admitted;
+    }
     fn hud_layers(&mut self, size: [u32; 2]) -> HudBatch {
         self.input_hud_begin();
         let mut batch = HudBatch::new(size, self.settings.gui_scale_inputs());
@@ -4816,6 +4847,7 @@ impl Game<'_> {
             return batch;
         }
         self.settle_title_toasts();
+        self.warn_software_rendering_once();
         if let Some(title) = &mut self.title {
             if std::mem::take(&mut title.onboarding_finished) {
                 // Options.onboardingAccessibilityFinished.
@@ -10931,6 +10963,7 @@ impl<'a> Game<'a> {
             tutorial,
             tutorial_toasts: Vec::new(),
             narrator_toast: None,
+            software_toast_done: false,
             narration: Default::default(),
             options_from_title: false,
             dragging: false,

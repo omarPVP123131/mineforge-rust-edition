@@ -2268,14 +2268,20 @@ mod tests {
     #[test]
     fn presets_set_vanilla_and_horizon_options() {
         let mut s = Settings::default();
+        // The cycle starts at the bottom, and the bottom is now Retro (MFRE,
+        // F23): the shortest distances and half the resolution.
+        Item::Horizon(H::Preset).cycle(&mut s, false, [854, 480], &NONE);
+        assert_eq!(s.horizon.preset, Preset::Retro);
+        assert_eq!(s.render_distance, 4);
+        assert_eq!(s.clouds, "false");
+        assert_eq!(s.horizon.resolution_scale, 50);
+        assert_eq!(s.horizon.entity_culling, EntityCullingMode::Asynchronous);
+        assert!(s.horizon.opaque_ice && s.horizon.cache_chests);
         Item::Horizon(H::Preset).cycle(&mut s, false, [854, 480], &NONE);
         assert_eq!(s.horizon.preset, Preset::FullPerformance);
         assert_eq!(s.render_distance, 6);
-        assert_eq!(s.clouds, "false");
         assert_eq!(s.horizon.resolution_scale, 75);
-        assert_eq!(s.horizon.entity_culling, EntityCullingMode::Asynchronous);
-        assert!(s.horizon.opaque_ice && s.horizon.cache_chests);
-        // The next one puts back what only Full Performance lowers.
+        // The next one puts back what only the bottom two presets lower.
         Item::Horizon(H::Preset).cycle(&mut s, false, [854, 480], &NONE);
         assert_eq!(s.horizon.preset, Preset::Performance);
         assert_eq!(s.render_distance, 8);
@@ -2310,7 +2316,7 @@ mod tests {
         assert_eq!(seen, [2, 4, 8, 1]);
         Item::Horizon(H::ScreenshotQuality).cycle(&mut s, true, [854, 480], &NONE);
         assert_eq!(s.horizon.screenshot_quality, 8);
-        assert_eq!(s.horizon.preset, Preset::FullPerformance);
+        assert_eq!(s.horizon.preset, Preset::Retro);
     }
 
     #[test]

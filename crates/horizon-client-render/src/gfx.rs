@@ -7776,6 +7776,11 @@ impl Renderer {
     pub fn device_lost(&self) -> bool {
         self.device_lost.load(std::sync::atomic::Ordering::Relaxed)
     }
+    /// Whether the CPU is drawing the game (WARP, llvmpipe): no usable GPU was
+    /// found and frames are slow whatever the settings say (MFRE, F23).
+    pub fn software_rendering(&self) -> bool {
+        is_software(self.info.device_type)
+    }
     /// The frame size of the pending `scaled` screenshot when it is larger than the
     /// window: the window's times the Resolution Scale (when above 100%) and
     /// `screenshot_quality`, cut down to what one texture and one readback buffer hold,
