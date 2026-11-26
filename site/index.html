@@ -3,182 +3,365 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MineForge Rust Edition — Descargas</title>
-<meta name="description" content="MineForge Rust Edition: Minecraft 26.3 reinventado en Rust. Gratis, sin cuenta obligatoria y sin telemetría. Descarga el launcher.">
+<title>MineForge Rust Edition — Minecraft 26.3 en Rust, gratis</title>
+<meta name="description" content="MineForge Rust Edition (Horizon): el motor de Minecraft 26.3 reescrito en Rust. Gratis para siempre, sin cuenta obligatoria y sin telemetría. Descarga el launcher.">
+<meta property="og:title" content="MineForge Rust Edition">
+<meta property="og:description" content="Minecraft 26.3 reinventado en Rust. Gratis, sin cuenta obligatoria, sin telemetría.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://omarPVP123131.github.io/mineforge-rust-edition/assets/hero.jpg">
+<meta name="theme-color" content="#0e0c0a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231e1a17'/%3E%3Cpath d='M8 24V9l5 8 3-5 3 5 5-8v15' fill='none' stroke='%23f0862a' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#141210; --panel:#1e1a17; --panel2:#262119; --ink:#f4ede4; --muted:#b3a89b;
-    --ember:#f0862a; --ember2:#ffb066; --line:#3a322a; --ok:#7dc98f;
+    --bg:#0e0c0a; --bg2:#14110e; --panel:rgba(255,255,255,.035); --panel2:rgba(255,255,255,.06);
+    --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
+    --ink:#f6efe6; --muted:#a89c8d; --dim:#7d7264;
+    --ember:#f0862a; --ember2:#ffb066; --emberd:#c96a15;
+    --teal:#5fb3a1; --ok:#7dc98f;
+    --disp:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+    --r:18px; --wrap:1120px;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);
-       font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif}
-  a{color:var(--ember2)}
-  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
-  header{border-bottom:1px solid var(--line);background:linear-gradient(180deg,#1b1713,#141210)}
-  .bar{display:flex;align-items:center;gap:12px;padding:14px 0}
-  .bar .name{font-weight:700;letter-spacing:.3px}
-  .bar .tag{color:var(--muted);font-size:13px}
-  .hero{padding:56px 0 30px;text-align:center}
-  .hero h1{font-size:clamp(28px,5vw,44px);margin:0 0 10px;line-height:1.15}
-  .hero h1 em{color:var(--ember);font-style:normal}
-  .hero p{color:var(--muted);max-width:640px;margin:0 auto 26px}
-  .btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-  .btn{display:inline-flex;align-items:center;gap:10px;padding:13px 22px;border-radius:12px;
-       text-decoration:none;font-weight:600;border:1px solid var(--line)}
-  .btn.primary{background:var(--ember);color:#20140a;border-color:var(--ember)}
-  .btn.primary:hover{background:var(--ember2)}
-  .btn.ghost{background:var(--panel);color:var(--ink)}
-  .btn.ghost:hover{border-color:var(--ember)}
-  .meta{margin:18px auto 0;color:var(--muted);font-size:13.5px;max-width:760px}
-  .meta code{background:var(--panel2);padding:2px 6px;border-radius:6px;color:var(--ember2)}
-  section{padding:34px 0}
-  h2{font-size:22px;margin:0 0 14px}
-  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
-  .card h3{margin:0 0 8px;font-size:16px}
-  .card p{margin:0;color:var(--muted);font-size:14.5px}
-  .step b{color:var(--ember2)}
-  .note{background:#2a1c10;border:1px solid #5a3a1c;border-radius:14px;padding:16px 18px;color:#f0d9bd}
-  .note b{color:var(--ember2)}
-  table{width:100%;border-collapse:collapse;font-size:14px}
-  td,th{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-  td code{word-break:break-all;color:var(--ember2);font-size:12.5px}
-  .mod{display:flex;gap:14px;align-items:flex-start}
-  .mod img{width:56px;height:56px;border-radius:10px;border:1px solid var(--line)}
-  .mod .sum{color:var(--muted);font-size:14px;margin:4px 0 8px}
-  .pill{display:inline-block;background:var(--panel2);border:1px solid var(--line);
-        border-radius:999px;padding:2px 10px;font-size:12px;color:var(--muted);margin-right:6px}
-  footer{border-top:1px solid var(--line);margin-top:30px;padding:26px 0 40px;color:var(--muted);font-size:13.5px}
-  footer p{margin:8px 0}
-  .hide{display:none}
-  .fail{color:var(--muted);font-size:14px}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--body);-webkit-font-smoothing:antialiased}
+  ::selection{background:var(--ember);color:#1d1206}
+  a{color:var(--ember2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--ember2);outline-offset:3px;border-radius:6px}
+  .wrap{max-width:var(--wrap);margin:0 auto;padding:0 24px}
+  h1,h2,h3{font-family:var(--disp);letter-spacing:-.015em}
+
+  /* ---------- nav ---------- */
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+      background:rgba(14,12,10,.72);border-bottom:1px solid transparent;transition:border-color .3s,background .3s}
+  nav.scrolled{border-color:var(--line);background:rgba(14,12,10,.9)}
+  .nav{display:flex;align-items:center;gap:26px;height:64px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--disp);font-weight:700;color:var(--ink)}
+  .brand:hover{text-decoration:none}
+  .brand small{display:block;font:500 11px/1.2 var(--body);color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+  .nav a.nl{color:var(--muted);font-size:14.5px;font-weight:500;padding:6px 2px}
+  .nav a.nl:hover{color:var(--ink);text-decoration:none}
+  .nav .sp{flex:1}
+  .gh{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:10px;
+      padding:8px 14px;color:var(--ink);font-size:14px;font-weight:600;background:var(--panel)}
+  .gh:hover{border-color:var(--ember);text-decoration:none}
+  @media(max-width:760px){.nav a.nl{display:none}}
+
+  /* ---------- hero ---------- */
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero .art{position:absolute;inset:0;background:url("assets/hero.jpg") center 62%/cover no-repeat;
+      transform:scale(1.02);filter:saturate(1.05)}
+  .hero .shade{position:absolute;inset:0;
+      background:linear-gradient(180deg,rgba(14,12,10,.55) 0%,rgba(14,12,10,.25) 34%,rgba(14,12,10,.88) 78%,var(--bg) 100%),
+                 linear-gradient(90deg,rgba(14,12,10,.72) 0%,rgba(14,12,10,.15) 55%,rgba(14,12,10,.35) 100%)}
+  .hero .in{position:relative;padding:clamp(70px,11vw,132px) 0 clamp(56px,8vw,96px);max-width:760px}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line2);border-radius:999px;
+      padding:7px 15px;font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+      color:var(--ember2);background:rgba(20,15,10,.55);backdrop-filter:blur(6px)}
+  .eyebrow i{width:7px;height:7px;border-radius:50%;background:var(--ember);box-shadow:0 0 12px var(--ember)}
+  .hero h1{font-size:clamp(38px,6.4vw,68px);line-height:1.04;margin:22px 0 18px;font-weight:700}
+  .hero h1 em{font-style:normal;background:linear-gradient(92deg,var(--ember2),var(--ember) 70%);
+      -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.lede{font-size:clamp(16px,2vw,19px);color:#d8cec2;max-width:600px;margin:0 0 30px}
+  .cta{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:11px;border-radius:13px;padding:15px 26px;font-weight:700;
+       font-size:15.5px;border:1px solid transparent;transition:transform .16s,box-shadow .16s,border-color .16s}
+  .btn:hover{text-decoration:none;transform:translateY(-2px)}
+  .btn.p{background:linear-gradient(180deg,var(--ember2),var(--ember));color:#221305;
+       box-shadow:0 10px 34px -10px rgba(240,134,42,.65)}
+  .btn.p:hover{box-shadow:0 16px 40px -10px rgba(240,134,42,.8)}
+  .btn.s{background:rgba(18,15,12,.6);border-color:var(--line2);color:var(--ink);backdrop-filter:blur(8px)}
+  .btn.s:hover{border-color:var(--ember)}
+  .btn svg{flex:none}
+  .herometa{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap}
+  .pill{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:12.5px;color:var(--muted);
+        background:rgba(16,13,10,.6);backdrop-filter:blur(6px)}
+  .pill b{color:var(--ember2);font-weight:600}
+  .pill code{font:600 12px var(--mono);color:var(--ember2)}
+
+  /* ---------- secciones ---------- */
+  section{padding:clamp(56px,8vw,92px) 0}
+  .kicker{font:600 12.5px/1 var(--body);letter-spacing:.18em;text-transform:uppercase;color:var(--ember);margin:0 0 12px}
+  h2{font-size:clamp(26px,3.6vw,38px);margin:0 0 14px;line-height:1.15}
+  .sub{color:var(--muted);max-width:640px;margin:0 0 38px}
+  .trust{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));margin-top:-46px;position:relative;z-index:5}
+  .tcard{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
+      border-radius:var(--r);padding:20px 20px 18px;backdrop-filter:blur(10px)}
+  .tcard svg{margin-bottom:10px}
+  .tcard h3{margin:0 0 6px;font-size:15.5px}
+  .tcard p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.55}
+
+  .dlgrid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .dl{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:24px;
+      display:flex;flex-direction:column;gap:14px;transition:border-color .2s,transform .2s}
+  .dl:hover{border-color:var(--line2);transform:translateY(-3px)}
+  .dl.main{border-color:rgba(240,134,42,.5);background:linear-gradient(180deg,rgba(240,134,42,.10),var(--panel))}
+  .dl .top{display:flex;align-items:center;gap:13px}
+  .dl .os{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--panel2);border:1px solid var(--line)}
+  .dl h3{margin:0;font-size:17px}
+  .dl .fmt{font-size:12.5px;color:var(--dim)}
+  .dl .row{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted);
+       border-top:1px dashed var(--line);padding-top:12px}
+  .dl .sha{font:400 11.5px/1.5 var(--mono);color:var(--dim);word-break:break-all;
+       background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:10px;padding:9px 11px;position:relative}
+  .dl .sha button{position:absolute;top:7px;right:7px;border:1px solid var(--line2);background:var(--panel2);
+       color:var(--muted);border-radius:7px;font:600 11px var(--body);padding:4px 9px;cursor:pointer}
+  .dl .sha button:hover{color:var(--ink);border-color:var(--ember)}
+  .dl .go{margin-top:auto}
+  .dl .go a{display:flex;justify-content:center;align-items:center;gap:9px;border-radius:11px;padding:12px;
+       font-weight:700;font-size:14.5px;border:1px solid var(--line2);color:var(--ink)}
+  .dl .go a:hover{border-color:var(--ember);text-decoration:none}
+  .dl.main .go a{background:linear-gradient(180deg,var(--ember2),var(--ember));color:#221305;border-color:transparent}
+  .sigs{margin-top:22px;display:flex;gap:22px;flex-wrap:wrap;font-size:13.5px;color:var(--muted)}
+
+  .callout{border:1px solid rgba(240,134,42,.4);background:linear-gradient(180deg,rgba(240,134,42,.12),rgba(240,134,42,.05));
+      border-radius:var(--r);padding:22px 26px;display:flex;gap:16px;align-items:flex-start}
+  .callout b{color:var(--ember2)}
+  .callout p{margin:0;color:#e8d9c6;font-size:14.5px}
+
+  .steps{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));counter-reset:p}
+  .step{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:26px 24px 22px}
+  .step .n{position:absolute;top:-16px;left:22px;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+      font:700 15px var(--disp);color:#221305;background:linear-gradient(180deg,var(--ember2),var(--ember));
+      box-shadow:0 8px 22px -8px rgba(240,134,42,.7)}
+  .step h3{margin:6px 0 8px;font-size:16.5px}
+  .step p{margin:0;font-size:14px;color:var(--muted)}
+  .step code{font:600 12.5px var(--mono);color:var(--ember2);background:rgba(0,0,0,.3);padding:2px 6px;border-radius:6px}
+
+  .mods{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  .mod{display:flex;gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+  .mod img{width:60px;height:60px;border-radius:14px;border:1px solid var(--line2);flex:none}
+  .mod h3{margin:0 0 4px;font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .mod .sum{color:var(--muted);font-size:13.5px;margin:0 0 10px}
+  .tag{font:600 11px var(--body);letter-spacing:.04em;color:var(--muted);border:1px solid var(--line);
+      border-radius:999px;padding:3px 10px;background:var(--panel2)}
+  .mod .links{font-size:13px}
+
+  details{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:0;margin-bottom:10px;overflow:hidden}
+  summary{cursor:pointer;padding:17px 22px;font-weight:600;font-size:15px;list-style:none;display:flex;
+      justify-content:space-between;align-items:center;gap:14px}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";color:var(--ember);font:600 20px var(--disp);transition:transform .2s}
+  details[open] summary::after{transform:rotate(45deg)}
+  details .a{padding:0 22px 18px;color:var(--muted);font-size:14.5px;border-top:1px dashed var(--line);padding-top:14px;margin:0 0 0}
+  details[open] summary{border-bottom:0}
+
+  footer{border-top:1px solid var(--line);background:var(--bg2);padding:44px 0 54px;margin-top:20px}
+  footer p{color:var(--dim);font-size:13px;margin:9px 0;max-width:820px}
+  footer b{color:var(--muted)}
+  .fl{display:flex;gap:20px;flex-wrap:wrap;margin-top:16px;font-size:13.5px}
+  .hide{display:none!important}
+  .fail{border:1px solid var(--line);border-radius:12px;padding:12px 16px;color:var(--muted);font-size:13.5px;background:var(--panel)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
+  @media(max-width:640px){.trust{margin-top:-30px}.dl .sha button{display:none}}
 </style>
 </head>
 <body>
-<header><div class="wrap bar">
-  <svg width="30" height="30" viewBox="0 0 32 32" aria-label="Logo MineForge">
-    <rect width="32" height="32" rx="7" fill="#1e1a17"/>
-    <path d="M8 24V9l5 8 3-5 3 5 5-8v15" fill="none" stroke="#f0862a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
-  </svg>
-  <span class="name">MineForge Rust Edition</span>
-  <span class="tag">Horizon · Minecraft 26.3 en Rust</span>
-</div></header>
 
-<div class="wrap hero">
-  <h1>Minecraft 26.3, <em>reinventado en Rust</em>.</h1>
-  <p>Motor de juego escrito desde cero en Rust: sin cuenta obligatoria, sin telemetría y sin
-     monetización de ningún tipo. Lo instala, lo verifica y lo actualiza su launcher.</p>
-  <div class="btns">
-    <a class="btn primary" id="dl-win" href="https://github.com/omarPVP123131/mineforge-rust-edition/releases">
-      ⬇ Descargar para Windows</a>
-    <a class="btn ghost" id="dl-linux" href="https://github.com/omarPVP123131/mineforge-rust-edition/releases">
-      Launcher para Linux x86-64</a>
-    <a class="btn ghost" href="https://github.com/omarPVP123131/mineforge-rust-edition">Código fuente</a>
-  </div>
-  <p class="meta" id="meta">Consultando las releases…</p>
-  <p class="meta fail hide" id="meta-fail">No se pudieron consultar las releases ahora mismo:
-     entra en <a href="https://github.com/omarPVP123131/mineforge-rust-edition/releases">la página
-     de releases</a> y descarga el launcher más reciente (empieza por <code>launcher@</code>).</p>
-</div>
+<nav id="nav"><div class="wrap nav">
+  <a class="brand" href="#">
+    <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#1e1a17"/><path d="M8 24V9l5 8 3-5 3 5 5-8v15" fill="none" stroke="#f0862a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
+    <span>MineForge<br><small>Rust Edition</small></span>
+  </a>
+  <a class="nl" href="#descargas">Descargas</a>
+  <a class="nl" href="#instalar">Instalar</a>
+  <a class="nl" href="#mods">Mods</a>
+  <a class="nl" href="#faq">FAQ</a>
+  <span class="sp"></span>
+  <a class="gh" href="https://github.com/omarPVP123131/mineforge-rust-edition">
+    <svg width="17" height="17" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+    Código fuente</a>
+</div></nav>
 
-<div class="wrap">
-  <section>
-    <h2>Instalación en tres pasos</h2>
-    <div class="grid">
-      <div class="card step"><h3>1 · Instala el launcher</h3>
-        <p><b>Windows:</b> doble clic en <code>horizon-launcher-setup.exe</code>.
-           <b>Linux:</b> descomprime el tar.gz y ejecuta <code>./horizon-launcher</code>; si la
-           terminal protesta por librerías, lee <code>LEEME-LINUX.txt</code> que viene dentro.</p></div>
-      <div class="card step"><h3>2 · Acepta el EULA</h3>
-        <p>En la pestaña <b>Jugar</b>, marca la casilla del EULA de Minecraft (hay que tener una
-           copia de Minecraft: Java Edition) y aparece el botón <b>Instalar y jugar</b>.</p></div>
-      <div class="card step"><h3>3 · Juega</h3>
-        <p>El launcher descarga el motor, comprueba su SHA-256 y su firma Ed25519, prepara la
-           partida y juega. Las actualizaciones llegan solas.</p></div>
+<header class="hero">
+  <div class="art" role="img" aria-label="Paisaje voxel al atardecer con una forja encendida"></div>
+  <div class="shade"></div>
+  <div class="wrap in">
+    <span class="eyebrow"><i></i>Horizon · Minecraft 26.3 en Rust</span>
+    <h1>El bloque a bloque,<br><em>reescrito en Rust</em>.</h1>
+    <p class="lede">MineForge Rust Edition es un motor de juego abierto, gratuito y sin ataduras:
+       sin cuenta obligatoria, sin telemetría y sin pagos. Lo instala y lo actualiza su launcher.</p>
+    <div class="cta">
+      <a class="btn p" id="cta-main" href="https://github.com/omarPVP123131/mineforge-rust-edition/releases">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/></svg>
+        <span id="cta-main-t">Descargar el launcher</span></a>
+      <a class="btn s" id="cta-alt" href="#descargas">Otras plataformas</a>
     </div>
-  </section>
+    <div class="herometa" id="herometa">
+      <span class="pill">Consultando releases…</span>
+    </div>
+  </div>
+</header>
 
-  <section>
-    <div class="note"><b>¿Descargaste <code>horizon-windows-x64.zip</code> y no arranca?</b>
-      Eso es el motor suelto, no el juego instalado: por diseño no arranca sin el launcher
-      (necesita los archivos de tu Minecraft). Instala el launcher del paso 1 y olvídate del ZIP.</div>
-  </section>
+<main>
+<div class="wrap"><div class="trust">
+  <div class="tcard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f0862a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-4.6-9.5-9A5.5 5.5 0 0 1 12 6.5 5.5 5.5 0 0 1 21.5 12C19 16.4 12 21 12 21Z"/></svg>
+    <h3>Gratis para siempre</h3><p>Sin compras, sin anuncios, sin monetización: es una exigencia del EULA de Minecraft y nuestra regla de oro.</p></div>
+  <div class="tcard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5fb3a1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6Z"/><path d="m9 12 2 2 4-4"/></svg>
+    <h3>Sin cuenta obligatoria</h3><p>Juega offline con perfiles locales; la cuenta de Microsoft sólo hace falta si quieres sus servicios.</p></div>
+  <div class="tcard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f0862a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><path d="m4 4 16 16"/></svg>
+    <h3>Sin telemetría</h3><p>Desactivada por defecto en todo el fork; nadie recibe datos de tus partidas.</p></div>
+  <div class="tcard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5fb3a1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2"/><rect x="8" y="1" width="8" height="4" rx="1"/><path d="m9.5 12.5 2 2 3.5-3.5"/></svg>
+    <h3>Código abierto</h3><p>LGPL-3.0: fuente completa, 45 parches numerados y avisos de licencia públicos.</p></div>
+</div></div>
 
-  <section>
-    <h2>Sumas y firma de lo que descargas</h2>
-    <div class="card"><table id="sums"><tbody>
-      <tr><td colspan="2">Consultando SHA256SUMS de la release del launcher…</td></tr>
-    </tbody></table></div>
-  </section>
+<section id="descargas"><div class="wrap">
+  <p class="kicker">Descargas</p>
+  <h2>Un launcher, tres archivos, cero sorpresas</h2>
+  <p class="sub">Todo sale de una única release firmada del launcher. El launcher comprueba el
+     SHA-256 y la firma Ed25519 antes de tocar tu disco, y se actualiza solo.</p>
+  <div class="dlgrid" id="dlgrid">
+    <div class="dl main"><div class="top"><span class="os"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.5 10.5 4v7.5H3Zm0 13L10.5 20v-7.5H3ZM11.5 3.8 21 2v9.5h-9.5Zm0 16.4L21 22v-9.5h-9.5Z"/></svg></span>
+      <div><h3>Windows x64</h3><span class="fmt">horizon-launcher-setup.exe · instalador por usuario</span></div></div>
+      <div class="row"><span>Tamaño</span><b id="w-size">—</b></div>
+      <div class="sha" id="w-sha">sumas al cargar…</div>
+      <div class="go"><a id="w-go" href="https://github.com/omarPVP123131/mineforge-rust-edition/releases">Descargar instalador</a></div></div>
+    <div class="dl"><div class="top"><span class="os"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16v13H4Z"/><path d="M8 7V4h8v3"/><path d="M4 12h16"/></svg></span>
+      <div><h3>Windows x64 · suelto</h3><span class="fmt">horizon-launcher-windows-x64.zip</span></div></div>
+      <div class="row"><span>Tamaño</span><b id="z-size">—</b></div>
+      <div class="sha" id="z-sha">sumas al cargar…</div>
+      <div class="go"><a id="z-go" href="https://github.com/omarPVP123131/mineforge-rust-edition/releases">Descargar ZIP</a></div></div>
+    <div class="dl"><div class="top"><span class="os"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3c-1 2-3 2.6-3 5 0 1.4.8 2.4.8 3.6 0 .9-.6 1.6-1.5 1.6-.4 0-.8-.1-1.1-.4C6.4 14 6 15.4 6 16.6 6 19 8.7 21 12 21s6-2 6-4.4c0-1.2-.4-2.6-1.2-3.8-.3.3-.7.4-1.1.4-.9 0-1.5-.7-1.5-1.6 0-1.2.8-2.2.8-3.6 0-2.4-2-3-3-5Z"/></svg></span>
+      <div><h3>Linux x86-64</h3><span class="fmt">horizon-launcher-linux-x86_64.tar.gz · incluye LEEME-LINUX.txt</span></div></div>
+      <div class="row"><span>Tamaño</span><b id="l-size">—</b></div>
+      <div class="sha" id="l-sha">sumas al cargar…</div>
+      <div class="go"><a id="l-go" href="https://github.com/omarPVP123131/mineforge-rust-edition/releases">Descargar tar.gz</a></div></div>
+  </div>
+  <p class="fail hide" id="dl-fail">No se pudieron consultar las releases ahora mismo: entra en
+     <a href="https://github.com/omarPVP123131/mineforge-rust-edition/releases">la página de releases</a>
+     y descarga la release <code>launcher@…</code> más reciente.</p>
+  <div class="sigs" id="sigs"></div>
+</div></section>
 
-  <section>
-    <h2>Mods propios del fork</h2>
-    <div class="grid" id="mods"><div class="card"><p>Consultando el catálogo…</p></div></div>
-    <p class="meta">Dentro del launcher aparecen en la página <b>Mods</b>, fusionados con el
-       catálogo de Horizon. Los mods nativos (Cinética) entrarán cuando se publique el SDK
-       del build.</p>
-  </section>
-</div>
+<section id="instalar" style="background:var(--bg2);border-block:1px solid var(--line)"><div class="wrap">
+  <p class="kicker">Instalación</p>
+  <h2>Tres pasos y a jugar</h2>
+  <p class="sub">Necesitas una copia de Minecraft: Java Edition (el EULA de Mojang es el único
+     permiso que este proyecto respeta a rajatabla).</p>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><h3>Instala el launcher</h3>
+      <p><b>Windows:</b> doble clic en el instalador. <b>Linux:</b> descomprime y ejecuta
+      <code>./horizon-launcher</code>; si faltan librerías, <code>LEEME-LINUX.txt</code> trae el
+      <code>apt / dnf / pacman</code> exacto.</p></div>
+    <div class="step"><span class="n">2</span><h3>Acepta el EULA</h3>
+      <p>En la pestaña <b>Jugar</b> marca la casilla del EULA de Minecraft. Sólo entonces aparece
+      el botón <b>Instalar y jugar</b>: el consentimiento es tuyo, nunca automático.</p></div>
+    <div class="step"><span class="n">3</span><h3>Juega y olvídate</h3>
+      <p>El launcher descarga el motor, verifica sumas y firma, prepara la partida con tu
+      Minecraft y juega. Las actualizaciones llegan solas, firmadas.</p></div>
+  </div>
+  <div style="height:26px"></div>
+  <div class="callout">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f0862a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z"/></svg>
+    <p><b>¿Bajaste <code>horizon-windows-x64.zip</code> de la release del juego y no arranca?</b>
+    Es el motor suelto, no el juego instalado: por diseño no arranca sin el launcher ni sin los
+    archivos de tu Minecraft. Instala el launcher del paso 1 y no vuelvas a tocar ese ZIP.</p>
+  </div>
+</div></section>
+
+<section id="mods"><div class="wrap">
+  <p class="kicker">Catálogo propio</p>
+  <h2>Mods del fork, dentro del launcher</h2>
+  <p class="sub">El launcher fusiona este catálogo con el de Horizon en su página <b>Mods</b>:
+     los dos juntos, verificados por suma. Los mods nativos (Cinética) entrarán con el SDK del build.</p>
+  <div class="mods" id="mods-grid"><div class="mod"><p class="sum">Consultando el catálogo…</p></div></div>
+</div></section>
+
+<section id="faq" style="background:var(--bg2);border-block:1px solid var(--line)"><div class="wrap" style="max-width:860px">
+  <p class="kicker">Dudas</p>
+  <h2>Preguntas frecuentes</h2>
+  <details open><summary>¿Es gratis de verdad? ¿Dónde está el truco?</summary>
+    <p class="a">Gratis y sin truco: el EULA de Minecraft prohíbe monetizar derivados, y nosotros lo
+    adoptamos como regla de oro. No hay compras, anuncios ni donaciones obligatorias.</p></details>
+  <details><summary>¿Necesito comprar Minecraft?</summary>
+    <p class="a">Sí, una copia de Minecraft: Java Edition propia: el launcher prepara la partida con
+    tus archivos oficiales. Este proyecto no distribuye ni un byte de Mojang.</p></details>
+  <details><summary>¿Puedo jugar sin cuenta de Microsoft?</summary>
+    <p class="a">Sí: perfiles offline locales. La cuenta sólo se usa si tú quieres sus servicios
+    (realms, skins oficiales…).</p></details>
+  <details><summary>En Linux el launcher no abre</summary>
+    <p class="a">Casi siempre faltan librerías del sistema. Dentro del tar.gz viene
+    <code>LEEME-LINUX.txt</code> con el comando exacto para Debian/Ubuntu, Fedora y Arch.</p></details>
+  <details><summary>¿De dónde salen los mods y cómo se verifican?</summary>
+    <p class="a">De la release <code>mods-26.3.0</code> del repositorio, listados en
+    <code>registry/index.json</code> con su SHA-256: el launcher no instala nada cuya suma no cuadre.</p></details>
+  <details><summary>¿Esto es oficial?</summary>
+    <p class="a">No. Es un fork independiente y abierto del motor Horizon. No aprobado por ni
+    asociado con Mojang o Microsoft; «Minecraft» es marca de Mojang Synergies AB.</p></details>
+</div></section>
+</main>
 
 <footer><div class="wrap">
-  <p><b>NOT AN OFFICIAL MINECRAFT PRODUCT.</b> No aprobado por ni asociado con Mojang o Microsoft.
-     «Minecraft» es marca de Mojang Synergies AB.</p>
-  <p>MineForge Rust Edition es software libre (LGPL-3.0): el código, los parches numerados y los
-     avisos de licencia viven en el repositorio. Gratis para siempre: sin compras, sin anuncios,
-     sin telemetría (desactivada por defecto).</p>
-  <p>Enlaces: <a href="https://github.com/omarPVP123131/mineforge-rust-edition/blob/main/LICENSE">LICENSE</a> ·
-     <a href="https://github.com/omarPVP123131/mineforge-rust-edition/blob/main/NOTICE-MFRE.md">NOTICE-MFRE</a> ·
-     <a href="https://github.com/omarPVP123131/mineforge-rust-edition/releases">Releases</a> ·
-     <a href="https://github.com/omarPVP123131/mineforge-rust-edition/issues">Reportar un problema</a></p>
+  <p><b>NOT AN OFFICIAL MINECRAFT PRODUCT.</b> No aprobado por ni asociado con Mojang o Microsoft.</p>
+  <p>MineForge Rust Edition es software libre (LGPL-3.0): código, parches numerados y avisos de
+     licencia en el repositorio. Telemetría desactivada por defecto. Gratis para siempre.</p>
+  <div class="fl">
+    <a href="https://github.com/omarPVP123131/mineforge-rust-edition/blob/main/LICENSE">LICENSE</a>
+    <a href="https://github.com/omarPVP123131/mineforge-rust-edition/blob/main/NOTICE-MFRE.md">NOTICE-MFRE</a>
+    <a href="https://github.com/omarPVP123131/mineforge-rust-edition/releases">Releases</a>
+    <a href="https://github.com/omarPVP123131/mineforge-rust-edition/issues">Reportar un problema</a>
+  </div>
 </div></footer>
 
 <script>
-const REPO = "https://api.github.com/repos/omarPVP123131/mineforge-rust-edition";
-const PAGE = "https://github.com/omarPVP123131/mineforge-rust-edition/releases";
-const $ = id => document.getElementById(id);
-const mb = n => (n/1048576).toFixed(1).replace(".", ",") + " MB";
-const short = h => h.slice(0, 8) + "…" + h.slice(-4);
+const REPO="https://api.github.com/repos/omarPVP123131/mineforge-rust-edition";
+const REL ="https://github.com/omarPVP123131/mineforge-rust-edition/releases";
+const $=id=>document.getElementById(id);
+const mb=n=>(n/1048576).toFixed(1).replace(".",",")+" MB";
+addEventListener("scroll",()=>{$("nav").classList.toggle("scrolled",scrollY>8)},{passive:true});
 
-async function json(url){ const r = await fetch(url); if(!r.ok) throw new Error(r.status); return r.json(); }
-
-(async () => {
-  try {
-    const [latest, all] = await Promise.all([json(REPO + "/releases/latest"), json(REPO + "/releases?per_page=30")]);
-    const asset = n => (latest.assets || []).find(a => a.name === n);
-    const win = asset("horizon-launcher-setup.exe");
-    const lin = asset("horizon-launcher-linux-x86_64.tar.gz");
-    const sums = asset("SHA256SUMS");
-    if (win) { $("dl-win").href = win.browser_download_url; $("dl-win").textContent = "⬇ Descargar para Windows (" + mb(win.size) + ")"; }
-    if (lin) { $("dl-linux").href = lin.browser_download_url; $("dl-linux").textContent = "Launcher para Linux x86-64 (" + mb(lin.size) + ")"; }
-    const game = all.find(r => /^v\d/.test(r.tag_name) && !r.prerelease && !r.draft);
-    $("meta").innerHTML = "Launcher <code>" + latest.tag_name + "</code> · juego estable <code>" +
-      (game ? game.tag_name : "—") + "</code> · sumas SHA-256 y firma Ed25519 en cada release" +
-      (sums ? " · <a href=\"" + sums.browser_download_url + "\">SHA256SUMS</a>" : "");
-    if (sums) {
-      const t = await (await fetch(sums.browser_download_url)).text();
-      $("sums").innerHTML = "<tbody>" + t.trim().split("\n").map(l => {
-        const [h, f] = l.split(/\s+/); return "<tr><td><code>" + h + "</code></td><td>" + f + "</td></tr>";
-      }).join("") + "</tbody>";
-    }
-  } catch (e) {
-    $("meta").classList.add("hide"); $("meta-fail").classList.remove("hide");
-    $("sums").innerHTML = "<tbody><tr><td>Ver las sumas en la página de releases.</td><td></td></tr></tbody>";
+(async()=>{
+ try{
+  const [latest,all]=await Promise.all([
+    fetch(REPO+"/releases/latest").then(r=>r.json()),
+    fetch(REPO+"/releases?per_page=30").then(r=>r.json())]);
+  const A=n=>(latest.assets||[]).find(a=>a.name===n);
+  const win=A("horizon-launcher-setup.exe"), zip=A("horizon-launcher-windows-x64.zip"),
+        lin=A("horizon-launcher-linux-x86_64.tar.gz"), sums=A("SHA256SUMS"), sig=A("SHA256SUMS.sig");
+  const game=all.find(r=>/^v\d/.test(r.tag_name)&&!r.prerelease&&!r.draft);
+  const fill=(id,a)=>{ if(!a)return;
+    $(id+"-size").textContent=mb(a.size);
+    $(id+"-go").href=a.browser_download_url; };
+  fill("w",win); fill("z",zip); fill("l",lin);
+  $("herometa").innerHTML=
+    '<span class="pill">Launcher <code>'+latest.tag_name.replace("launcher@","")+'</code></span>'+
+    '<span class="pill">Juego estable <code>'+(game?game.tag_name.replace("v",""):"—")+'</code></span>'+
+    '<span class="pill">Minecraft <b>26.3</b></span>'+
+    '<span class="pill">Licencia <b>LGPL-3.0</b></span>';
+  const plat=(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||"";
+  if(/linux/i.test(plat)){ $("cta-main").href=lin?lin.browser_download_url:REL;
+    $("cta-main-t").textContent="Descargar para Linux ("+(lin?mb(lin.size):"tar.gz")+")";
+    $("cta-alt").textContent="Windows y otras opciones"; }
+  else { if(win){ $("cta-main").href=win.browser_download_url;
+    $("cta-main-t").textContent="Descargar para Windows ("+mb(win.size)+")"; } }
+  if(sums){
+    const t=await (await fetch(sums.browser_download_url)).text();
+    const row={}; t.trim().split("\n").forEach(l=>{const[h,f]=l.split(/\s+/);row[f]=h;});
+    const put=(id,f)=>{ const h=row[f]; if(!h)return;
+      $(id+"-sha").innerHTML='<button type="button" data-h="'+h+'" aria-label="Copiar SHA-256">copiar</button>'+h; };
+    put("w","horizon-launcher-setup.exe"); put("z","horizon-launcher-windows-x64.zip");
+    put("l","horizon-launcher-linux-x86_64.tar.gz");
+    $("sigs").innerHTML='<span>🔎 <a href="'+sums.browser_download_url+'">SHA256SUMS</a></span>'+
+      (sig?'<span>✍️ <a href="'+sig.browser_download_url+'">SHA256SUMS.sig</a> (Ed25519)</span>':'')+
+      '<span>📦 <a href="'+REL+'">todas las releases</a></span>';
   }
-  try {
-    const idx = await json("https://raw.githubusercontent.com/omarPVP123131/mineforge-rust-edition/main/registry/index.json");
-    $("mods").innerHTML = idx.projects.map(p => {
-      const v = p.versions[0];
-      return "<div class=\"card mod\">" +
-        (p.icon ? "<img alt=\"\" src=\"" + p.icon + "\">" : "") +
-        "<div><h3>" + p.name + " <span class=\"pill\">" + v.version + "</span><span class=\"pill\">Minecraft " + v.game + "</span></h3>" +
-        "<p class=\"sum\">" + p.summary + "</p>" +
-        "<p><span class=\"pill\">" + p.license + "</span><span class=\"pill\">" + (v.side === "both" ? "cliente y servidor" : v.side) + "</span> " +
-        "<a href=\"" + v.file.url + "\">descargar .hmod</a></p></div></div>";
-    }).join("");
-  } catch (e) {
-    $("mods").innerHTML = "<div class=\"card\"><p>El catálogo no se pudo cargar ahora mismo; dentro del launcher se ve igual (página Mods).</p></div>";
-  }
+ }catch(e){ $("dl-fail").classList.remove("hide"); }
+ document.addEventListener("click",ev=>{
+   const b=ev.target.closest("button[data-h]"); if(!b)return;
+   navigator.clipboard&&navigator.clipboard.writeText(b.dataset.h).then(()=>{b.textContent="✓";setTimeout(()=>b.textContent="copiar",1200);});
+ });
+ try{
+  const idx=await (await fetch("https://raw.githubusercontent.com/omarPVP123131/mineforge-rust-edition/main/registry/index.json")).json();
+  $("mods-grid").innerHTML=idx.projects.map(p=>{const v=p.versions[0];
+    return '<div class="mod">'+(p.icon?'<img alt="Icono de '+p.name+'" src="'+p.icon+'">':'')+
+      '<div><h3>'+p.name+' <span class="tag">v'+v.version+'</span><span class="tag">Minecraft '+v.game+'</span></h3>'+
+      '<p class="sum">'+p.summary+'</p>'+
+      '<p class="links"><span class="tag">'+p.license+'</span> <span class="tag">'+(v.side==="both"?"cliente y servidor":v.side)+'</span> '+
+      '<a href="'+v.file.url+'">.hmod</a> · <a href="'+p.source+'">fuente</a></p></div></div>';}).join("");
+ }catch(e){ $("mods-grid").innerHTML='<div class="mod"><p class="sum">El catálogo no cargó ahora mismo; dentro del launcher se ve igual (página Mods).</p></div>'; }
 })();
 </script>
 </body>
