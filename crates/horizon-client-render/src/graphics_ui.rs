@@ -818,7 +818,7 @@ impl H {
                 Some(i as f32 / (LOD_STEPS.len() - 1) as f32)
             }
             H::Workers => Some(g.workers as f32 / max_workers() as f32),
-            H::ResolutionScale => Some((g.resolution_scale as f32 - 25.0) / 175.0),
+            H::ResolutionScale => Some((g.resolution_scale as f32 - 10.0) / 190.0),
             H::TargetFps => Some((g.target_fps as f32 - 30.0) / 210.0),
             H::UpscalingSharpness => Some(g.upscaling_sharpness as f32 / 100.0),
             // Auto, then 10..480 by 10.
@@ -840,7 +840,7 @@ impl H {
             H::EntityCullingPrecheck => Some(32),
             H::UploadBudget => Some((UPLOAD_STEPS.len() - 1) as u32),
             H::Workers => Some(max_workers()),
-            H::ResolutionScale => Some(35),
+            H::ResolutionScale => Some(38),
             H::TargetFps => Some(42),
             H::UpscalingSharpness => Some(20),
             H::HdrPaperWhite | H::HdrUiBrightness => Some(crate::graphics::NITS_STEPS),
@@ -1018,7 +1018,7 @@ impl H {
                 g.lod_distance = LOD_STEPS[(v * (LOD_STEPS.len() - 1) as f32).round() as usize]
             }
             H::Workers => g.workers = (v * max_workers() as f32).round() as u32,
-            H::ResolutionScale => g.resolution_scale = (25.0 + (v * 35.0).round() * 5.0) as u32,
+            H::ResolutionScale => g.resolution_scale = (10.0 + (v * 38.0).round() * 5.0) as u32,
             H::TargetFps => g.target_fps = (30.0 + (v * 42.0).round() * 5.0) as u32,
             H::UpscalingSharpness => g.upscaling_sharpness = (v * 20.0).round() as u32 * 5,
             H::HdrPaperWhite => g.hdr_paper_white = crate::graphics::nits_at(v),
@@ -2274,7 +2274,7 @@ mod tests {
         assert_eq!(s.horizon.preset, Preset::Retro);
         assert_eq!(s.render_distance, 4);
         assert_eq!(s.clouds, "false");
-        assert_eq!(s.horizon.resolution_scale, 25);
+        assert_eq!(s.horizon.resolution_scale, 15);
         assert_eq!(s.horizon.entity_culling, EntityCullingMode::Asynchronous);
         assert!(s.horizon.opaque_ice && s.horizon.cache_chests);
         Item::Horizon(H::Preset).cycle(&mut s, false, [854, 480], &NONE);

@@ -898,7 +898,7 @@ pub struct Graphics {
     /// and no preset sets it.
     pub parallel_tick: ParallelTickMode,
     pub overlay: Overlay,
-    /// World resolution as a percentage of the window's (25..=200). The floor
+    /// World resolution as a percentage of the window's (10..=200). The floor
     /// is what the renderer's own `MIN_SCALE` allows; below 100% it is also the
     /// floor Dynamic Resolution rises from.
     pub resolution_scale: u32,
@@ -1186,7 +1186,7 @@ impl Graphics {
                     }
                 }
                 "workers" => g.workers = number(g.workers).min(64),
-                "resolutionScale" => g.resolution_scale = number(g.resolution_scale).clamp(25, 200),
+                "resolutionScale" => g.resolution_scale = number(g.resolution_scale).clamp(10, 200),
                 "dynamicResolution" => g.dynamic_resolution = flag(g.dynamic_resolution),
                 "targetFps" => g.target_fps = number(g.target_fps).clamp(30, 240),
                 "fxaa" => g.fxaa = flag(g.fxaa),

@@ -34,7 +34,7 @@ los descarga de Mojang con el EULA aceptado, verificando cada SHA-1.
   con un toast al arrancar.
 - **RAM:** 4 GB mínimo, 8 GB recomendado. **Disco:** ~2 GB + las versiones instaladas.
 - **PC vieja:** dentro del juego, Opciones → Gráficos → preset **Retro** (distancia 4, nubes
-  apagadas, escala de resolución 25 %) es lo que más FPS da; detalle completo en
+  apagadas, escala de resolución 15 %; el slider llega hasta 10 %) es lo que más FPS da; detalle en
   [el sitio del fork](https://omarPVP123131.github.io/mineforge-rust-edition/#requisitos).
 
 ## Compilar desde la fuente

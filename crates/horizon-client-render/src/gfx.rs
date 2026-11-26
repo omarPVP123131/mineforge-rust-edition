@@ -6817,7 +6817,7 @@ impl Renderer {
     ) {
         self.world_post.set_sharpness(&self.device, sharpness);
         let taa = taa && self.world_post.supports_taa();
-        self.world_post.scale = scale.clamp(0.25, 2.0);
+        self.world_post.scale = scale.clamp(0.10, 2.0);
         self.world_post.antialias = antialias && !taa;
         self.world_post.taa = taa;
         self.world_post.upscale = if taa { upscale.clamp(1.0, 4.0) } else { 1.0 };

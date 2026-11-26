@@ -11,7 +11,7 @@
 use glam::{DMat4, DVec3, Mat4, Vec2};
 
 /// The least a world is scaled to when memory runs out.
-const MIN_SCALE: f32 = 0.25;
+const MIN_SCALE: f32 = 0.10;
 /// The TAA history format: 8 bits would band as frames accumulate.
 const HISTORY_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 
