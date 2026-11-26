@@ -898,7 +898,9 @@ pub struct Graphics {
     /// and no preset sets it.
     pub parallel_tick: ParallelTickMode,
     pub overlay: Overlay,
-    /// World resolution as a percentage of the window's (50..=200).
+    /// World resolution as a percentage of the window's (25..=200). The floor
+    /// is what the renderer's own `MIN_SCALE` allows; below 100% it is also the
+    /// floor Dynamic Resolution rises from.
     pub resolution_scale: u32,
     /// Dynamic Resolution: below 100%, `resolution_scale` is the floor, and the scale rises
     /// toward 100% while the GPU keeps `target_fps` (`crate::dynamic_resolution`). Off by default.
@@ -1184,7 +1186,7 @@ impl Graphics {
                     }
                 }
                 "workers" => g.workers = number(g.workers).min(64),
-                "resolutionScale" => g.resolution_scale = number(g.resolution_scale).clamp(50, 200),
+                "resolutionScale" => g.resolution_scale = number(g.resolution_scale).clamp(25, 200),
                 "dynamicResolution" => g.dynamic_resolution = flag(g.dynamic_resolution),
                 "targetFps" => g.target_fps = number(g.target_fps).clamp(30, 240),
                 "fxaa" => g.fxaa = flag(g.fxaa),

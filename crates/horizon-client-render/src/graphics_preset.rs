@@ -37,7 +37,9 @@ struct Table {
 fn table(preset: Preset) -> Option<Table> {
     Some(match preset {
         // Below Full Performance there is only drawing fewer pixels: the
-        // shortest distances the options allow and half the resolution.
+        // shortest distances the options allow and the lowest scale the
+        // renderer takes (MIN_SCALE): a quarter of the window's pixels, which
+        // is the whole game on a machine whose CPU draws it (MFRE, F23).
         Preset::Retro => Table {
             render_distance: 4,
             simulation_distance: 5,
@@ -51,7 +53,7 @@ fn table(preset: Preset) -> Option<Table> {
             weather_radius: 3,
             lod_distance: 0,
             opaque_ice: true,
-            resolution_scale: 50,
+            resolution_scale: 25,
             fxaa: false,
             dither_cutout_mips: false,
         },
