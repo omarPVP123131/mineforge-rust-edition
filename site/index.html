@@ -292,7 +292,7 @@
     <div class="tcard">
       <h3>PC vieja (guía rápida)</h3>
       <ul style="margin:8px 0 0;padding-left:18px;line-height:1.9">
-        <li>En el juego: Opciones → Gráficos → preset <b>Retro</b></li>
+        <li>En el juego: Opciones → Gráficos → preset <b>Retro</b> (distancia 2, cielo y clima apagados)</li>
         <li>Escala de resolución al 10–15 % (el slider llega hasta 10 %) y ventana pequeña</li>
         <li>Cierra todo lo demás: con 4 GB de RAM no sobra nada</li>
         <li>Si el aviso dice “Software rendering”, tu GPU quedó fuera: mejora modesta, milagros no</li>
@@ -328,9 +328,10 @@
     <p class="a">Mira la sección <a href="#requisitos" style="color:var(--ember2)">Requisitos</a>:
     si al arrancar aparece el aviso <b>“Software rendering”</b>, tu tarjeta gráfica no soporta
     Vulkan/DX12/OpenGL 3.3 y la CPU está dibujando el juego — ahí el techo lo pone el procesador.
-    Usa el preset <b>Retro</b> (baja la escala de resolución al 15 %; el slider llega hasta
-    <b>10 %</b> — en render por software los FPS son casi proporcionales a los píxeles, así que
-    es la palanca más fuerte): es lo que más da en esas máquinas.</p></details>
+    Usa el preset <b>Retro</b> (distancia de render 2 — unos 3× menos chunks que 4 —, cielo,
+    clima y texturas animadas apagados, y escala de resolución al 15 %; el slider llega hasta
+    <b>10 %</b> — en render por software los FPS son casi proporcionales a los píxeles): es lo
+    que más da en esas máquinas.</p></details>
   <details><summary>¿De dónde salen los mods y cómo se verifican?</summary>
     <p class="a">De la release <code>mods-26.3.0</code> del repositorio, listados en
     <code>registry/index.json</code> con su SHA-256: el launcher no instala nada cuya suma no cuadre.</p></details>

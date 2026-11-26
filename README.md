@@ -33,8 +33,9 @@ los descarga de Mojang con el EULA aceptado, verificando cada SHA-1.
   Sin eso el juego cae a **renderizado por software** (la CPU dibuja todo, muy lento) y lo avisa
   con un toast al arrancar.
 - **RAM:** 4 GB mínimo, 8 GB recomendado. **Disco:** ~2 GB + las versiones instaladas.
-- **PC vieja:** dentro del juego, Opciones → Gráficos → preset **Retro** (distancia 4, nubes
-  apagadas, escala de resolución 15 %; el slider llega hasta 10 %) es lo que más FPS da; detalle en
+- **PC vieja:** dentro del juego, Opciones → Gráficos → preset **Retro** (distancia de render 2,
+  nubes, cielo, clima y texturas animadas apagados, escala de resolución 15 %; el slider llega
+  hasta 10 %) es lo que más FPS da; detalle en
   [el sitio del fork](https://omarPVP123131.github.io/mineforge-rust-edition/#requisitos).
 
 ## Compilar desde la fuente

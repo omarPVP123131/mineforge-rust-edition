@@ -2269,18 +2269,21 @@ mod tests {
     fn presets_set_vanilla_and_horizon_options() {
         let mut s = Settings::default();
         // The cycle starts at the bottom, and the bottom is now Retro (MFRE,
-        // F23): the shortest distances and half the resolution.
+        // F23): the shortest distances, the lowest scale, and no sky, weather
+        // or animated textures.
         Item::Horizon(H::Preset).cycle(&mut s, false, [854, 480], &NONE);
         assert_eq!(s.horizon.preset, Preset::Retro);
-        assert_eq!(s.render_distance, 4);
+        assert_eq!(s.render_distance, 2);
         assert_eq!(s.clouds, "false");
         assert_eq!(s.horizon.resolution_scale, 15);
+        assert!(!s.horizon.sky && !s.horizon.weather && !s.horizon.animated_textures);
         assert_eq!(s.horizon.entity_culling, EntityCullingMode::Asynchronous);
         assert!(s.horizon.opaque_ice && s.horizon.cache_chests);
         Item::Horizon(H::Preset).cycle(&mut s, false, [854, 480], &NONE);
         assert_eq!(s.horizon.preset, Preset::FullPerformance);
         assert_eq!(s.render_distance, 6);
         assert_eq!(s.horizon.resolution_scale, 75);
+        assert!(s.horizon.sky && s.horizon.weather && s.horizon.animated_textures);
         // The next one puts back what only the bottom two presets lower.
         Item::Horizon(H::Preset).cycle(&mut s, false, [854, 480], &NONE);
         assert_eq!(s.horizon.preset, Preset::Performance);

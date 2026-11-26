@@ -10,9 +10,9 @@ use crate::settings::Settings;
 
 /// What differs between the presets. Every one of them also turns on entity and particle
 /// culling on a worker, the block-entity caches and GPU Culling's Auto (which tries it only
-/// where it makes frames faster), keeps cave culling, the sky, the fog, the weather and the
-/// animated textures on, uploads meshes unthrottled and draws at a fixed resolution without
-/// TAA.
+/// where it makes frames faster), keeps cave culling and the fog on, uploads meshes
+/// unthrottled and draws at a fixed resolution without TAA. Every one but Retro also keeps
+/// the sky, the weather and the animated textures on.
 struct Table {
     render_distance: i32,
     simulation_distance: i32,
@@ -32,17 +32,22 @@ struct Table {
     resolution_scale: u32,
     fxaa: bool,
     dither_cutout_mips: bool,
+    /// The sky, the weather and the animated textures: Retro turns them off,
+    /// every other preset keeps them on.
+    sky: bool,
+    weather: bool,
+    animated_textures: bool,
 }
 
 fn table(preset: Preset) -> Option<Table> {
     Some(match preset {
-        // Below Full Performance there is only drawing fewer pixels: the
-        // shortest distances the options allow and a scale near the floor the
-        // renderer takes (MIN_SCALE, 10%): 15% is under a tenth of the
-        // window's pixels, which is the whole game on a machine whose CPU
-        // draws it, and still a recognizable world (MFRE, F23).
+        // Below Full Performance there is only drawing less: the shortest
+        // distances the options allow, a scale near the floor the renderer
+        // takes (MIN_SCALE, 10%), and no sky, weather or animated textures —
+        // where the CPU draws the game, every chunk and every layer it does
+        // not draw is time it does not spend (MFRE, F23).
         Preset::Retro => Table {
-            render_distance: 4,
+            render_distance: 2,
             simulation_distance: 5,
             clouds: "false",
             particles: 2,
@@ -57,6 +62,9 @@ fn table(preset: Preset) -> Option<Table> {
             resolution_scale: 15,
             fxaa: false,
             dither_cutout_mips: false,
+            sky: false,
+            weather: false,
+            animated_textures: false,
         },
         Preset::FullPerformance => Table {
             render_distance: 6,
@@ -74,6 +82,9 @@ fn table(preset: Preset) -> Option<Table> {
             resolution_scale: 75,
             fxaa: false,
             dither_cutout_mips: false,
+            sky: true,
+            weather: true,
+            animated_textures: true,
         },
         Preset::Performance => Table {
             render_distance: 8,
@@ -91,6 +102,9 @@ fn table(preset: Preset) -> Option<Table> {
             resolution_scale: 100,
             fxaa: false,
             dither_cutout_mips: false,
+            sky: true,
+            weather: true,
+            animated_textures: true,
         },
         Preset::Balanced => Table {
             render_distance: 12,
@@ -108,6 +122,9 @@ fn table(preset: Preset) -> Option<Table> {
             resolution_scale: 100,
             fxaa: false,
             dither_cutout_mips: false,
+            sky: true,
+            weather: true,
+            animated_textures: true,
         },
         Preset::Quality => Table {
             render_distance: 16,
@@ -125,6 +142,9 @@ fn table(preset: Preset) -> Option<Table> {
             resolution_scale: 100,
             fxaa: true,
             dither_cutout_mips: false,
+            sky: true,
+            weather: true,
+            animated_textures: true,
         },
         Preset::Ultra => Table {
             render_distance: 24,
@@ -142,6 +162,9 @@ fn table(preset: Preset) -> Option<Table> {
             resolution_scale: 100,
             fxaa: true,
             dither_cutout_mips: true,
+            sky: true,
+            weather: true,
+            animated_textures: true,
         },
         Preset::Custom => return None,
     })
@@ -178,10 +201,10 @@ pub fn apply_preset(preset: Preset, s: &mut Settings) {
     g.cache_copper_golem_statues = true;
     g.chunk_updates = 0;
     g.upload_budget_kib = 0;
-    g.sky = true;
+    g.sky = t.sky;
     g.fog = true;
-    g.weather = true;
-    g.animated_textures = true;
+    g.weather = t.weather;
+    g.animated_textures = t.animated_textures;
     g.dither_cutout_mips = t.dither_cutout_mips;
     g.resolution_scale = t.resolution_scale;
     g.dynamic_resolution = false;

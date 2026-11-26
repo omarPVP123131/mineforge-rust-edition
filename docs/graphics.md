@@ -18,25 +18,26 @@ Every setting applies at once, except worker threads, the graphics API, transluc
 
 Each preset is a fixed table (`graphics_preset.rs`), so picking one gives the same settings whatever was set before:
 
-| | Full Performance | Performance | Balanced | Quality | Ultra |
-| --- | --- | --- | --- | --- | --- |
-| Render distance | 6 | 8 | 12 | 16 | 24 |
-| Simulation distance | 5 | 6 | 8 | 12 | 12 |
-| Clouds | off | off | fast | fancy | fancy |
-| Particles | minimal | minimal | decreased | all | all |
-| Entity shadows | off | off | on | on | on |
-| Biome blend | off | off | 3×3 | 5×5 | 7×7 |
-| Mipmap levels | 0 | 0 | 2 | 4 | 4 |
-| Entity distance | 50% | 50% | 75% | 100% | 150% |
-| Cutout leaves | off | off | on | on | on |
-| Weather radius | 3 | 3 | 5 | 10 | 10 |
-| LOD distance | off | off | off | 64 | 128 |
-| Opaque ice | on | off | off | off | off |
-| Resolution scale | 75% | 100% | 100% | 100% | 100% |
-| Anti-aliasing | off | off | off | FXAA | FXAA |
-| Distant plant dither | off | off | off | off | on |
+| | Retro | Full Performance | Performance | Balanced | Quality | Ultra |
+| --- | --- | --- | --- | --- | --- | --- |
+| Render distance | 2 | 6 | 8 | 12 | 16 | 24 |
+| Simulation distance | 5 | 5 | 6 | 8 | 12 | 12 |
+| Clouds | off | off | off | fast | fancy | fancy |
+| Particles | minimal | minimal | minimal | decreased | all | all |
+| Entity shadows | off | off | off | on | on | on |
+| Biome blend | off | off | off | 3×3 | 5×5 | 7×7 |
+| Mipmap levels | 0 | 0 | 0 | 2 | 4 | 4 |
+| Entity distance | 50% | 50% | 50% | 75% | 100% | 150% |
+| Cutout leaves | off | off | off | on | on | on |
+| Weather radius | 3 | 3 | 3 | 5 | 10 | 10 |
+| LOD distance | off | off | off | off | 64 | 128 |
+| Opaque ice | on | on | off | off | off | off |
+| Resolution scale | 15% | 75% | 100% | 100% | 100% | 100% |
+| Anti-aliasing | off | off | off | off | FXAA | FXAA |
+| Distant plant dither | off | off | off | off | off | on |
+| Sky, weather, animated textures | off | on | on | on | on | on |
 
-Every preset also turns on the optimizations that leave the picture as it is: asynchronous entity and particle culling, the block-entity caches and GPU Culling's Auto, which tries it only where it makes frames faster. Full Performance adds the ones that change the picture (opaque ice, the lower resolution). Every preset keeps cave culling, the sky, the fog, the weather and the animated textures on, uploads meshes unthrottled, and turns dynamic resolution, TAA and upscaling off. Far detail, translucent batching (on unless the player turned it off), leaf culling (it changes how canopies look, and has nothing to cull where a preset turns cutout leaves off) and the entity culling precheck keep the player's choice.
+Every preset also turns on the optimizations that leave the picture as it is: asynchronous entity and particle culling, the block-entity caches and GPU Culling's Auto, which tries it only where it makes frames faster. Full Performance adds the ones that change the picture (opaque ice, the lower resolution). Every preset keeps cave culling and the fog on, uploads meshes unthrottled, and turns dynamic resolution, TAA and upscaling off; every preset but Retro also keeps the sky, the weather and the animated textures on (Retro drops them, and takes the render distance to the options' floor: where the CPU draws the game, every chunk and every layer it does not draw is time it does not spend). Far detail, translucent batching (on unless the player turned it off), leaf culling (it changes how canopies look, and has nothing to cull where a preset turns cutout leaves off) and the entity culling precheck keep the player's choice.
 
 ![The graphics settings screen](media/settings-graphics.png)
 

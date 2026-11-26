@@ -2061,17 +2061,27 @@ mod tests {
     }
 
     #[test]
-    fn every_preset_keeps_the_animated_textures_on() {
+    fn every_preset_but_retro_keeps_the_animated_textures_on() {
         // The Performance preset used to turn them off, which froze the fire,
-        // the water, the lava and the portals (#2064).
+        // the water, the lava and the portals (#2064). Retro is the one
+        // deliberate exception (MFRE, F23): where the CPU draws the game, it
+        // trades the animations for frames, as the player's own choice of the
+        // preset.
         assert!(Graphics::default().animated_textures);
         for preset in Preset::ALL {
             let mut s = crate::settings::Settings::default();
             apply_preset(preset, &mut s);
-            assert!(
-                s.horizon.animated_textures,
-                "{preset:?} turned the animated textures off"
-            );
+            if preset == Preset::Retro {
+                assert!(
+                    !s.horizon.animated_textures,
+                    "Retro keeps the animated textures on"
+                );
+            } else {
+                assert!(
+                    s.horizon.animated_textures,
+                    "{preset:?} turned the animated textures off"
+                );
+            }
         }
     }
 
