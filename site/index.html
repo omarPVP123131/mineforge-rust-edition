@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MineForge Rust Edition — Descargas</title>
+<meta name="description" content="MineForge Rust Edition: Minecraft 26.3 reinventado en Rust. Gratis, sin cuenta obligatoria y sin telemetría. Descarga el launcher.">
+<style>
+  :root{
+    --bg:#141210; --panel:#1e1a17; --panel2:#262119; --ink:#f4ede4; --muted:#b3a89b;
+    --ember:#f0862a; --ember2:#ffb066; --line:#3a322a; --ok:#7dc98f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif}
+  a{color:var(--ember2)}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+  header{border-bottom:1px solid var(--line);background:linear-gradient(180deg,#1b1713,#141210)}
+  .bar{display:flex;align-items:center;gap:12px;padding:14px 0}
+  .bar .name{font-weight:700;letter-spacing:.3px}
+  .bar .tag{color:var(--muted);font-size:13px}
+  .hero{padding:56px 0 30px;text-align:center}
+  .hero h1{font-size:clamp(28px,5vw,44px);margin:0 0 10px;line-height:1.15}
+  .hero h1 em{color:var(--ember);font-style:normal}
+  .hero p{color:var(--muted);max-width:640px;margin:0 auto 26px}
+  .btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:13px 22px;border-radius:12px;
+       text-decoration:none;font-weight:600;border:1px solid var(--line)}
+  .btn.primary{background:var(--ember);color:#20140a;border-color:var(--ember)}
+  .btn.primary:hover{background:var(--ember2)}
+  .btn.ghost{background:var(--panel);color:var(--ink)}
+  .btn.ghost:hover{border-color:var(--ember)}
+  .meta{margin:18px auto 0;color:var(--muted);font-size:13.5px;max-width:760px}
+  .meta code{background:var(--panel2);padding:2px 6px;border-radius:6px;color:var(--ember2)}
+  section{padding:34px 0}
+  h2{font-size:22px;margin:0 0 14px}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h3{margin:0 0 8px;font-size:16px}
+  .card p{margin:0;color:var(--muted);font-size:14.5px}
+  .step b{color:var(--ember2)}
+  .note{background:#2a1c10;border:1px solid #5a3a1c;border-radius:14px;padding:16px 18px;color:#f0d9bd}
+  .note b{color:var(--ember2)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  td,th{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  td code{word-break:break-all;color:var(--ember2);font-size:12.5px}
+  .mod{display:flex;gap:14px;align-items:flex-start}
+  .mod img{width:56px;height:56px;border-radius:10px;border:1px solid var(--line)}
+  .mod .sum{color:var(--muted);font-size:14px;margin:4px 0 8px}
+  .pill{display:inline-block;background:var(--panel2);border:1px solid var(--line);
+        border-radius:999px;padding:2px 10px;font-size:12px;color:var(--muted);margin-right:6px}
+  footer{border-top:1px solid var(--line);margin-top:30px;padding:26px 0 40px;color:var(--muted);font-size:13.5px}
+  footer p{margin:8px 0}
+  .hide{display:none}
+  .fail{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<header><div class="wrap bar">
+  <svg width="30" height="30" viewBox="0 0 32 32" aria-label="Logo MineForge">
+    <rect width="32" height="32" rx="7" fill="#1e1a17"/>
+    <path d="M8 24V9l5 8 3-5 3 5 5-8v15" fill="none" stroke="#f0862a" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>
+  <span class="name">MineForge Rust Edition</span>
+  <span class="tag">Horizon · Minecraft 26.3 en Rust</span>
+</div></header>
+
+<div class="wrap hero">
+  <h1>Minecraft 26.3, <em>reinventado en Rust</em>.</h1>
+  <p>Motor de juego escrito desde cero en Rust: sin cuenta obligatoria, sin telemetría y sin
+     monetización de ningún tipo. Lo instala, lo verifica y lo actualiza su launcher.</p>
+  <div class="btns">
+    <a class="btn primary" id="dl-win" href="https://github.com/omarPVP123131/mineforge-rust-edition/releases">
+      ⬇ Descargar para Windows</a>
+    <a class="btn ghost" id="dl-linux" href="https://github.com/omarPVP123131/mineforge-rust-edition/releases">
+      Launcher para Linux x86-64</a>
+    <a class="btn ghost" href="https://github.com/omarPVP123131/mineforge-rust-edition">Código fuente</a>
+  </div>
+  <p class="meta" id="meta">Consultando las releases…</p>
+  <p class="meta fail hide" id="meta-fail">No se pudieron consultar las releases ahora mismo:
+     entra en <a href="https://github.com/omarPVP123131/mineforge-rust-edition/releases">la página
+     de releases</a> y descarga el launcher más reciente (empieza por <code>launcher@</code>).</p>
+</div>
+
+<div class="wrap">
+  <section>
+    <h2>Instalación en tres pasos</h2>
+    <div class="grid">
+      <div class="card step"><h3>1 · Instala el launcher</h3>
+        <p><b>Windows:</b> doble clic en <code>horizon-launcher-setup.exe</code>.
+           <b>Linux:</b> descomprime el tar.gz y ejecuta <code>./horizon-launcher</code>; si la
+           terminal protesta por librerías, lee <code>LEEME-LINUX.txt</code> que viene dentro.</p></div>
+      <div class="card step"><h3>2 · Acepta el EULA</h3>
+        <p>En la pestaña <b>Jugar</b>, marca la casilla del EULA de Minecraft (hay que tener una
+           copia de Minecraft: Java Edition) y aparece el botón <b>Instalar y jugar</b>.</p></div>
+      <div class="card step"><h3>3 · Juega</h3>
+        <p>El launcher descarga el motor, comprueba su SHA-256 y su firma Ed25519, prepara la
+           partida y juega. Las actualizaciones llegan solas.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="note"><b>¿Descargaste <code>horizon-windows-x64.zip</code> y no arranca?</b>
+      Eso es el motor suelto, no el juego instalado: por diseño no arranca sin el launcher
+      (necesita los archivos de tu Minecraft). Instala el launcher del paso 1 y olvídate del ZIP.</div>
+  </section>
+
+  <section>
+    <h2>Sumas y firma de lo que descargas</h2>
+    <div class="card"><table id="sums"><tbody>
+      <tr><td colspan="2">Consultando SHA256SUMS de la release del launcher…</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section>
+    <h2>Mods propios del fork</h2>
+    <div class="grid" id="mods"><div class="card"><p>Consultando el catálogo…</p></div></div>
+    <p class="meta">Dentro del launcher aparecen en la página <b>Mods</b>, fusionados con el
+       catálogo de Horizon. Los mods nativos (Cinética) entrarán cuando se publique el SDK
+       del build.</p>
+  </section>
+</div>
+
+<footer><div class="wrap">
+  <p><b>NOT AN OFFICIAL MINECRAFT PRODUCT.</b> No aprobado por ni asociado con Mojang o Microsoft.
+     «Minecraft» es marca de Mojang Synergies AB.</p>
+  <p>MineForge Rust Edition es software libre (LGPL-3.0): el código, los parches numerados y los
+     avisos de licencia viven en el repositorio. Gratis para siempre: sin compras, sin anuncios,
+     sin telemetría (desactivada por defecto).</p>
+  <p>Enlaces: <a href="https://github.com/omarPVP123131/mineforge-rust-edition/blob/main/LICENSE">LICENSE</a> ·
+     <a href="https://github.com/omarPVP123131/mineforge-rust-edition/blob/main/NOTICE-MFRE.md">NOTICE-MFRE</a> ·
+     <a href="https://github.com/omarPVP123131/mineforge-rust-edition/releases">Releases</a> ·
+     <a href="https://github.com/omarPVP123131/mineforge-rust-edition/issues">Reportar un problema</a></p>
+</div></footer>
+
+<script>
+const REPO = "https://api.github.com/repos/omarPVP123131/mineforge-rust-edition";
+const PAGE = "https://github.com/omarPVP123131/mineforge-rust-edition/releases";
+const $ = id => document.getElementById(id);
+const mb = n => (n/1048576).toFixed(1).replace(".", ",") + " MB";
+const short = h => h.slice(0, 8) + "…" + h.slice(-4);
+
+async function json(url){ const r = await fetch(url); if(!r.ok) throw new Error(r.status); return r.json(); }
+
+(async () => {
+  try {
+    const [latest, all] = await Promise.all([json(REPO + "/releases/latest"), json(REPO + "/releases?per_page=30")]);
+    const asset = n => (latest.assets || []).find(a => a.name === n);
+    const win = asset("horizon-launcher-setup.exe");
+    const lin = asset("horizon-launcher-linux-x86_64.tar.gz");
+    const sums = asset("SHA256SUMS");
+    if (win) { $("dl-win").href = win.browser_download_url; $("dl-win").textContent = "⬇ Descargar para Windows (" + mb(win.size) + ")"; }
+    if (lin) { $("dl-linux").href = lin.browser_download_url; $("dl-linux").textContent = "Launcher para Linux x86-64 (" + mb(lin.size) + ")"; }
+    const game = all.find(r => /^v\d/.test(r.tag_name) && !r.prerelease && !r.draft);
+    $("meta").innerHTML = "Launcher <code>" + latest.tag_name + "</code> · juego estable <code>" +
+      (game ? game.tag_name : "—") + "</code> · sumas SHA-256 y firma Ed25519 en cada release" +
+      (sums ? " · <a href=\"" + sums.browser_download_url + "\">SHA256SUMS</a>" : "");
+    if (sums) {
+      const t = await (await fetch(sums.browser_download_url)).text();
+      $("sums").innerHTML = "<tbody>" + t.trim().split("\n").map(l => {
+        const [h, f] = l.split(/\s+/); return "<tr><td><code>" + h + "</code></td><td>" + f + "</td></tr>";
+      }).join("") + "</tbody>";
+    }
+  } catch (e) {
+    $("meta").classList.add("hide"); $("meta-fail").classList.remove("hide");
+    $("sums").innerHTML = "<tbody><tr><td>Ver las sumas en la página de releases.</td><td></td></tr></tbody>";
+  }
+  try {
+    const idx = await json("https://raw.githubusercontent.com/omarPVP123131/mineforge-rust-edition/main/registry/index.json");
+    $("mods").innerHTML = idx.projects.map(p => {
+      const v = p.versions[0];
+      return "<div class=\"card mod\">" +
+        (p.icon ? "<img alt=\"\" src=\"" + p.icon + "\">" : "") +
+        "<div><h3>" + p.name + " <span class=\"pill\">" + v.version + "</span><span class=\"pill\">Minecraft " + v.game + "</span></h3>" +
+        "<p class=\"sum\">" + p.summary + "</p>" +
+        "<p><span class=\"pill\">" + p.license + "</span><span class=\"pill\">" + (v.side === "both" ? "cliente y servidor" : v.side) + "</span> " +
+        "<a href=\"" + v.file.url + "\">descargar .hmod</a></p></div></div>";
+    }).join("");
+  } catch (e) {
+    $("mods").innerHTML = "<div class=\"card\"><p>El catálogo no se pudo cargar ahora mismo; dentro del launcher se ve igual (página Mods).</p></div>";
+  }
+})();
+</script>
+</body>
+</html>

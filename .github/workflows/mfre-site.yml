@@ -1,0 +1,36 @@
+name: mfre site
+# MineForge Rust Edition: publishes the fork's download page (site/) to GitHub Pages. One plain
+# HTML file, no build step: it resolves the launcher's download buttons, the sums and the mod
+# catalog from the public API at view time, so the page never names a version that moved.
+# The site is documentation, not a release channel: nothing reads it but players.
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', '.github/workflows/mfre-site.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: mfre-site
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: site
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
