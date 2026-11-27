@@ -1533,6 +1533,8 @@ fn mfre_catalog_passes_the_readers_checks() {
     let text = fs::read_to_string(at).unwrap();
     let index = Index::parse(&text).unwrap();
     let p = index.project("mfre_ember").expect("MFRE Ember is listed");
+    // Ember is content-only: listed as a content mod, inspected as one at install.
+    assert_eq!(p.kind, index::Kind::Mod);
     let v = index
         .installable_for(p, GAME, &[] as &[String])
         .expect("MFRE Ember installs for this game");
@@ -1575,10 +1577,34 @@ fn mfre_catalog_lists_the_kinetic_native_mod() {
     let p = index
         .project("mfre_kinetic")
         .expect("Cinética MFRE is listed");
+    // The catalog kind decides how the downloaded file is inspected: a native mod listed as a
+    // content mod is refused at install ("it has native code: it is a native-mod").
+    assert_eq!(p.kind, index::Kind::NativeMod);
     let v = index
         .installable_for(p, GAME, &[] as &[String])
         .expect("Cinética installs for this game");
     assert_eq!(v.file.name, "mfre_kinetic-0.1.0.hmod");
+    // The version's API line carries the build pins, exactly as the mod's own manifest declares
+    // them: the install compares the file's facts with what the index lists.
+    let manifest = fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../mods/mfre-kinetic/horizon-mod.toml"),
+    )
+    .unwrap();
+    let pin = |key: &str| -> String {
+        manifest
+            .lines()
+            .find_map(|l| l.strip_prefix(&format!("{key} = \"")))
+            .map(|rest| rest.trim_end_matches('"').to_owned())
+            .unwrap_or_else(|| panic!("the manifest pins {key}"))
+    };
+    assert_eq!(
+        v.api,
+        format!("native-1/{}/{}", pin("horizon"), pin("mixins"))
+    );
+    assert_eq!(v.game, pin("game"));
+    // A native bundle's facts carry no side and no capabilities; the index must not list them.
+    assert_eq!(v.side, None);
+    assert!(v.capabilities.known().is_empty());
     assert!(v.file.url.contains("/releases/download/mods-26.3.2/"));
     assert_eq!(
         download::refuse(&FileRef {
