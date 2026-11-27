@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated": "2026-11-27T18:17:58Z",
+  "generated": "2026-11-27T22:14:51Z",
   "projects": [
     {
       "id": "mfre_ember",
@@ -69,16 +69,16 @@
       ],
       "versions": [
         {
-          "version": "0.1.0",
+          "version": "0.1.1",
           "published": "2026-11-27",
-          "changelog": "Primera publicación en el catálogo: MVP rotacional (ejes, ruedas dentadas, manivela, rueda de agua y medidores).",
+          "changelog": "Arregla el arranque: la manivela registraba su Part dos veces (el del block entity ya se expande a sus 7 bloques) y el juego rechazaba la carga con \"attached to mfre_kinetic:hand_crank twice\". Sin cambios de contenido.",
           "api": "native-1/4c00d50b1476544ee4551e42be89d07254f577a4/e59da9094f0c2fdda6c627fe9eff22dec6a906f0",
           "game": "26.3",
           "file": {
-            "name": "mfre_kinetic-0.1.0.hmod",
-            "url": "https://github.com/omarPVP123131/mineforge-rust-edition/releases/download/mods-26.3.2/mfre_kinetic-0.1.0.hmod",
-            "size": 43032,
-            "sha256": "b3239ed6e05b786b70e9600469c9f79723b7f0fb9a36093ad8aada770d5e5693"
+            "name": "mfre_kinetic-0.1.1.hmod",
+            "url": "https://github.com/omarPVP123131/mineforge-rust-edition/releases/download/mods-26.3.2.1/mfre_kinetic-0.1.1.hmod",
+            "size": 43134,
+            "sha256": "ff6a93444fa14fe01d711779cc6e4e473834195e545e8cb17ef12c4e0df6ca49"
           }
         }
       ]

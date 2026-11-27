@@ -1583,7 +1583,7 @@ fn mfre_catalog_lists_the_kinetic_native_mod() {
     let v = index
         .installable_for(p, GAME, &[] as &[String])
         .expect("Cinética installs for this game");
-    assert_eq!(v.file.name, "mfre_kinetic-0.1.0.hmod");
+    assert_eq!(v.file.name, "mfre_kinetic-0.1.1.hmod");
     // The version's API line carries the build pins, exactly as the mod's own manifest declares
     // them: the install compares the file's facts with what the index lists.
     let manifest = fs::read_to_string(
@@ -1605,7 +1605,7 @@ fn mfre_catalog_lists_the_kinetic_native_mod() {
     // A native bundle's facts carry no side and no capabilities; the index must not list them.
     assert_eq!(v.side, None);
     assert!(v.capabilities.known().is_empty());
-    assert!(v.file.url.contains("/releases/download/mods-26.3.2/"));
+    assert!(v.file.url.contains("/releases/download/mods-26.3.2.1/"));
     assert_eq!(
         download::refuse(&FileRef {
             url: v.file.url.clone(),
