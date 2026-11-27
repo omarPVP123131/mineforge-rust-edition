@@ -155,9 +155,11 @@ impl Hooks for Mod {
                 "stressometer",
             ])
             .build();
+        // El type ya cubre el clic derecho de la manivela: la instalación expande este Part
+        // como BlockPart de los 7 bloques del type, así que `use_without_item` despacha sin
+        // un `block_part` explícito — registrarlo además lo adjuntaría dos veces al mismo
+        // bloque y el juego rechaza el arranque ("attached to … twice").
         r.block_entity_part_with_state(&kind, Kinetic)
             .expect("native block entity type");
-        // El clic derecho de la manivela: BlockPart sobre el bloque (use_without_item).
-        r.block_part(crank_key, Kinetic);
     }
 }

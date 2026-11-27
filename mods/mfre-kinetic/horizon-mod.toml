@@ -1,6 +1,6 @@
 id = "mfre_kinetic"
 name = "Cinética MFRE"
-version = "0.1.0"
+version = "0.1.1"
 description = "Potencia rotacional, máquinas y estructuras móviles para MineForge Rust Edition. Reescritura clean-room inspirada en Create (MIT, (c) simibubi); ver NOTICE-MFRE."
 authors = ["MFRE"]
 # Mod nativo (D21/D23): Rust en src/, compilado por el launcher contra los pines de [native], junto a data/ y assets/.
