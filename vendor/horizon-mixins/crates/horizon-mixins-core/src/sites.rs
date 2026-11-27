@@ -17,22 +17,6 @@ pub fn contains_closure(expr: &Expr) -> bool {
     find.visit_expr(expr);
     find.0
 }
-/// Whether `expr` holds a `?`, a try block, or an `unsafe` or `const` block.
-pub fn contains_exit_or_block(expr: &Expr) -> bool {
-    struct Find(bool);
-    impl<'ast> Visit<'ast> for Find {
-        fn visit_expr(&mut self, e: &'ast Expr) {
-            self.0 |= matches!(
-                e,
-                Expr::Try(_) | Expr::TryBlock(_) | Expr::Unsafe(_) | Expr::Const(_)
-            );
-            visit::visit_expr(self, e);
-        }
-    }
-    let mut find = Find(false);
-    find.visit_expr(expr);
-    find.0
-}
 pub fn is_call(expr: &Expr) -> bool {
     matches!(expr, Expr::Call(_) | Expr::MethodCall(_))
 }
@@ -130,9 +114,6 @@ pub struct Site {
     pub const_context: bool,
     /// Inside a closure body: the closure may run later, elsewhere or never.
     pub in_closure: bool,
-    /// Inside the operand of a `&` or `&mut`, where its value may be a temporary whose
-    /// lifetime the borrow extends.
-    pub beneath_reference: bool,
 }
 #[derive(Default)]
 pub struct Sites {
@@ -143,7 +124,6 @@ pub struct Sites {
     next_is_root: bool,
     const_context: bool,
     closures: usize,
-    references: usize,
 }
 impl Sites {
     pub fn in_block(block: &syn::Block) -> Self {
@@ -206,7 +186,6 @@ impl<'ast> Visit<'ast> for Sites {
             whole_expression: root,
             const_context: self.const_context,
             in_closure: self.closures > 0,
-            beneath_reference: self.references > 0,
         };
         self.values.push(site(expression));
         if is_call(expr) {
@@ -219,10 +198,7 @@ impl<'ast> Visit<'ast> for Sites {
         if matches!(expr, Expr::Paren(_)) {
             self.next_is_root = root;
         }
-        let reference = matches!(expr, Expr::Reference(_));
-        self.references += usize::from(reference);
         visit::visit_expr(self, expr);
-        self.references -= usize::from(reference);
     }
 }
 

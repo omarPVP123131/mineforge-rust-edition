@@ -697,14 +697,14 @@ fn cfg_attributes_shared_module_sources_and_shadowing_fail_closed() {
         ),
         (
             "engine/src/calls.rs",
-            "let second = consume(next(evaluations, log));",
-            "let second = consume(unknown()?);",
+            "let first = consume(next(evaluations, log));",
+            "let _value = unknown()?; let first = consume(next(evaluations, log));",
             "E_UNSUPPORTED_CONTROL_FLOW",
         ),
         (
             "engine/src/calls.rs",
-            "let second = consume(next(evaluations, log));",
-            "let second = *&consume(next(evaluations, log));",
+            "let first = consume(next(evaluations, log));",
+            "let _value = &unknown(); let first = consume(next(evaluations, log));",
             "E_UNSUPPORTED_CONTROL_FLOW",
         ),
         (

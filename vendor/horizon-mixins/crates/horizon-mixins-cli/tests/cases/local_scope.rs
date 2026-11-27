@@ -129,14 +129,12 @@ fn sites_in_closures_and_other_unsupported_scopes_stay_refused() {
         &bump("values.iter().map(|x| x + 1).count()"),
     );
     reject(&f, "E_UNSUPPORTED_SITE");
-    // A `?` elsewhere is left as written.
-    let f = fixture(
+    // Async closures, `?` and nested items are as unsupported as before.
+    for body in [
+        "let f = async || 1; sink(1)",
         "let f = || Some(1)?; sink(1)",
-        &before("before", "sink", 1, 0),
-    );
-    build_plan(&f.root, &f.mods).unwrap();
-    // Async closures and nested items are as unsupported as before.
-    for body in ["let f = async || 1; sink(1)", "fn inner() {} sink(1)"] {
+        "fn inner() {} sink(1)",
+    ] {
         let f = fixture(body, &before("before", "sink", 1, 0));
         reject(&f, "E_UNSUPPORTED_CONTROL_FLOW");
     }
@@ -174,11 +172,11 @@ fn local_use_that_could_change_generated_code_is_refused() {
         &before("before", "sink", 1, 0),
     );
     reject(&f, "E_UNSUPPORTED_MACRO");
-    // OVERWRITE drops the whole body, its local `use` with it.
+    // OVERWRITE rewrites the whole body and keeps its old restriction.
     let f = fixture(
         "use std::vec::Vec; sink(1)",
         "\n[[injection]]\nid=\"overwrite\"\ntarget=\"fixture_game::run\"\nkind=\"OVERWRITE\"\nhelper=\"over.rs\"\n",
     );
     fs::write(f.mods.join("alpha/over.rs"), "fn over() -> i32 { 1 }").unwrap();
-    build_plan(&f.root, &f.mods).unwrap();
+    reject(&f, "E_UNSUPPORTED_CONTROL_FLOW");
 }

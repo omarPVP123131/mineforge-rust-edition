@@ -633,32 +633,6 @@ pub fn build_staged(workspace: &Path, mods: &Path) -> Result<(Plan, crate::nativ
                 {
                     return Err(context(Diagnostic::new("E_UNSUPPORTED_SITE", "the selected site contains a closure, which this hook would move into generated code").file(&f.file)));
                 }
-                // The site moves into generated code, where a `?` would leave a closure instead
-                // of the function.
-                if sites::contains_exit_or_block(&site.expr) {
-                    return Err(context(Diagnostic::new(CLOSURES_ETC.0, "the selected site contains `?`, an `unsafe` or a `const` block, which this hook would move into generated code").file(&f.file)));
-                }
-                // The site moves into generated code: a borrow of a call inside it could have
-                // been extended (a tuple-struct argument, say) where the generated call is not.
-                if referenced_call(&site.expr) {
-                    return Err(context(Diagnostic::new(REFERENCED_CALL.0, "the selected site contains a call beneath a reference, which may change temporary lifetimes").file(&f.file)));
-                }
-                // Beneath a borrow, only a hook that replaces the site by a value of the same
-                // type in the same place keeps the borrow's temporary as it was: the generated
-                // call's result is the borrowed temporary, extended exactly as the site's was.
-                // A statement form (a block before or after the call) is not.
-                if site.beneath_reference
-                    && !matches!(
-                        injection.kind,
-                        Kind::WrapOperation
-                            | Kind::ModifyArg
-                            | Kind::ModifyArgs
-                            | Kind::ModifyExpressionValue
-                            | Kind::ModifyConstant
-                    )
-                {
-                    return Err(context(Diagnostic::new(REFERENCED_CALL.0, "the selected site is beneath a reference, where only a hook that wraps its value may run").file(&f.file)));
-                }
                 if (injection.kind == Kind::BeforeCall
                     || (injection.kind == Kind::AfterCall && injection.cancellable))
                     && !site.whole_expression
@@ -1005,9 +979,6 @@ pub(crate) fn validate_target_with(
         // are checked in those values only ([`exit_value_error`]). MODIFY_VARIABLE likewise
         // replaces only the value it selects ([`modified_value_error`]).
         rewrites_body: !matches!(kind, Kind::Return | Kind::ModifyVariable),
-        // A hook that rewrites only the site it selects leaves every other borrow as written;
-        // the selected site's own borrows are checked where it is selected.
-        site_only: kind.selects_site(),
         // A `?` is an exit RETURN would miss; MODIFY_VARIABLE leaves one outside its value alone.
         try_outside_value: kind == Kind::ModifyVariable,
         body_macros: false,
@@ -1034,10 +1005,7 @@ pub(crate) fn validate_target_with(
     // any exit or expression inside a macro, just like ordinary HEAD.
     safety.body_macros = safety.boundary;
     safety.in_body = true;
-    // OVERWRITE drops the body: nothing in it reaches the staged function.
-    if kind != Kind::Overwrite {
-        safety.visit_block(&f.block);
-    }
+    safety.visit_block(&f.block);
     if safety.error.is_none() && kind == Kind::Return {
         safety.error = exit_value_error(&f.block);
     }
@@ -1205,7 +1173,6 @@ struct Safety {
     error: Option<(&'static str, &'static str)>,
     boundary: bool,
     rewrites_body: bool,
-    site_only: bool,
     try_outside_value: bool,
     body_macros: bool,
     relaxed: bool,
@@ -1270,9 +1237,6 @@ impl<'ast> Visit<'ast> for Safety {
             // RETURN never rewrites inside a closure; what is inside is still checked.
             Expr::Closure(c) if (!self.rewrites_body || self.relaxed) && c.asyncness.is_none() => {}
             Expr::Try(_) if self.try_outside_value => {}
-            // A hook that rewrites only its site leaves a `?`, `unsafe` or `const` block
-            // elsewhere as written; the site itself is checked where it is selected.
-            Expr::Try(_) | Expr::Unsafe(_) | Expr::Const(_) if self.site_only => {}
             Expr::Closure(_)
             | Expr::Async(_)
             | Expr::Await(_)
@@ -1283,10 +1247,7 @@ impl<'ast> Visit<'ast> for Safety {
             | Expr::Const(_) => self.error = Some(CLOSURES_ETC),
             // Calls under a reference can depend on temporary lifetime extension.
             Expr::Reference(r)
-                if self.rewrites_body
-                    && !self.site_only
-                    && self.macro_depth == 0
-                    && contains_call(&r.expr) =>
+                if self.rewrites_body && self.macro_depth == 0 && contains_call(&r.expr) =>
             {
                 self.error = Some(REFERENCED_CALL)
             }
@@ -1384,23 +1345,6 @@ impl<'ast> Visit<'ast> for Safety {
             ));
         }
     }
-}
-/// Whether `expr` borrows the result of a call anywhere within it.
-fn referenced_call(expr: &Expr) -> bool {
-    struct Find(bool);
-    impl<'ast> Visit<'ast> for Find {
-        fn visit_expr(&mut self, e: &'ast Expr) {
-            if let Expr::Reference(r) = e
-                && contains_call(&r.expr)
-            {
-                self.0 = true;
-            }
-            visit::visit_expr(self, e);
-        }
-    }
-    let mut f = Find(false);
-    f.visit_expr(expr);
-    f.0
 }
 fn contains_call(expr: &Expr) -> bool {
     struct Find(bool);

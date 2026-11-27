@@ -104,7 +104,7 @@ fn return_hooks_still_refuse_references_to_calls_and_closures_in_the_values_they
         let e = build_plan(&f.root, &f.mods).unwrap_err();
         assert_eq!(e.code, "E_UNSUPPORTED_CONTROL_FLOW", "{body}: {e}");
     }
-    // A hook that rewrites one site still refuses a site that borrows a call's result.
+    // Hooks that rewrite inside the body keep the check for the whole body.
     let f = fixture(r#"let arg = sink(size(&Guard::new("argument", 2))); sink(arg)"#);
     f.append(
         "mods/alpha/horizon-mixin.toml",
@@ -115,14 +115,13 @@ target="fixture_game::run"
 kind="BEFORE_CALL"
 selector="sink"
 require=2
-ordinal=0
+ordinal=1
 helper="before.rs"
 "#,
     );
     fs::write(f.mods.join("alpha/before.rs"), "fn before() {}").unwrap();
     let e = build_plan(&f.root, &f.mods).unwrap_err();
     assert_eq!(e.code, "E_UNSUPPORTED_CONTROL_FLOW", "{e}");
-    assert!(e.message.contains("beneath a reference"), "{e}");
 }
 
 #[test]
@@ -200,205 +199,4 @@ fn the_helper_sees_each_exit_value_once() {
     )
     .unwrap();
     f.run("check");
-}
-
-#[test]
-fn site_hooks_leave_borrows_elsewhere_alone_and_wrap_values_beneath_a_borrow() {
-    // The borrow of `Guard::new("argument", 2)` is in another statement than the selected
-    // `sink(arg)`, and `&Guard::new("extended", 3)` is the selected site of a WRAP_OPERATION:
-    // its result is still the temporary the `let` extends to the end of `run`.
-    let f = fixture(
-        r#"
-        let arg = sink(size(&Guard::new("argument", 2)));
-        let extended = &Guard::new("extended", 3);
-        mark("body");
-        sink(arg + size(extended))
-    "#,
-    );
-    f.append(
-        "mods/alpha/horizon-mixin.toml",
-        r#"
-[[injection]]
-id="before"
-target="fixture_game::run"
-kind="BEFORE_CALL"
-selector="sink"
-require=2
-ordinal=1
-helper="before.rs"
-
-[[injection]]
-id="wrap"
-target="fixture_game::run"
-kind="WRAP_OPERATION"
-selector="Guard::new"
-require=2
-ordinal=1
-helper="wrap.rs"
-bindings=[{name="name",ty="&'static str",value="$arg0"},{name="n",ty="i32",value="$arg1"},{name="original",ty="impl FnOnce(&'static str, i32) -> crate::Guard",value="$operation"}]
-"#,
-    );
-    fs::write(
-        f.mods.join("alpha/before.rs"),
-        "fn before() { crate::mark(\"before\"); }",
-    )
-    .unwrap();
-    fs::write(
-        f.mods.join("alpha/wrap.rs"),
-        "fn wrap(name: &'static str, n: i32, original: impl FnOnce(&'static str, i32) -> crate::Guard) -> crate::Guard { crate::mark(\"wrap\"); original(name, n + 1) }",
-    )
-    .unwrap();
-    fs::write(
-        f.root.join("driver/src/lib.rs"),
-        r#"
-#[test]
-fn temporaries_keep_their_lifetimes() {
-    use fixture_game::{run, LOG};
-    assert_eq!(run(false), 7);
-    assert_eq!(
-        *LOG.lock().unwrap(),
-        ["argument", "wrap", "body", "before", "helper", "extended"]
-    );
-}
-"#,
-    )
-    .unwrap();
-    f.run("check");
-}
-
-#[test]
-fn statement_hooks_refuse_a_site_beneath_a_borrow() {
-    let f = fixture(r#"let extended = &Guard::new("extended", 3); sink(size(extended))"#);
-    f.append(
-        "mods/alpha/horizon-mixin.toml",
-        r#"
-[[injection]]
-id="before"
-target="fixture_game::run"
-kind="BEFORE_CALL"
-selector="Guard::new"
-require=1
-ordinal=0
-helper="before.rs"
-"#,
-    );
-    fs::write(f.mods.join("alpha/before.rs"), "fn before() {}").unwrap();
-    let e = build_plan(&f.root, &f.mods).unwrap_err();
-    assert_eq!(e.code, "E_UNSUPPORTED_CONTROL_FLOW", "{e}");
-    assert!(e.message.contains("beneath a reference"), "{e}");
-}
-
-#[test]
-fn overwrite_drops_a_body_that_borrows_a_call_or_holds_closures() {
-    let f = fixture(
-        r#"let extended = &Guard::new("extended", 3); let n = Some(1).map(|n| n + 1)?; sink(size(extended) + n)"#,
-    );
-    fs::write(
-        f.root.join("engine/src/lib.rs"),
-        fs::read_to_string(f.root.join("engine/src/lib.rs"))
-            .unwrap()
-            .replace(
-                "pub fn run(early: bool) -> i32 {",
-                "pub fn run(early: bool) -> Option<i32> { Some({",
-            )
-            .replace(
-                "sink(size(extended) + n) }",
-                "sink(size(extended) + n) }) }",
-            ),
-    )
-    .unwrap();
-    fs::write(
-        f.mods.join("alpha/horizon-mixin.toml"),
-        r#"
-[mod]
-id="alpha"
-version="1"
-[[injection]]
-id="overwrite"
-target="fixture_game::run"
-kind="OVERWRITE"
-helper="overwrite.rs"
-"#,
-    )
-    .unwrap();
-    fs::write(
-        f.mods.join("alpha/overwrite.rs"),
-        "fn run() -> Option<i32> { crate::mark(\"overwrite\"); Some(7) }",
-    )
-    .unwrap();
-    fs::write(
-        f.root.join("driver/src/lib.rs"),
-        r#"
-#[test]
-fn the_body_is_replaced() {
-    use fixture_game::{run, LOG};
-    assert_eq!(run(false), Some(7));
-    assert_eq!(*LOG.lock().unwrap(), ["overwrite"]);
-}
-"#,
-    )
-    .unwrap();
-    f.run("check");
-}
-
-#[test]
-fn site_hooks_leave_a_question_mark_elsewhere_alone_but_not_in_their_site() {
-    let body = r#"let n = Some(2).map(|n| n + 1)?; let m = sink(n); Some(sink(m + Some(1)?))"#;
-    let rows = |ordinal: usize| {
-        format!(
-            r#"
-[mod]
-id="alpha"
-version="1"
-[[injection]]
-id="before"
-target="fixture_game::run"
-kind="BEFORE_CALL"
-selector="sink"
-require=2
-ordinal={ordinal}
-helper="before.rs"
-"#
-        )
-    };
-    let staged = |ordinal: usize| {
-        let f = fixture(body);
-        fs::write(
-            f.root.join("engine/src/lib.rs"),
-            fs::read_to_string(f.root.join("engine/src/lib.rs"))
-                .unwrap()
-                .replace(
-                    "pub fn run(early: bool) -> i32 {",
-                    "pub fn run(early: bool) -> Option<i32> {",
-                ),
-        )
-        .unwrap();
-        fs::write(f.mods.join("alpha/horizon-mixin.toml"), rows(ordinal)).unwrap();
-        fs::write(
-            f.mods.join("alpha/before.rs"),
-            "fn before() { crate::mark(\"before\"); }",
-        )
-        .unwrap();
-        f
-    };
-    // `sink(n)`: the `?`s are in other statements.
-    let f = staged(0);
-    fs::write(
-        f.root.join("driver/src/lib.rs"),
-        r#"
-#[test]
-fn before_runs_once() {
-    use fixture_game::{run, LOG};
-    assert_eq!(run(false), Some(4));
-    assert_eq!(*LOG.lock().unwrap(), ["before"]);
-}
-"#,
-    )
-    .unwrap();
-    f.run("check");
-    // `sink(m + Some(1)?)`: the `?` is the site's own.
-    let f = staged(1);
-    let e = build_plan(&f.root, &f.mods).unwrap_err();
-    assert_eq!(e.code, "E_UNSUPPORTED_CONTROL_FLOW", "{e}");
-    assert!(e.message.contains("selected site contains `?`"), "{e}");
 }
