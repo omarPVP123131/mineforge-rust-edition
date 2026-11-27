@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated": "2026-11-25T00:00:00Z",
+  "generated": "2026-11-27T00:00:00Z",
   "projects": [
     {
       "id": "mfre_ember",
@@ -40,6 +40,49 @@
             "url": "https://github.com/omarPVP123131/mineforge-rust-edition/releases/download/mods-26.3.0/mfre_ember-0.1.0.hmod",
             "size": 6335,
             "sha256": "e97416fdf047b5ab482cff61b2c74fc7c8a31faf0b461c6d388efe7b8a4786ef"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mfre_kinetic",
+      "kind": "mod",
+      "name": "Cinética MFRE",
+      "summary": "Potencia rotacional al estilo Create: ejes, ruedas dentadas, manivelas y medidores de esfuerzo para mover máquinas de MineForge Rust Edition.",
+      "description": "Cinética MFRE lleva la potencia rotacional a MineForge Rust Edition: un lenguaje de máquinas inspirado en Create (reescritura clean-room, MIT, (c) simibubi; ver NOTICE-MFRE del repositorio). Gira una manivela o una rueda de agua y el esfuerzo viaja por ejes y ruedas dentadas hasta tus máquinas; los medidores de velocidad y esfuerzo dicen cuánto aguanta la red antes de pararse. Es un mod nativo: el launcher lo compila en tu equipo contra el SDK firmado del build que juegas, con su propia toolchain de Rust (no instalas nada). MVP rotacional (F42): ejes, rueda dentada grande, manivela, rueda de agua, velocímetro y estresómetro, con bloques, recetas y texturas propias de la paleta del fork. Fuente y reportes: el repositorio del fork.",
+      "authors": [
+        "MineForge Rust Edition"
+      ],
+      "owners": [
+        "omarPVP1231"
+      ],
+      "license": "MIT",
+      "source": "https://github.com/omarPVP123131/mineforge-rust-edition",
+      "icon": "https://raw.githubusercontent.com/omarPVP123131/mineforge-rust-edition/main/registry/icons/mfre_kinetic.png",
+      "categories": [
+        "technology"
+      ],
+      "tags": [
+        "kinetic",
+        "rotational-power",
+        "mfre"
+      ],
+      "versions": [
+        {
+          "version": "0.1.0",
+          "published": "2026-11-27",
+          "changelog": "Primera publicación en el catálogo: MVP rotacional (ejes, ruedas dentadas, manivela, rueda de agua y medidores).",
+          "api": "0.2",
+          "side": "both",
+          "capabilities": [
+            "registries"
+          ],
+          "game": "26.3",
+          "file": {
+            "name": "mfre_kinetic-0.1.0.hmod",
+            "url": "https://github.com/omarPVP123131/mineforge-rust-edition/releases/download/mods-26.3.2/mfre_kinetic-0.1.0.hmod",
+            "size": 43032,
+            "sha256": "b3239ed6e05b786b70e9600469c9f79723b7f0fb9a36093ad8aada770d5e5693"
           }
         }
       ]

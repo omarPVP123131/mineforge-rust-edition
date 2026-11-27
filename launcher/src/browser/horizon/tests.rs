@@ -1566,3 +1566,41 @@ fn mfre_catalog_passes_the_readers_checks() {
     assert!(mfre_ids().contains("mfre_ember"));
     assert!(MFRE_REPORT.contains("omarPVP123131/mineforge-rust-edition/issues"));
 }
+
+#[test]
+fn mfre_catalog_lists_the_kinetic_native_mod() {
+    let at = Path::new(env!("CARGO_MANIFEST_DIR")).join("../registry/index.json");
+    let text = fs::read_to_string(at).unwrap();
+    let index = Index::parse(&text).unwrap();
+    let p = index
+        .project("mfre_kinetic")
+        .expect("Cinética MFRE is listed");
+    let v = index
+        .installable_for(p, GAME, &[] as &[String])
+        .expect("Cinética installs for this game");
+    assert_eq!(v.file.name, "mfre_kinetic-0.1.0.hmod");
+    assert!(v.file.url.contains("/releases/download/mods-26.3.2/"));
+    assert_eq!(
+        download::refuse(&FileRef {
+            url: v.file.url.clone(),
+            name: v.file.name.clone(),
+            size: v.file.size,
+            sha512: None,
+            sha256: Some(v.file.sha256.clone()),
+            sha1: None,
+            primary: true,
+        }),
+        None
+    );
+    // Its icon passes the allowlist and exists in the repository the index names.
+    let icon = p.icon.as_deref().expect("Cinética has an icon");
+    assert_eq!(crate::browser::images::refuse(icon), None);
+    let png = Path::new(env!("CARGO_MANIFEST_DIR")).join("../registry/icons/mfre_kinetic.png");
+    assert!(png.exists());
+    assert!(icon.ends_with("registry/icons/mfre_kinetic.png"));
+    // A native mod of the fork folds into a real index and is remembered as the fork's.
+    let mut merged = sample();
+    merge_index(&mut merged, index);
+    assert!(merged.project("mfre_kinetic").is_some());
+    assert!(mfre_ids().contains("mfre_kinetic"));
+}
