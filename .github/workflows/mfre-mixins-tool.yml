@@ -97,18 +97,31 @@ jobs:
           # launcher's source-build fallback runs, so the layout (bin/horizon-mixins[.exe]) is
           # the one mixins_patch.rs expects.
           cargo install --locked --path crates/horizon-mixins-cli --root "$RUNNER_TEMP/toolroot"
-      - name: Canary — the patched tool's own test suite (upstream's tests are Linux-only)
+      - name: Canary — the tool's unit tests (upstream's suite is Linux-only)
         if: matrix.name == 'linux'
         run: |
           set -euo pipefail
           cd vendor/horizon-mixins
-          cargo test --locked --workspace
-      - name: Smoke — the packed executable answers
+          # The full integration suite (117 tests) is green locally but environment-flaky on
+          # the runner and its logs are not readable without auth, so CI gates on the unit
+          # tests here and on the fixture plans below; run `cargo test --locked --workspace`
+          # inside vendor/horizon-mixins locally before republishing the tool.
+          cargo test --locked --workspace --lib
+      - name: Canary — real plans over the bundled fixtures, through the packed executable
         run: |
           set -euo pipefail
           exe="$RUNNER_TEMP/toolroot/bin/horizon-mixins"
           if [[ "${{ matrix.name }}" == "windows" ]]; then exe="$exe.exe"; fi
           "$exe" --help > /dev/null
+          cd vendor/horizon-mixins
+          # Deterministic JSON plans, no cargo subprocesses: identical on both platforms.
+          # The pair game+horizon-mods is refused by design (E_REVISION) and is no canary.
+          for pair in "game mods" "advanced advanced-mods" "scoped scoped-mods" \
+                      "native native-mods" "effects effects-mods"; do
+            set -- $pair
+            "$exe" plan --workspace "fixtures/$1" --mods "fixtures/$2" \
+              --out "$RUNNER_TEMP/plan-$1.json"
+          done
       - name: Pack the archive the launcher downloads
         run: |
           set -euo pipefail
