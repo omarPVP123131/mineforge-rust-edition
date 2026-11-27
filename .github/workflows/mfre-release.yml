@@ -48,8 +48,82 @@ jobs:
       ref: ${{ github.sha }}
       version: ${{ needs.meta.outputs.version }}
 
+  # The game release carries a copy of its build's SDK index (sdk_cache.rs: `build_of` reads
+  # `<base>/<tag>/sdk.json` under the game tag's signature to learn the build id, and native
+  # mods are compiled against `sdk-<build id>`). The SDK of this exact commit must already be
+  # published (workflow `mfre sdk`, tag `sdk-<commit>`); this job fails the release early,
+  # before anything is built twice, when it is not.
+  sdk:
+    needs: meta
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: crates/horizon-release-sign/release-keys.txt
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Download the build's SDK index from its own signed release
+        env:
+          SDK_TAG: sdk-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          base="https://github.com/$GITHUB_REPOSITORY/releases/download/$SDK_TAG"
+          mkdir -p sdk-dist
+          for f in sdk.json SHA256SUMS SHA256SUMS.sig; do
+            curl -fsSL --retry 3 -o "sdk-dist/$f" "$base/$f" || {
+              echo "::error::$SDK_TAG has no $f — publish this commit's SDK first (push the tag $SDK_TAG; workflow 'mfre sdk')";
+              exit 1; }
+          done
+      - name: Check it exactly as a launcher checks it
+        env:
+          SDK_TAG: sdk-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          python3 - "$SDK_TAG" <<'PY'
+          import base64, hashlib, subprocess, sys, tempfile, os
+          tag = sys.argv[1]
+          keys = [l.strip() for l in open("crates/horizon-release-sign/release-keys.txt")
+                  if l.strip() and not l.startswith("#")]
+          sums = open("sdk-dist/SHA256SUMS", "rb").read()
+          sigs = [l for l in open("sdk-dist/SHA256SUMS.sig").read().splitlines() if l.strip()]
+          message = f"horizon release {tag}\n".encode() + sums
+          with tempfile.TemporaryDirectory() as tmp:
+              ok = False
+              for i, key in enumerate(keys):
+                  der = bytes.fromhex("302a300506032b6570032100") + base64.b64decode(key)
+                  pem = os.path.join(tmp, f"key{i}.pem")
+                  b64 = base64.encodebytes(der).decode().strip()
+                  open(pem, "w").write("-----BEGIN PUBLIC KEY-----\n"
+                      + "\n".join(b64[j:j+64] for j in range(0, len(b64), 64))
+                      + "\n-----END PUBLIC KEY-----\n")
+                  for j, sig in enumerate(sigs):
+                      raw = os.path.join(tmp, f"sig{j}.bin")
+                      open(raw, "wb").write(base64.b64decode(sig))
+                      msg = os.path.join(tmp, "message")
+                      open(msg, "wb").write(message)
+                      r = subprocess.run(["openssl", "pkeyutl", "-verify", "-pubin",
+                                          "-inkey", pem, "-rawin", "-in", msg, "-sigfile", raw],
+                                         capture_output=True)
+                      if r.returncode == 0:
+                          ok = True
+          if not ok:
+              sys.exit(f"no release key verifies {tag}'s SHA256SUMS.sig")
+          digest = hashlib.sha256(open("sdk-dist/sdk.json", "rb").read()).hexdigest()
+          listed = [l.split() for l in sums.decode().splitlines() if l.strip()]
+          if not any(len(p) == 2 and p[0] == digest and p[1] == "sdk.json" for p in listed):
+              sys.exit("sdk.json's SHA-256 is not a line of the signed SHA256SUMS")
+          print(f"{tag}: signature and sdk.json checksum verified")
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: horizon-sdk-index
+          path: sdk-dist/sdk.json
+          if-no-files-found: error
+          retention-days: 3
+
   sign:
-    needs: [meta, build]
+    needs: [meta, build, sdk]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # The key's only job: hash the archives and sign with the runner's OpenSSL, as upstream.
@@ -70,7 +144,7 @@ jobs:
         run: |
           bash tools/ci/sign_release.sh "${{ needs.meta.outputs.tag }}" \
             dist/horizon-linux-x86_64.tar.gz dist/horizon-windows-x64.zip \
-            dist/horizon-server-linux-x86_64.tar.gz
+            dist/horizon-server-linux-x86_64.tar.gz dist/sdk.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: signature
@@ -79,7 +153,7 @@ jobs:
           retention-days: 3
 
   publish:
-    needs: [meta, build, sign]
+    needs: [meta, build, sdk, sign]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -122,10 +196,11 @@ jobs:
           - \`horizon-windows-x64.zip\` — el juego para Windows x64
           - \`horizon-linux-x86_64.tar.gz\` — el juego para Linux x86_64
           - \`horizon-server-linux-x86_64.tar.gz\` — el servidor dedicado (jugar con amigos)
+          - \`sdk.json\` — el índice del SDK de mods de este build (mods nativos del catálogo)
           - \`SHA256SUMS\` + \`SHA256SUMS.sig\` — las sumas y su firma Ed25519
           NOTES
           gh release create "$tag" \
             dist/horizon-linux-x86_64.tar.gz dist/horizon-windows-x64.zip \
-            dist/horizon-server-linux-x86_64.tar.gz \
+            dist/horizon-server-linux-x86_64.tar.gz dist/sdk.json \
             dist/SHA256SUMS dist/SHA256SUMS.sig \
             --title "MineForge Rust Edition ${version}" --notes-file notes.md

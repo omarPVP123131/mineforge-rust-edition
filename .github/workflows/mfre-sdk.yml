@@ -1,0 +1,234 @@
+name: mfre sdk
+# MineForge Rust Edition: publishes the exact-build mod SDK of one commit of main, as the
+# release `sdk-<commit>` the launcher's native-mod flow reads (launcher/src/native_mods/
+# sdk_cache.rs: `<base>/sdk-<build id>/…`, base = this repository's release downloads).
+# Push a tag `sdk-<40-hex commit>` or run this by hand with the commit.
+#
+# Fork variant of upstream's sdk-publish.yml: same legs (mfre-sdk-legs.yml, the fork's
+# copy of the disabled prebuilt-game-build.yml), same
+# assembly, signing, verification and publication, minus the `tools/prebuilt_game.py
+# authorize` gate — that gate demands successful upstream push runs ("checks",
+# "parity-main") on the exact commit, workflows this fork deliberately does not run
+# (D27). The gates kept: the commit must be a full lowercase SHA and an ancestor of this
+# repository's main, the sign job signs only that, and `verify` re-checks the complete
+# asset set under `horizon-release-sign` exactly as a launcher does before `publish`
+# writes anything. The release is a prerelease with --latest=false, so `releases/latest`
+# stays a game release (D30) and no channel list sees it (stable_builds skips prereleases).
+on:
+  push:
+    tags: ['sdk-[0-9a-f]*']
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: The full 40-hex commit of main to build and publish the SDK of
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: mfre-sdk
+  cancel-in-progress: false
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      commit: ${{ steps.meta.outputs.commit }}
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - id: meta
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/sdk-* ]]; then
+            commit="${GITHUB_REF#refs/tags/sdk-}"
+          else
+            commit="${{ inputs.commit }}"
+          fi
+          [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "::error::the commit must be a full lowercase 40-hex SHA (got: $commit)"; exit 1; }
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "tag=sdk-$commit" >> "$GITHUB_OUTPUT"
+
+  legs:
+    needs: meta
+    uses: ./.github/workflows/mfre-sdk-legs.yml
+    with:
+      commit: ${{ needs.meta.outputs.commit }}
+      dry_run: false
+
+  # Everything below runs only when the legs did (an existing `sdk-<commit>` release skips
+  # them: an exact-build SDK is immutable, so there is nothing to rebuild or overwrite).
+  index:
+    needs: [meta, legs]
+    if: needs.legs.outputs.needed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+      issues: read
+    env:
+      COMMIT: ${{ needs.meta.outputs.commit }}
+      TAG: ${{ needs.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ needs.meta.outputs.commit }}
+      - id: rust
+        run: echo "version=$(cat tools/ci/rust-version)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: ${{ steps.rust.outputs.version }}
+          targets: wasm32-unknown-unknown
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: sdk-leg-*
+          path: legs
+      - name: Gather matching build data and surfaces
+        run: python3 tools/prebuilt_game.py gather legs dist
+      - name: Package the complete generated API source
+        run: |
+          python3 tools/sdk_api_source.py build "$RUNNER_TEMP/api-source"
+          python3 tools/sdk_api_source.py archive "$RUNNER_TEMP/api-source" dist/api-source.tar.xz
+      - name: Compare with the previous authenticated SDK surface
+        id: previous
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          previous=$(python3 tools/ci/nightly.py sdk-previous "$COMMIT" previous-surface.json)
+          echo "build=$previous" >> "$GITHUB_OUTPUT"
+          if [[ -n "$previous" ]]; then
+            mkdir -p base
+            if git cat-file -e "$previous:crates/horizon-mod-vocab/changes" 2>/dev/null; then
+              git archive "$previous" crates/horizon-mod-vocab/changes | tar -x -C base
+            fi
+            cargo run --locked --release -q -p horizon-mod-api-gen --bin horizon-stage -- surface-diff \
+              previous-surface.json dist/surface.json --notes crates/horizon-mod-vocab/changes \
+              --base-notes base/crates/horizon-mod-vocab/changes --json surface-diff.json | tee -a "$GITHUB_STEP_SUMMARY"
+            test -s surface-diff.json
+          fi
+      - name: Index and validate every exact-host asset and patch
+        env:
+          PREVIOUS: ${{ steps.previous.outputs.build }}
+        run: |
+          previous=(); [[ -n "$PREVIOUS" ]] && previous=(--previous "$PREVIOUS" surface-diff.json)
+          python3 tools/prebuilt_game.py index dist "${previous[@]}"
+          python3 tools/prebuilt_game.py validate-release dist "$COMMIT"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sdk-release
+          path: dist
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
+  sign:
+    needs: [meta, index]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      COMMIT: ${{ needs.meta.outputs.commit }}
+      TAG: ${{ needs.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: tools/ci/sign_release.sh
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+          fetch-depth: 0
+          filter: blob:none
+      - name: The real key signs only a full commit of main
+        run: |
+          [[ "$COMMIT" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git fetch -q --no-tags --filter=blob:none origin +refs/heads/main:refs/remotes/origin/main
+          git merge-base --is-ancestor "$COMMIT" refs/remotes/origin/main
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sdk-release
+          path: dist
+      - name: Sign the SDK release domain, never a game tag
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+        run: bash tools/ci/sign_release.sh "$TAG" dist/*
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sdk-signature
+          path: dist/SHA256SUMS*
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
+  verify:
+    needs: [meta, index, sign]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      issues: read
+    env:
+      COMMIT: ${{ needs.meta.outputs.commit }}
+      TAG: ${{ needs.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.meta.outputs.commit }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sdk-release
+          path: dist
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sdk-signature
+          path: dist
+      - name: Verify exactly the complete SDK under its own signature domain
+        run: |
+          cargo run --locked --quiet -p horizon-release-sign -- verify --repository "$GITHUB_REPOSITORY" --tag "$TAG" dist
+          expected=$(python3 tools/ci/nightly.py sdk-assets | sort)
+          actual=$(ls dist | sort)
+          [[ "$expected" == "$actual" ]] || { echo '::error::SDK asset set is incomplete or has extra files'; exit 1; }
+
+  publish:
+    needs: [meta, verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      COMMIT: ${{ needs.meta.outputs.commit }}
+      TAG: ${{ needs.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.meta.outputs.commit }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sdk-release
+          path: dist
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sdk-signature
+          path: dist
+      - name: Publish an immutable sdk-<exact main SHA>
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git fetch -q --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if answer=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --silent 2>&1); then
+            # Do not overwrite an exact-build SDK, even on a forced rebuild or a re-run tag.
+            python3 tools/ci/nightly.py require-sdk "$COMMIT"
+          elif grep -q 'HTTP 404' <<< "$answer"; then
+            gh release create "$TAG" dist/* --target "$COMMIT" --prerelease --latest=false \
+              --title "Mod SDK ${COMMIT::10}" \
+              --notes "Exact-build SDK for $COMMIT; sdk.json inventories every asset and SHA256SUMS is signed for $TAG."
+          else
+            echo "$answer"; exit 1
+          fi
