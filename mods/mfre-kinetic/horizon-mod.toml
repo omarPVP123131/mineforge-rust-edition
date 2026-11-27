@@ -9,7 +9,11 @@ side = "both"
 # registries: "May add blocks, items, mob effects and entity types to your worlds".
 capabilities = ["registries"]
 
+# Pin al build que la release v26.3.2 sirve (F36): el launcher compila contra el SDK de ese
+# build (sdk-<commit>); horizon-mod-api no cambió entre 0719b37 (spike F42) y este commit.
+# mixins = la revisión de la tool (crates/horizon-mod-package/src/mixins_tool.rs, REV); este
+# mod no declara [[native.mixin]], así que la tool nunca se descarga.
 [native]
 game = "26.3"
-horizon = "0719b3727e1cbee015d35f5eb4a34d0162c7e567"
+horizon = "4c00d50b1476544ee4551e42be89d07254f577a4"
 mixins = "e59da9094f0c2fdda6c627fe9eff22dec6a906f0"

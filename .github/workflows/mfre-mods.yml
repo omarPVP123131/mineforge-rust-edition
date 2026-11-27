@@ -1,0 +1,135 @@
+name: mfre mods
+# MineForge Rust Edition: publishes the fork's mod packages. Push a tag `mods-<game version>`
+# (mods-26.3.2) or run this by hand with a version. Every `mods/mfre-*` project with a
+# horizon-mod.toml is packed with the repository's own cargo-horizon-mod — the same tool a
+# modder runs: a native mod fetches the signed SDK of its [native] pin from this repository's
+# releases (workflow "mfre sdk" must have published `sdk-<pin>` first), `check` runs cargo
+# check for the host and for wasm32 plus the package rules, and `build` packs the .hmod with
+# its uses table. The release is created with --latest=false, so `releases/latest` stays a
+# game release (D30), and a `mods-*` tag is no version the launcher's channels list
+# (stable_builds skips what parses to no version). The catalog entry (registry/index.json and
+# registry/icons/) is a follow-up commit on main: its size and SHA-256 come from the file
+# this workflow published, and the browser's catalog test gates that commit locally.
+on:
+  push:
+    tags: ['mods-[0-9]*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The game version to publish mod packages for (the tag is mods-<version>)
+        required: true
+        default: '26.3.2'
+permissions:
+  contents: read
+concurrency:
+  group: mfre-mods
+  cancel-in-progress: false
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - id: meta
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/mods-* ]]; then
+            tag="${GITHUB_REF#refs/tags/}"
+          else
+            tag="mods-${{ inputs.version }}"
+          fi
+          version="${tag#mods-}"
+          [[ "$tag" =~ ^mods-[0-9]+(\.[0-9]+)*$ ]] || { echo "::error::$tag is not mods-<digits>[.<digits>…]"; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: meta
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - id: rust
+        run: echo "version=$(cat tools/ci/rust-version)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: ${{ steps.rust.outputs.version }}
+          targets: wasm32-unknown-unknown
+      - name: Install the repository's own mod tool
+        run: cargo install --locked --path crates/cargo-horizon-mod
+      - name: Check and pack every fork mod
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          shopt -s nullglob
+          for dir in mods/mfre-*/; do
+            [[ -f "$dir/horizon-mod.toml" ]] || continue
+            echo "::group::${dir%/}"
+            # A code mod is checked (host + wasm32 against its pinned SDK) before it is packed;
+            # a content-only mod has no Cargo project, and `build` runs the content checks.
+            if [[ -f "$dir/Cargo.toml" ]]; then
+              ( cd "$dir" && cargo horizon-mod check )
+            fi
+            ( cd "$dir" && cargo horizon-mod build )
+            hmod=$(find "$dir" -name '*.hmod' -path '*horizon-mod*' | head -1)
+            [[ -n "$hmod" ]] || { echo "::error::${dir%/} packed no .hmod"; exit 1; }
+            read -r id ver < <(python3 - "$dir" <<'PY'
+          import sys, tomllib
+          m = tomllib.load(open(sys.argv[1] + "/horizon-mod.toml", "rb"))
+          print(m["id"], m["version"])
+          PY
+            )
+            cp "$hmod" "dist/${id}-${ver}.hmod"
+            echo "::endgroup::"
+          done
+          [[ -n "$(ls -A dist)" ]] || { echo "::error::no mods/mfre-* project packed"; exit 1; }
+          sha256sum dist/*.hmod > sums.txt
+          stat -c "%n %s B" dist/*.hmod >> sums.txt
+          cat sums.txt >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mods-dist
+          path: dist
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
+  publish:
+    needs: [meta, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: mods-dist
+          path: dist
+      - name: Publish the mod packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ needs.meta.outputs.tag }}"
+          version="${{ needs.meta.outputs.version }}"
+          {
+            echo "Paquetes de mods de MineForge Rust Edition para el juego ${version}."
+            echo
+            echo "Catálogo del launcher: la entrada de registry/index.json apunta al archivo"
+            echo "de aquí cuyo SHA-256 y tamaño coinciden (el lector del catálogo los verifica"
+            echo "antes de instalar)."
+            echo
+            echo '```'
+            (cd dist && sha256sum *.hmod && stat -c "%n %s B" *.hmod)
+            echo '```'
+          } > notes.md
+          gh release create "$tag" dist/*.hmod \
+            --target "${{ github.sha }}" --latest=false \
+            --title "Mods MFRE ${version}" --notes-file notes.md

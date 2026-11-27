@@ -5,9 +5,11 @@ edition = "2024"
 publish = false
 
 [dependencies]
-# Spike F42 en el árbol del juego (opción B de MODS-MFRE): API por path al árbol del fork.
-# Flujo estándar fuera del árbol: horizon-mod-api = { path = ".horizon/sdk/api/crates/horizon-mod-api" }
-horizon-mod-api = { path = "../../crates/horizon-mod-api" }
+# Flujo estándar (F36): la API del SDK que `cargo horizon-mod` fetch-ea en .horizon/sdk/ según
+# el pin de horizon-mod.toml; el launcher stagea la crate contra su SDK inmutable al compilar.
+# (El spike F42 usó el path al árbol ../../crates/horizon-mod-api, opción B de MODS-MFRE, que
+# no es autocontenido: el .hmod del catálogo no puede depender del árbol del repo.)
+horizon-mod-api = { path = ".horizon/sdk/api/crates/horizon-mod-api" }
 
 # A mod is its own project, not a member of the game's workspace.
 [workspace]

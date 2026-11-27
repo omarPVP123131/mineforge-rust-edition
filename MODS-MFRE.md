@@ -65,10 +65,15 @@ la sandbox** (game-tree: el `Cargo.toml` del mod apunta por path a `crates/horiz
 
 ## 3. Decisiones y limitaciones del fork
 
-- **SDK**: `new`/`update` descargan el SDK de los releases de upstream `horizon-rust/horizon`
-  (firmado; `HORIZON_SDK_BASE` acepta un espejo propio, URL o carpeta). MFRE no publica SDK
-  (F26); para mods del fork conviene la **opción B** (game-tree, contra la API del propio árbol)
-  o un espejo. Los mods contra SDK upstream funcionan igual: la API 0.2 es la misma.
+- **SDK**: desde F36 inc.A el fork publica su propio SDK: el workflow **mfre sdk** (tag
+  `sdk-<sha40>`) sube la release prerelease `sdk-<commit>` firmada, y las releases del juego
+  adjuntan su `sdk.json`; `SDK_RELEASES`/`SDK_RELEASE_LIST` (horizon-addresses) ya apuntan al
+  fork, así que `new`/`update`/`check`/`build` lo encuentran solos (`HORIZON_SDK_BASE` acepta
+  un espejo adicional, URL o carpeta). `mods/mfre-kinetic` pasó del game-tree del spike F42 al
+  flujo estándar (dep `horizon-mod-api = { path = ".horizon/sdk/api/crates/horizon-mod-api" }`,
+  pin = el build que sirve la release del juego): el `.hmod` del catálogo debe ser
+  autocontenido, y el path al árbol (`../../crates/…`) no existe en la máquina del jugador.
+  La **opción B** (game-tree) sigue valiendo para spikes locales sin SDK publicado.
 - **sha512 no bit-reproducible entre hosts**: reconstruir `wasm-hello` con la misma toolchain
   fijada dio un sha512 distinto al clavado en upstream (rutas/host embebidos). No es fallo: la
   herramienta reescribe `[wasm]` en cada build y el juego verifica `mod.wasm` contra el
