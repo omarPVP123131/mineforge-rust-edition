@@ -1604,3 +1604,43 @@ fn mfre_catalog_lists_the_kinetic_native_mod() {
     assert!(merged.project("mfre_kinetic").is_some());
     assert!(mfre_ids().contains("mfre_kinetic"));
 }
+
+/// The search box folds accents: Spanish typists search "cinetica" and must find "Cinética
+/// MFRE" (QA fix in `matches`/`fold`).
+#[test]
+fn mfre_catalog_search_folds_accents() {
+    let fork = Path::new(env!("CARGO_MANIFEST_DIR")).join("../registry/index.json");
+    let text = fs::read_to_string(&fork).unwrap();
+    let mut index = sample();
+    merge_index(&mut index, Index::parse(&text).unwrap());
+    let kinetic = index.project("mfre_kinetic").expect("Cinética is listed");
+    assert!(matches(kinetic, "cinetica"));
+    assert!(matches(kinetic, "CINETICA MFRE"));
+    assert!(matches(kinetic, "cinética"));
+    assert!(!matches(kinetic, "cinetico"));
+}
+
+/// Horizon's own registry went offline in 2026-11 (its repository was taken down; the Pages
+/// address answers 404). A dead remote base must leave the catalog standing on the fork's own
+/// index alone — the QA fix in `fetch_index` — and must not be cached over a real registry.
+#[test]
+fn mfre_catalog_survives_a_dead_upstream_registry() {
+    let fork = Path::new(env!("CARGO_MANIFEST_DIR")).join("../registry/index.json");
+    // `.invalid` is a reserved top-level domain: the lookup fails wherever this runs.
+    std::env::set_var(
+        "HORIZON_MOD_INDEX",
+        "https://mfre-dead-registry.invalid/index.json",
+    );
+    std::env::set_var("MFRE_MOD_INDEX", &fork);
+    let fetched = super::fetch_index();
+    std::env::remove_var("HORIZON_MOD_INDEX");
+    std::env::remove_var("MFRE_MOD_INDEX");
+    let (index, text) = fetched.expect("the fork's catalog loads with a dead base");
+    assert!(
+        text.is_empty(),
+        "the fallback must not be cached over a real registry"
+    );
+    assert!(index.project("mfre_kinetic").is_some());
+    assert!(index.project("mfre_ember").is_some());
+    assert!(mfre_ids().contains("mfre_kinetic"));
+}

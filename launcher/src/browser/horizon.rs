@@ -129,10 +129,14 @@ pub fn index() -> Result<Arc<Index>, String> {
     let cache = crate::backend::game_home().join(CACHE);
     let index = match fetch_index() {
         Ok((index, text)) => {
-            if let Some(dir) = cache.parent() {
-                let _ = fs::create_dir_all(dir);
+            // MFRE (QA fix): an empty text is the dead-registry fallback; caching it would
+            // overwrite the kept copy of a real registry, which still serves offline starts.
+            if !text.is_empty() {
+                if let Some(dir) = cache.parent() {
+                    let _ = fs::create_dir_all(dir);
+                }
+                let _ = fs::write(&cache, text);
             }
-            let _ = fs::write(&cache, text);
             index
         }
         Err(e) => {
@@ -152,24 +156,44 @@ pub fn index() -> Result<Arc<Index>, String> {
 fn fetch_index() -> Result<(Index, String), String> {
     use std::io::Read;
     let at = location();
-    let text = if at.starts_with("https://") {
-        let response = download::agent(&at).get(&at).call().map_err(|e| match e {
-            ureq::Error::Status(code, _) => format!("The mod registry answered {code}."),
-            ureq::Error::Transport(t) => format!("The mod registry can't be reached: {t}"),
-        })?;
-        let mut text = String::new();
-        response
-            .into_reader()
-            .take(MAX_INDEX)
-            .read_to_string(&mut text)
-            .map_err(|e| e.to_string())?;
-        text
-    } else {
-        fs::read_to_string(&at).map_err(|e| format!("{at}: {e}"))?
-    };
-    let mut index = match local() {
-        true => Index::parse_local(&text)?,
-        false => Index::parse(&text)?,
+    let remote = at.starts_with("https://");
+    let fetched = (|| -> Result<(Index, String), String> {
+        let text = if remote {
+            let response = download::agent(&at).get(&at).call().map_err(|e| match e {
+                ureq::Error::Status(code, _) => format!("The mod registry answered {code}."),
+                ureq::Error::Transport(t) => format!("The mod registry can't be reached: {t}"),
+            })?;
+            let mut text = String::new();
+            response
+                .into_reader()
+                .take(MAX_INDEX)
+                .read_to_string(&mut text)
+                .map_err(|e| e.to_string())?;
+            text
+        } else {
+            fs::read_to_string(&at).map_err(|e| format!("{at}: {e}"))?
+        };
+        let index = match local() {
+            true => Index::parse_local(&text)?,
+            false => Index::parse(&text)?,
+        };
+        Ok((index, text))
+    })();
+    // MFRE (QA fix): Horizon's own registry went offline (its repository was taken down; the
+    // Pages address answers 404). A remote base that fails must not take the catalog down with
+    // it: fall back to an empty base so the fork's own index alone fills the page. A local
+    // (development) registry still fails loudly. The empty text tells `index()` to keep the
+    // cached copy of a real registry instead of overwriting it with the fallback.
+    let (mut index, text) = match fetched {
+        Ok(pair) => pair,
+        Err(_) if remote => (
+            Index {
+                schema: index::SCHEMA,
+                ..Index::default()
+            },
+            String::new(),
+        ),
+        Err(why) => return Err(why),
     };
     // MFRE: both catalogs at once — the fork's own index folds into Horizon's.
     if !local() {
@@ -639,17 +663,35 @@ pub fn github_repo(source: &str) -> Option<String> {
 
 /// The words of a query found in a project's id, name, summary, authors or tags.
 fn matches(p: &index::Project, text: &str) -> bool {
-    let hay = format!(
+    let hay = fold(&format!(
         "{} {} {} {} {}",
         p.id,
         p.name,
         p.summary,
         p.authors.join(" "),
         p.tags.join(" ")
-    )
-    .to_lowercase();
+    ));
     text.split_whitespace()
-        .all(|word| hay.contains(&word.to_lowercase()))
+        .all(|word| hay.contains(&fold(word)))
+}
+
+/// MFRE (QA fix): lowercase and drop accents, so "cinetica" finds "Cinética MFRE". The catalog
+/// is bilingual (es/en) and typists rarely bother with accent marks.
+fn fold(text: &str) -> String {
+    text.to_lowercase()
+        .chars()
+        .map(|c| match c {
+            'á' | 'à' | 'â' | 'ä' | 'ã' | 'å' => 'a',
+            'é' | 'è' | 'ê' | 'ë' => 'e',
+            'í' | 'ì' | 'î' | 'ï' => 'i',
+            'ó' | 'ò' | 'ô' | 'ö' | 'õ' => 'o',
+            'ú' | 'ù' | 'û' | 'ü' => 'u',
+            'ñ' => 'n',
+            'ç' => 'c',
+            'ý' | 'ÿ' => 'y',
+            c => c,
+        })
+        .collect()
 }
 
 /// The sorts the registry can honor: it has downloads and each version's publish day, but no
