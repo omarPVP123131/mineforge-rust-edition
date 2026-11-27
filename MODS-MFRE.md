@@ -1,8 +1,8 @@
 # MODS-MFRE — Toolchain de mods validada (Fase 18)
 
-**Actualizado:** 2026-11-24 · **Rama:** `mfre/main` (parche 0022) · **Estado:** validada en
-sandbox 🟦 (wasm **y nativo game-tree**, F42); lo que necesita GPU o el motor prebuilt queda
-marcado 🖥️ (máquina real, GUÍA-QA §5.10 y §5.13).
+**Actualizado:** 2026-11-27 · **Rama:** `mfre/main` · **Estado:** validada en sandbox 🟦 (wasm,
+nativo game-tree F42, nativo SDK F36 y canal de mixins §5); lo que necesita GPU o el motor
+prebuilt queda marcado 🖥️ (máquina real, GUÍA-QA §5.10, §5.13 y §11).
 
 La infraestructura de mods es la de upstream y el fork la conserva completa y sin tocar
 (`git diff` del fork sobre `crates/horizon-mod-*`, `crates/cargo-horizon-mod` y `docs/modding/`
@@ -91,3 +91,39 @@ la sandbox** (game-tree: el `Cargo.toml` del mod apunta por path a `crates/horiz
 - Herramienta: `crates/cargo-horizon-mod/` (plantillas `template/wasm`, `template/native`).
 - Runtime: `crates/horizon-mod-wasm/` (tests `real_member`, `real_library`, grupos, cachés).
 - Empaquetado/manifiesto: `crates/horizon-mod-package/`.
+
+## 5. Mixins nativos: canal de la herramienta prebuilt (F36 inc.C, 2026-11-27)
+
+Los mods nativos pueden inyectar código en las funciones internas del juego con filas
+`[[native.mixin]]` (HEAD/TAIL/RETURN/WRAP_OPERATION/OVERWRITE, campos privados, cancelación;
+libro: `docs/modding/src/concepts/native-route/2-mixins.md`). Eso lo hace una herramienta
+externa, `horizon-mixins`, pinneada por commit (`crates/horizon-mod-package/src/mixins_tool.rs`,
+`REV = e59da90…`). Su repo upstream (`horizon-rust/horizon-mixins`) **dejó de ser público**, así
+que la construcción desde fuente que el launcher usa como respaldo murió con él.
+
+El fork resolvió así:
+
+- **Fuente vendida**: el snapshot exacto del pin (MIT, © levzzz) vive sin modificar en
+  `vendor/horizon-mixins/` con su `PROVENANCE-MFRE.md` (procedencia, SHA-256 del tarball
+  recuperado, licencia). El único cambio del fork (`tools/mixins/narrow-reference-rule.patch`)
+  se aplica al buildear con el aplicador del repo: `cargo run -p xtask -- mixins-tool patch
+  vendor/horizon-mixins` — el mismo contrato de identidad (rev + hash del parche + target) que
+  el launcher verifica.
+- **Release de prebuilts**: el workflow **mfre mixins tool** (`.github/workflows/
+  mfre-mixins-tool.yml`, tag `mixins-tool-<rev12>-<patch12>` = la salida de `xtask mixins-tool
+  release`; hoy `mixins-tool-e59da9094f0c-52eaeef7cac1`) compila la herramienta parchada en
+  ubuntu-22.04 y windows-latest, la canariza con su propia suite de tests (Linux; la suite
+  upstream es Linux-only) y publica `horizon-mixins-<target>.tar.gz` (dentro: `bin/
+  horizon-mixins[.exe]` + `identity.txt`) con `SHA256SUMS` firmado (`RELEASE_SIGNING_KEY`,
+  verificación publish con `horizon-release-sign`, como las releases del juego).
+- **Consumo**: el launcher 26.3.2 (congelado) ya hace todo — `launcher/src/native_mods/
+  mixins_patch.rs` busca el prebuilt de su plataforma en esa release, lo verifica contra
+  `SHA256SUMS` e `identity.txt` y solo si no existe intenta la fuente (muerta). Cero cambios en
+  el launcher, cero configuración para el jugador.
+- **Cuándo republicar**: solo si cambian `REV` o el parche carried (el tag lo dice
+  `xtask mixins-tool release`).
+
+Validado 🟦: snapshot recuperado y verificado (el parche aplica exacto), tool v0.6.0 compila con
+su toolchain pinneada (1.95.0), suite verde, y el prototipo de archivo linux cumple byte a byte
+el contrato del launcher (SUMS, identity, ejecutable 0755). La compilación de un mod con mixins
+en máquina real queda en GUÍA-QA §11.

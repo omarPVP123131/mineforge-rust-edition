@@ -9,7 +9,8 @@ name: mfre mods
 # game release (D30), and a `mods-*` tag is no version the launcher's channels list
 # (stable_builds skips what parses to no version). The catalog entry (registry/index.json and
 # registry/icons/) is a follow-up commit on main: its size and SHA-256 come from the file
-# this workflow published, and the browser's catalog test gates that commit locally.
+# this workflow published, and the browser's catalog test gates that commit locally. Dispatching with notes_only rewrites the
+# notes of an existing `mods-*` release (the modder guide) without building or touching assets.
 on:
   push:
     tags: ['mods-[0-9]*']
@@ -19,6 +20,10 @@ on:
         description: The game version to publish mod packages for (the tag is mods-<version>)
         required: true
         default: '26.3.2'
+      notes_only:
+        description: Only rewrite the notes of the existing release (no build, no new assets)
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -31,6 +36,7 @@ jobs:
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
       version: ${{ steps.meta.outputs.version }}
+      notes_only: ${{ steps.meta.outputs.notes_only }}
     steps:
       - id: meta
         run: |
@@ -44,9 +50,11 @@ jobs:
           [[ "$tag" =~ ^mods-[0-9]+(\.[0-9]+)*$ ]] || { echo "::error::$tag is not mods-<digits>[.<digits>…]"; exit 1; }
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "notes_only=${{ github.event_name == 'workflow_dispatch' && inputs.notes_only }}" >> "$GITHUB_OUTPUT"
 
   build:
     needs: meta
+    if: needs.meta.outputs.notes_only != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -101,6 +109,7 @@ jobs:
 
   publish:
     needs: [meta, build]
+    if: needs.meta.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -109,27 +118,70 @@ jobs:
       GH_REPO: ${{ github.repository }}
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.meta.outputs.notes_only != 'true'
         with:
           name: mods-dist
           path: dist
-      - name: Publish the mod packages
+      - name: Publish the mod packages (or rewrite an existing release's notes)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           tag="${{ needs.meta.outputs.tag }}"
           version="${{ needs.meta.outputs.version }}"
-          {
-            echo "Paquetes de mods de MineForge Rust Edition para el juego ${version}."
-            echo
-            echo "Catálogo del launcher: la entrada de registry/index.json apunta al archivo"
-            echo "de aquí cuyo SHA-256 y tamaño coinciden (el lector del catálogo los verifica"
-            echo "antes de instalar)."
-            echo
-            echo '```'
-            (cd dist && sha256sum *.hmod && stat -c "%n %s B" *.hmod)
-            echo '```'
-          } > notes.md
-          gh release create "$tag" dist/*.hmod \
-            --target "${{ github.sha }}" --latest=false \
-            --title "Mods MFRE ${version}" --notes-file notes.md
+          notes_only="${{ needs.meta.outputs.notes_only }}"
+          if [[ "$notes_only" == "true" ]]; then
+            gh release view "$tag" > /dev/null || {
+              echo "::error::no existe la release $tag; corre el workflow sin notes_only para crearla"
+              exit 1
+            }
+            mkdir -p dist
+            gh release download "$tag" --pattern '*.hmod' --dir dist --clobber
+          fi
+          cat > notes.md <<NOTES
+          Paquetes de mods de MineForge Rust Edition para el juego ${version}: los \`.hmod\`
+          instalables con un clic desde el catálogo del launcher.
+
+          ## Cómo se instala desde aquí
+
+          La entrada del catálogo (\`registry/index.json\`, rama main) apunta al archivo de esta
+          release cuyo SHA-256 y tamaño coinciden; el lector del catálogo del launcher los
+          verifica antes de instalar. Los mods nativos se compilan en la máquina del jugador:
+          el launcher baja el juego prebuilt, el SDK firmado de esta versión (\`sdk.json\` en la
+          release \`v${version}\`; el resto en la prerelease \`sdk-<commit>\`) y, si el mod usa
+          mixins, la herramienta prebuilt de la release \`mixins-tool-*\` — todo automático.
+
+          ## Las 3 formas de hacer mods (libro: \`docs/modding/\` en main)
+
+          1. **Contenido** — datos y recursos sin código: \`how-to/content-mods.md\`.
+          2. **Wasm** — scripts sandboxeados sobre la API del motor (chat, ticks, fluidos…):
+             \`cargo horizon-mod new mi-mod --template wasm\` → \`build --wasm\` → \`check\`;
+             \`how-to/wasm-mods.md\`.
+          3. **Nativos** — Rust contra el SDK del juego (registros de bloques/items, hooks y,
+             con filas \`[[native.mixin]]\`, código dentro de las funciones internas del juego):
+             \`cargo horizon-mod new mi-mod --template native\`; \`how-to/native-mods.md\` y
+             \`concepts/native-route.md\`. El pin \`[native] horizon\` debe ser el commit de esta
+             versión (el \`build\` de su \`sdk.json\`).
+
+          ## Cómo llega un mod a esta release y al catálogo
+
+          1. Escribe y prueba tu mod con \`cargo horizon-mod check\` / \`build\` (la herramienta
+             instala sola el Rust del repo y baja el SDK firmado).
+          2. El fork empaqueta: cada proyecto \`mods/mfre-*\` se buildea aquí con ese mismo
+             \`cargo-horizon-mod\` al empujar el tag \`mods-<version>\`.
+          3. La entrada de catálogo (registro + icono) es un commit en main con el SHA-256 y el
+             tamaño del archivo publicado aquí; el test del reader del catálogo la valida.
+
+          Guía del fork (toolchain, SDK, decisiones): \`MODS-MFRE.md\`. Sumas de lo publicado:
+
+          \`\`\`
+          $(cd dist && sha256sum *.hmod && stat -c "%n %s B" *.hmod)
+          \`\`\`
+          NOTES
+          if [[ "$notes_only" == "true" ]]; then
+            gh release edit "$tag" --notes-file notes.md
+          else
+            gh release create "$tag" dist/*.hmod \
+              --target "${{ github.sha }}" --latest=false \
+              --title "Mods MFRE ${version}" --notes-file notes.md
+          fi

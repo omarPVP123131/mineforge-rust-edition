@@ -1,0 +1,253 @@
+name: mfre mixins tool
+# MineForge Rust Edition: publishes the prebuilt horizon-mixins tool that launchers consume for
+# `[[native.mixin]]` builds. launcher/src/native_mods/mixins_patch.rs looks, once per pin and
+# patch, for `<MIXINS_TOOL_RELEASES>/<release_tag()>/horizon-mixins-<rustc host target>.tar.gz`
+# with a `SHA256SUMS` listing it and an `identity.txt` inside (rev + patch hash + target), and
+# only then falls back to building the pinned source — whose upstream URL
+# (github.com/horizon-rust/horizon-mixins) answers 404 since upstream took the repository
+# private. This workflow is that release: it builds the tool from the vendored snapshot of the
+# pin (vendor/horizon-mixins, see its PROVENANCE-MFRE.md) with the fork's carried patch applied
+# by the repository's own applier (`xtask mixins-tool patch`), canaries it with the tool's own
+# test suite, and signs the archives exactly as the game releases are signed.
+# Push the tag `mixins-tool-<rev12>-<patch12>` that `cargo run -p xtask -- mixins-tool release`
+# prints, or run this by hand; a new release is only needed when that tag changes, i.e. when the
+# pin (mixins_tool::REV) or tools/mixins/narrow-reference-rule.patch change.
+on:
+  push:
+    tags: ['mixins-tool-*']
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: mfre-mixins-tool
+  cancel-in-progress: false
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      rev: ${{ steps.meta.outputs.rev }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            crates/horizon-mod-package/src/mixins_tool.rs
+            tools/mixins/narrow-reference-rule.patch
+            vendor/horizon-mixins/PROVENANCE-MFRE.md
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - id: meta
+        run: |
+          set -euo pipefail
+          rev=$(sed -n 's/^pub const REV: &str = "\([0-9a-f]\{40\}\)";.*/\1/p' \
+            crates/horizon-mod-package/src/mixins_tool.rs)
+          [[ ${#rev} -eq 40 ]] || { echo "::error::no REV in mixins_tool.rs"; exit 1; }
+          patch_hash=$(sha256sum tools/mixins/narrow-reference-rule.patch | cut -d' ' -f1)
+          tag="mixins-tool-${rev:0:12}-${patch_hash:0:12}"
+          if [[ "$GITHUB_REF" == refs/tags/mixins-tool-* ]]; then
+            pushed="${GITHUB_REF#refs/tags/}"
+            [[ "$pushed" == "$tag" ]] || {
+              echo "::error::pushed tag $pushed is not the pinned $tag (rev + patch hash)"
+              exit 1
+            }
+          fi
+          [[ -f vendor/horizon-mixins/PROVENANCE-MFRE.md ]] || {
+            echo "::error::vendor/horizon-mixins snapshot is missing"; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "rev=$rev" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: meta
+    name: build ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The launcher's own two platforms (mfre-launcher.yml): a launcher on any other host
+          # would fall back to the (dead) source URL, so this list must match that matrix.
+          - name: linux
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+          - name: windows
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - id: rust
+        run: echo "version=$(cat tools/ci/rust-version)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: ${{ steps.rust.outputs.version }}
+      - name: Apply the carried patch with the repository's own applier
+        run: cargo run --locked -p xtask -- mixins-tool patch vendor/horizon-mixins
+      - name: Build the tool (its own pinned toolchain, its own lockfile)
+        run: |
+          set -euo pipefail
+          cd vendor/horizon-mixins
+          # rustup honors the snapshot's rust-toolchain.toml; this is the same install the
+          # launcher's source-build fallback runs, so the layout (bin/horizon-mixins[.exe]) is
+          # the one mixins_patch.rs expects.
+          cargo install --locked --path crates/horizon-mixins-cli --root "$RUNNER_TEMP/toolroot"
+      - name: Canary — the patched tool's own test suite (upstream's tests are Linux-only)
+        if: matrix.name == 'linux'
+        run: |
+          set -euo pipefail
+          cd vendor/horizon-mixins
+          cargo test --locked --workspace
+      - name: Smoke — the packed executable answers
+        run: |
+          set -euo pipefail
+          exe="$RUNNER_TEMP/toolroot/bin/horizon-mixins"
+          if [[ "${{ matrix.name }}" == "windows" ]]; then exe="$exe.exe"; fi
+          "$exe" --help > /dev/null
+      - name: Pack the archive the launcher downloads
+        run: |
+          set -euo pipefail
+          cargo run --locked -p xtask -- mixins-tool identity "${{ matrix.target }}" \
+            > "$RUNNER_TEMP/toolroot/identity.txt"
+          out="$PWD/dist"
+          mkdir -p "$out"
+          ( cd "$RUNNER_TEMP/toolroot" && tar czf "$out/horizon-mixins-${{ matrix.target }}.tar.gz" bin identity.txt )
+          tar tzf "$out/horizon-mixins-${{ matrix.target }}.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tool-${{ matrix.name }}
+          path: dist/horizon-mixins-${{ matrix.target }}.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+
+  sign:
+    needs: [meta, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The key's only job: hash the archives and sign with the runner's OpenSSL, as upstream.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: tools/ci/sign_release.sh
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          pattern: tool-*
+          merge-multiple: true
+      - name: Sign the checksums for this release (SHA256SUMS.sig)
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+        run: |
+          bash tools/ci/sign_release.sh "${{ needs.meta.outputs.tag }}" \
+            dist/horizon-mixins-x86_64-unknown-linux-gnu.tar.gz \
+            dist/horizon-mixins-x86_64-pc-windows-msvc.tar.gz
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: signature
+          path: dist/SHA256SUMS*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: [meta, build, sign]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: stable
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+          pattern: tool-*
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: signature
+          path: dist
+      - name: The signature, checked as launchers check it
+        run: |
+          cargo run --locked --quiet -p horizon-release-sign -- verify \
+            --repository "$GITHUB_REPOSITORY" --tag "${{ needs.meta.outputs.tag }}" --publishing dist
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ needs.meta.outputs.tag }}"
+          rev="${{ needs.meta.outputs.rev }}"
+          cat > notes.md <<NOTES
+          Herramienta horizon-mixins precompilada — la pieza que faltaba para los mods nativos
+          con mixins en MineForge Rust Edition.
+
+          ## Qué es esto
+
+          \`horizon-mixins\` es la herramienta upstream que teje el código de un mod dentro de
+          las funciones existentes del juego (las filas \`[[native.mixin]]\` de un mod nativo:
+          HEAD/TAIL/RETURN/WRAP_OPERATION/OVERWRITE, campos privados, cancelación de lógica
+          vanilla). El launcher la necesita al compilar un mod nativo con mixins; la busca
+          primero en esta release (archivo \`horizon-mixins-<plataforma>.tar.gz\` verificado
+          contra \`SHA256SUMS\` y contra el \`identity.txt\` interior: revisión + parche +
+          plataforma) y solo si no existe intenta construirla desde la fuente upstream.
+
+          ## Por qué existe esta release
+
+          El repositorio upstream de la herramienta (\`horizon-rust/horizon-mixins\`) dejó de ser
+          público, así que la construcción desde fuente ya no es posible: sin estos prebuilt,
+          ningún mod con \`[[native.mixin]]\` compila. La fuente exacta de la revisión pinneada
+          (\`${rev}\`) se recuperó de una copia pública (MIT) y vive vendorizada en el árbol del
+          fork (\`vendor/horizon-mixins/\`) con su \`PROVENANCE-MFRE.md\` (procedencia, licencia y
+          SHA-256 del snapshot). El fork le aplica su único cambio carried
+          (\`tools/mixins/narrow-reference-rule.patch\`) con el aplicador del propio repositorio.
+
+          ## Quién la consume
+
+          - **Launcher 26.3.2 (congelado), automáticamente**: al instalar/compilar un mod nativo
+            con mixins, descarga el archivo de su plataforma de aquí (una vez por pin+parche) y
+            lo verifica antes de ejecutarlo. No hay que configurar nada.
+          - **CI del fork**: los builds nativos con mixins en máquinas de jugadores siguen el
+            mismo camino; el empaquetado (\`cargo horizon-mod build\`) no necesita esta
+            herramienta, solo llevar el pin.
+
+          ## Para modders: las 3 rutas de modding en MFRE
+
+          1. **Mods de contenido** — datos/recursos sin código (el libro: \`docs/modding/src/how-to/content-mods.md\`).
+          2. **Mods wasm** — scripts sandboxeados sobre la API del motor (\`cargo horizon-mod new mi-mod --template wasm\`).
+          3. **Mods nativos** — Rust compilado contra el SDK del juego; con hooks/registros o,
+             para intervenir funciones internas del juego, con **mixins** (esta release lo
+             habilita): \`cargo horizon-mod new mi-mod --template native\` y el libro
+             \`docs/modding/src/concepts/native-route.md\`.
+
+          Guía completa del fork: \`MODS-MFRE.md\` en la rama main. Las releases \`mods-*\`
+          publican los \`.hmod\` instalables y el catálogo del launcher los lista.
+
+          ## Archivos
+
+          - \`horizon-mixins-x86_64-unknown-linux-gnu.tar.gz\` — Linux x86_64
+          - \`horizon-mixins-x86_64-pc-windows-msvc.tar.gz\` — Windows x64
+          - \`SHA256SUMS\` + \`SHA256SUMS.sig\` — sumas y firma Ed25519 (misma clave que las
+            releases del juego; \`crates/horizon-release-sign/release-keys.txt\`)
+
+          \`\`\`
+          $(cd dist && sha256sum horizon-mixins-*.tar.gz)
+          \`\`\`
+          NOTES
+          gh release create "$tag" \
+            dist/horizon-mixins-x86_64-unknown-linux-gnu.tar.gz \
+            dist/horizon-mixins-x86_64-pc-windows-msvc.tar.gz \
+            dist/SHA256SUMS dist/SHA256SUMS.sig \
+            --target "${{ github.sha }}" --latest=false \
+            --title "horizon-mixins tool ${rev:0:12} (MFRE)" --notes-file notes.md
