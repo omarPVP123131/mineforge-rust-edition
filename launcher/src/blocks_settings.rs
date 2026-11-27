@@ -411,6 +411,11 @@ impl Launcher {
                                     this.mods.message = horizon_launcher::browser::java::set_enabled(&this.mods.home(), &id, true).err().map(Err);
                                     this.instance_mods_changed();
                                 }
+                                // MFRE (QA fix): Settings > Storage granted the permission with
+                                // no mod action; the row and the instances re-read the settings.
+                                PendingConsent::Settings => {
+                                    this.instance_mods_changed();
+                                }
                             } }
                             Ok(None) => {},
                         }

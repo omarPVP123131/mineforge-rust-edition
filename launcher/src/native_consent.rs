@@ -12,6 +12,9 @@ pub(super) enum PendingConsent {
     Install(crate::mods_page::InstallRequest),
     Github(Resolved, Option<String>),
     Local(String),
+    /// MFRE (QA fix): the Allow button of Settings > Storage, when native mods are not
+    /// allowed yet: it grants the permission with no mod action attached.
+    Settings,
 }
 
 impl PendingConsent {
@@ -22,6 +25,7 @@ impl PendingConsent {
             Self::Install(request) => request.item().1.to_owned(),
             Self::Local(id) => id.clone(),
             Self::Github(found, _) => found.label(),
+            Self::Settings => String::new(),
         }
     }
 }
@@ -58,7 +62,8 @@ pub(super) fn resolve(
                 }
             }
             PendingConsent::Local(id) => java::set_enabled(home, &id, false)?,
-            PendingConsent::Install(..) | PendingConsent::Github(..) => {}
+            PendingConsent::Install(..) | PendingConsent::Github(..) | PendingConsent::Settings => {
+            }
         }
     }
     Ok(None)
@@ -114,6 +119,23 @@ mod tests {
         assert!(resolve(&mut unsupported, true, false, &mut settings, home.path()).is_err());
         assert!(unsupported.is_some());
         assert!(Settings::load().native_mods_allowed_at.is_none());
+        // MFRE (QA fix): Settings > Storage grants the permission with no mod action attached;
+        // declining it changes nothing anywhere.
+        let mut declined = Some(PendingConsent::Settings);
+        assert!(
+            resolve(&mut declined, false, true, &mut settings, home.path())
+                .unwrap()
+                .is_none()
+        );
+        assert!(declined.is_none());
+        assert!(Settings::load().native_mods_allowed_at.is_none());
+        let mut from_settings = Some(PendingConsent::Settings);
+        let action = resolve(&mut from_settings, true, true, &mut settings, home.path())
+            .unwrap()
+            .unwrap();
+        assert!(matches!(action, PendingConsent::Settings));
+        assert!(Settings::load().native_mods_allowed_at.is_some());
+        settings.revoke_native_mods().unwrap();
         if horizon_launcher::rust_toolchain::host().is_some() {
             let mut pending = Some(PendingConsent::Local("sample".into()));
             let action = resolve(&mut pending, true, true, &mut settings, home.path())

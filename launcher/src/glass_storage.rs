@@ -428,7 +428,16 @@ impl Launcher {
                         )
                         .into_any_element(),
                 ),
-                None,
+                // MFRE (QA fix): the permission can also be granted from here, with no mod
+                // action pending — the same question the first build asks, asked up front.
+                Some(
+                    button("storage-native-allow", "Allow", Kind::Secondary, &t)
+                        .on_click(cx.listener(|this, _, _, cx| {
+                            this.pending_consent = Some(PendingConsent::Settings);
+                            cx.notify();
+                        }))
+                        .into_any_element(),
+                ),
             ));
         }
         div()
