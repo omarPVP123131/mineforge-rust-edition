@@ -71,10 +71,14 @@ pub(super) struct InstanceDialog {
     pub(super) memory: Option<u32>,
     /// What the folder picked with "Import a folder…" holds: instances to copy into new ones.
     pub(super) folder: Option<FolderScan>,
+    /// The launchers installed on this computer, looked for as a new instance's dialog first
+    /// draws (`other_launchers::scan`): their instances, each one click from a copy of its own.
+    pub(super) detected: Option<FolderScan>,
 }
 
-/// The folder a new instance's dialog was given to import (its "Import a folder…"): what
-/// `other_launchers::in_folder` found in it.
+/// A look for other launchers' instances, running or done: the launchers installed on this
+/// computer (`other_launchers::scan`) or the folder picked with "Import a folder…"
+/// (`other_launchers::in_folder`).
 pub(super) enum FolderScan {
     Scanning,
     Ready(Vec<other_launchers::Found>),
@@ -356,6 +360,7 @@ impl Launcher {
             busy: false,
             java,
             folder: None,
+            detected: None,
         });
         self.servers.text(Field::InstanceVersion).set(String::new());
         // A new one starts with the name it would get ("My MineForge"), until the player types one.
@@ -434,7 +439,7 @@ impl Launcher {
             let found = picked.map(|path| other_launchers::in_folder(&path, None));
             let _ =
                 this.update(cx, |this, cx| {
-                    let mut alone = false;
+                    let mut alone = None;
                     if let Some(d) = this.instances.dialog.as_mut() {
                         match found {
                             // The picker closed with no folder: the section goes away.
@@ -448,14 +453,15 @@ impl Launcher {
                             ).into());
                             }
                             Some(found) => {
-                                alone = found.len() == 1;
+                                // One instance in the folder: no list to pick from.
+                                alone = (found.len() == 1).then(|| found[0].clone());
                                 d.folder = Some(FolderScan::Ready(found));
                             }
                         }
                     }
-                    // One instance in the folder: no list to pick from, it imports right away.
-                    if alone {
-                        this.import_found_instance(0, cx);
+                    // It imports right away.
+                    if let Some(found) = alone {
+                        this.import_found_instance(found, cx);
                     }
                     cx.notify();
                 });
@@ -463,22 +469,17 @@ impl Launcher {
         .detach();
     }
 
-    /// Copies the `index`-th instance the picked folder holds into a new instance of this
-    /// launcher: its game folder comes along (a copy can be gigabytes, so the work runs in the
-    /// background). A folder that records no Minecraft version plays the newest release.
-    pub(super) fn import_found_instance(&mut self, index: usize, cx: &mut Context<Self>) {
-        let Some(found) = self
-            .instances
-            .dialog
-            .as_ref()
-            .filter(|d| !d.busy)
-            .and_then(|d| match &d.folder {
-                Some(FolderScan::Ready(found)) => found.get(index).cloned(),
-                _ => None,
-            })
-        else {
+    /// Copies an instance another launcher holds into a new instance of this launcher: its game
+    /// folder comes along (a copy can be gigabytes, so the work runs in the background). An
+    /// instance that records no Minecraft version plays the newest release.
+    pub(super) fn import_found_instance(
+        &mut self,
+        found: other_launchers::Found,
+        cx: &mut Context<Self>,
+    ) {
+        if self.instances.dialog.as_ref().is_none_or(|d| d.busy) {
             return;
-        };
+        }
         let taken: Vec<&str> = self
             .instances
             .list
@@ -521,19 +522,63 @@ impl Launcher {
         .detach();
     }
 
-    /// The dialog's folder-import section: its button, and what the picked folder holds, each
-    /// instance one click from a copy of its own. Both themes draw it (the rows and buttons
-    /// follow the theme, as the Modpacks page's do).
+    /// The dialog's other-launcher section: the launchers installed on this computer, found as
+    /// the dialog first draws, and the folder picked with "Import a folder…"; each instance, one
+    /// click from a copy of its own. Both themes draw it (the rows and buttons follow the theme,
+    /// as the Modpacks page's do).
     pub(super) fn folder_import_rows(&mut self, cx: &mut Context<Self>) -> Option<Div> {
         let t = self.theme;
-        let (busy, scanning, found) = {
-            let d = self.instances.dialog.as_ref()?;
-            match &d.folder {
-                Some(FolderScan::Scanning) => (d.busy, true, Vec::new()),
-                Some(FolderScan::Ready(found)) => (d.busy, false, found.clone()),
-                None => return None,
+        // The first draw of a new instance's dialog starts looking for the launchers installed
+        // on this computer; reading their folders can take a moment and the window stays free.
+        if matches!(
+            self.instances.dialog.as_ref().map(|d| &d.detected),
+            Some(None)
+        ) {
+            if let Some(d) = self.instances.dialog.as_mut() {
+                d.detected = Some(FolderScan::Scanning);
             }
+            let task = cx.background_executor().spawn(async {
+                horizon_launcher::sources::Folders::current().map_or_else(Vec::new, |folders| {
+                    other_launchers::scan(horizon_launcher::sources::Os::current(), &folders)
+                })
+            });
+            cx.spawn(async move |this, cx| {
+                let found = task.await;
+                let _ = this.update(cx, |this, cx| {
+                    // A closed or newer dialog keeps what it has; only the waiting one fills.
+                    if let Some(d) = this.instances.dialog.as_mut() {
+                        if matches!(d.detected, Some(FolderScan::Scanning)) {
+                            d.detected = Some(FolderScan::Ready(found));
+                        }
+                    }
+                    cx.notify();
+                });
+            })
+            .detach();
+        }
+        let (busy, detecting, detected, scanning, found) = {
+            let d = self.instances.dialog.as_ref()?;
+            let read = |scan: &Option<FolderScan>| match scan {
+                Some(FolderScan::Scanning) => (true, Vec::new()),
+                Some(FolderScan::Ready(found)) => (false, found.clone()),
+                None => (false, Vec::new()),
+            };
+            let (detecting, detected) = read(&d.detected);
+            let (scanning, found) = read(&d.folder);
+            (d.busy, detecting, detected, scanning, found)
         };
+        let mut rows: Vec<AnyElement> = Vec::new();
+        if detecting {
+            rows.push(
+                text(theme::CAPTION)
+                    .text_color(t.muted)
+                    .child(tr("Looking for other launchers…").to_string())
+                    .into_any_element(),
+            );
+        }
+        for (i, f) in detected.into_iter().enumerate() {
+            rows.push(self.found_import_row(format!("detected-import-{i}"), i + 1, f, busy, cx));
+        }
         let choose = button(
             "instance-choose-folder",
             tr("Import a folder…").to_string(),
@@ -548,17 +593,14 @@ impl Launcher {
                 cx.notify();
             }))
         };
-        let hint = text(theme::CAPTION).text_color(t.muted).child(tr(
-            "A folder of TLauncher, the official launcher, Prism Launcher, MultiMC, \
-             ATLauncher, the Modrinth App, the CurseForge app — or any folder holding a game. \
-             Its worlds, mods and settings are copied; the folder stays as it is.",
-        ));
-        let mut rows: Vec<AnyElement> = vec![div()
-            .flex()
-            .items_center()
-            .gap(px(10.))
-            .child(choose)
-            .into_any_element()];
+        rows.push(
+            div()
+                .flex()
+                .items_center()
+                .gap(px(10.))
+                .child(choose)
+                .into_any_element(),
+        );
         if scanning {
             rows.push(
                 text(theme::CAPTION)
@@ -568,40 +610,13 @@ impl Launcher {
             );
         }
         for (i, f) in found.into_iter().enumerate() {
-            let detail = if f.minecraft.is_none() {
-                format!(
-                    "{}  ·  {}",
-                    modpacks::found_summary(&f),
-                    tr("no version recorded: the newest release is used")
-                )
-            } else {
-                modpacks::found_summary(&f)
-            };
-            let import = button(
-                format!("folder-import-{i}"),
-                tr("Import").to_string(),
-                Kind::Secondary,
-                &t,
-            );
-            let right = if busy {
-                disabled(import)
-            } else {
-                import.on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
-                    this.import_found_instance(i, cx);
-                    cx.notify();
-                }))
-            };
-            rows.push(
-                index_row(
-                    i + 1,
-                    f.name.clone(),
-                    Some(detail.into_any_element()),
-                    Some(right.into_any_element()),
-                    &t,
-                )
-                .into_any_element(),
-            );
+            rows.push(self.found_import_row(format!("folder-import-{i}"), i + 1, f, busy, cx));
         }
+        let hint = text(theme::CAPTION).text_color(t.muted).child(tr(
+            "A folder of TLauncher, the official launcher, Prism Launcher, MultiMC, \
+             ATLauncher, the Modrinth App, the CurseForge app — or any folder holding a game. \
+             Its worlds, mods and settings are copied; the folder stays as it is.",
+        ));
         Some(
             div()
                 .flex()
@@ -616,6 +631,46 @@ impl Launcher {
                 .children(rows)
                 .child(hint),
         )
+    }
+
+    /// One instance another launcher holds: its name, what it plays and where it comes from, and
+    /// the Import that copies it into a new instance of this launcher.
+    fn found_import_row(
+        &self,
+        id: String,
+        number: usize,
+        f: other_launchers::Found,
+        busy: bool,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let t = self.theme;
+        let detail = if f.minecraft.is_none() {
+            format!(
+                "{}  ·  {}",
+                modpacks::found_summary(&f),
+                tr("no version recorded: the newest release is used")
+            )
+        } else {
+            modpacks::found_summary(&f)
+        };
+        let name = f.name.clone();
+        let import = button(id, tr("Import").to_string(), Kind::Secondary, &t);
+        let right = if busy {
+            disabled(import)
+        } else {
+            import.on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                this.import_found_instance(f.clone(), cx);
+                cx.notify();
+            }))
+        };
+        index_row(
+            number,
+            name,
+            Some(detail.into_any_element()),
+            Some(right.into_any_element()),
+            &t,
+        )
+        .into_any_element()
     }
 
     /// Creates or changes the instance as the dialog says. A copy can be gigabytes of worlds, so
