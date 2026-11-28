@@ -35,6 +35,17 @@
 //!   whose type is none of the four copies without a loader. A user's guide shows the instances
 //!   in a folder named `instances` (<https://github.com/Griefed/ServerPackCreator>, README).
 //!   Every other field is ignored.
+//! - TLauncher: no public page describes its files, so this follows what real folders show. It
+//!   plays in a Minecraft game folder of its own choosing (the official launcher's by default),
+//!   where `TlauncherProfiles.json` holds its accounts. Its TLmods packs are folders in that
+//!   folder's `versions/` holding game data of their own (`mods/`, `saves/`, `config/`), each
+//!   with a `<name>.json` whose `inheritsFrom` chain ends in the game's version and may name a
+//!   loader in the ids it passes (`fabric-loader-0.16.9-1.21.1`, `forge-1.16.5-36.2.39`,
+//!   `1.20.1-forge-47.3.0`). The game folder itself is one more instance, shared, as the
+//!   official launcher's.
+//! - Any other folder: a folder holding game data (`saves/`, `mods/`, `options.txt`…) that no
+//!   mark above is in imports as one instance of its own; a whole game folder (with `versions/`,
+//!   `libraries/` and `assets/`) gives only what an instance holds, as a shared one.
 //!
 //! Neither the CurseForge app nor the Modrinth App describes where it records an instance's
 //! Minecraft version, so the player names it when copying one.
@@ -83,9 +94,9 @@ const SHARED: [&str; 9] = [
     "servers.dat",
     "optionsshaders.txt",
 ];
-/// What is never copied from an instance's own game folder: logs and the CurseForge app's own
-/// files.
-const SKIPPED: [&str; 6] = [
+/// What is never copied from an instance's own game folder: logs, the CurseForge app's own
+/// files and the launchers' account files (a copy gets no one's accounts).
+const SKIPPED: [&str; 8] = [
     "logs",
     "crash-reports",
     "minecraftinstance.json",
@@ -94,10 +105,15 @@ const SKIPPED: [&str; 6] = [
     "server-terrain",
     // The browser's list of what it installed (and may delete): only this launcher writes it.
     "mod-browser.json",
+    "launcher_profiles.json",
+    "TlauncherProfiles.json",
 ];
 const CURSEFORGE: &str = "the CurseForge app";
 const MODRINTH_APP: &str = "the Modrinth App";
 const ATLAUNCHER: &str = "ATLauncher";
+const TLAUNCHER: &str = "TLauncher";
+/// A folder that holds a game but no launcher's mark: the instance is the folder's own.
+const FOLDER: &str = "the chosen folder";
 
 /// The name a launcher goes by on its own window, for a list: `launcher` as [`Found`] names it.
 pub fn app_name(launcher: &'static str) -> &'static str {
@@ -282,6 +298,13 @@ pub fn official_profiles(root: &Path) -> Vec<Found> {
     found
 }
 
+/// `dir` holds a game's own files: what marks a folder as one an instance plays in.
+fn is_game_folder(dir: &Path) -> bool {
+    ["saves", "mods", "options.txt", "resourcepacks", "config"]
+        .iter()
+        .any(|f| dir.join(f).exists())
+}
+
 /// The game folders in `dir` (each folder in it that holds one), as `launcher`'s instances.
 fn game_folders(dir: &Path, launcher: &'static str) -> Vec<Found> {
     let mut found: Vec<Found> = fs::read_dir(dir)
@@ -289,11 +312,7 @@ fn game_folders(dir: &Path, launcher: &'static str) -> Vec<Found> {
         .flatten()
         .flatten()
         .map(|e| e.path())
-        .filter(|p| {
-            ["saves", "mods", "options.txt", "resourcepacks", "config"]
-                .iter()
-                .any(|f| p.join(f).exists())
-        })
+        .filter(|p| is_game_folder(p))
         .filter_map(|game| {
             Some(Found {
                 launcher,
@@ -423,12 +442,16 @@ pub fn atlauncher_instances(root: &Path) -> Vec<Found> {
     found
 }
 
-/// What one folder holds: an official launcher's profiles, a Prism or MultiMC root (or its
-/// `instances/`), the CurseForge app's modding folder (or its `Instances/`), the Modrinth App's
-/// folder, or a single instance folder.
+/// What one folder holds: an official launcher's or TLauncher's profiles, a Prism or MultiMC
+/// root (or its `instances/`), the CurseForge app's modding folder (or its `Instances/`), the
+/// Modrinth App's folder, a single instance folder, or any folder holding a game.
 pub fn in_folder(dir: &Path, launcher: Option<&'static str>) -> Vec<Found> {
-    if dir.join("launcher_profiles.json").is_file() {
-        return official_profiles(dir);
+    // TLauncher plays in the official launcher's folder as often as its own: what both record
+    // is offered together.
+    let mut profiles = official_profiles(dir);
+    profiles.extend(tlauncher_instances(dir));
+    if !profiles.is_empty() {
+        return profiles;
     }
     if dir.join("minecraftinstance.json").is_file() {
         let parent = dir.parent().unwrap_or(dir);
@@ -471,8 +494,196 @@ pub fn in_folder(dir: &Path, launcher: Option<&'static str>) -> Vec<Found> {
     });
     match prism_instance(dir, launcher) {
         Some(one) => vec![one],
-        None => prism_instances(dir, launcher),
+        None => {
+            let prism = prism_instances(dir, launcher);
+            if !prism.is_empty() {
+                return prism;
+            }
+            // Nothing names this folder's launcher: the game in it is the instance.
+            game_folder_instance(dir).into_iter().collect()
+        }
     }
+}
+
+/// An id that reads as a Minecraft release: `1.21`, `1.21.1` (not a snapshot, not a loader's
+/// id with a version of its own).
+fn looks_like_version(id: &str) -> bool {
+    let base = id.split(['-', '+']).next().unwrap_or(id);
+    let mut parts = base.split('.');
+    let digits = |s: &str| !s.is_empty() && s.chars().all(|c| c.is_ascii_digit());
+    let (Some(major), Some(minor)) = (parts.next(), parts.next()) else {
+        return false;
+    };
+    digits(major) && digits(minor) && parts.all(digits)
+}
+
+/// The loader a version id names and the Minecraft version inside it. The official launcher's
+/// ids (`fabric-loader-0.16.9-1.21.1`, `neoforge-21.1.77`, `1.20.1-forge-47.3.0`) and
+/// TLauncher's own (`forge-1.16.5-36.2.39`) both hold them; anything else names no loader.
+fn id_loader(id: &str) -> Option<(Loader, Option<String>)> {
+    let named = |name: &'static str, rest: &str| Loader {
+        name,
+        version: rest.to_string(),
+    };
+    if let Some(rest) = id
+        .strip_prefix("fabric-loader-")
+        .or_else(|| id.strip_prefix("quilt-loader-"))
+    {
+        let name = if id.starts_with("fabric") {
+            "fabric"
+        } else {
+            "quilt"
+        };
+        // The loader's version, then the game's (`0.16.9-1.21.1`).
+        return Some(match rest.rsplit_once('-') {
+            Some((version, mc)) if looks_like_version(mc) => {
+                (named(name, version), Some(mc.to_string()))
+            }
+            _ => (named(name, rest), None),
+        });
+    }
+    if let Some(version) = id.strip_prefix("neoforge-") {
+        return Some((named("neoforge", version), None));
+    }
+    if let Some(rest) = id.strip_prefix("forge-") {
+        // The game's version, then the loader's (`1.16.5-36.2.39`).
+        return Some(match rest.split_once('-') {
+            Some((mc, version)) if looks_like_version(mc) => {
+                (named("forge", version), Some(mc.to_string()))
+            }
+            _ => (named("forge", rest), None),
+        });
+    }
+    if let Some((mc, version)) = id.split_once("-forge-") {
+        return Some((
+            named("forge", version),
+            looks_like_version(mc).then(|| mc.to_string()),
+        ));
+    }
+    None
+}
+
+/// The Minecraft version and loader a TLauncher version folder plays: what the ids in its
+/// `<name>.json`'s `inheritsFrom` chain name, the chain's end the game's version when it reads
+/// as one.
+fn tlauncher_target(root: &Path, name: &str) -> (Option<String>, Option<Loader>) {
+    let (mut minecraft, mut loader) = (None, None);
+    let mut id = name.to_string();
+    // Chains are a handful of ids deep; a loop in them ends here.
+    for _ in 0..8 {
+        match id_loader(&id) {
+            Some((l, mc)) => {
+                loader.get_or_insert(l);
+                if let Some(mc) = mc {
+                    minecraft.get_or_insert(mc);
+                }
+            }
+            None if looks_like_version(&id) => {
+                minecraft.get_or_insert(id.clone());
+            }
+            None => {}
+        }
+        let file = root.join("versions").join(&id).join(format!("{id}.json"));
+        let Some(parent) = fs::read_to_string(&file)
+            .ok()
+            .and_then(|t| serde_json::from_str::<Value>(&t).ok())
+            .and_then(|v| {
+                v["inheritsFrom"]
+                    .as_str()
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .map(String::from)
+            })
+        else {
+            break;
+        };
+        id = parent;
+    }
+    (minecraft, loader)
+}
+
+/// TLauncher's instances: the TLmods packs in its game folder's `versions/` (each a version
+/// folder holding game data of its own), and the game folder itself, where its default profile
+/// plays (shared, as the official launcher's own folder). `TlauncherProfiles.json` says
+/// TLauncher keeps the folder.
+pub fn tlauncher_instances(root: &Path) -> Vec<Found> {
+    if !root.join("TlauncherProfiles.json").is_file() {
+        return Vec::new();
+    }
+    let mut found: Vec<Found> = fs::read_dir(root.join("versions"))
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| is_game_folder(p))
+        .filter_map(|game| {
+            let name = game.file_name()?.to_string_lossy().into_owned();
+            let (minecraft, loader) = tlauncher_target(root, &name);
+            Some(Found {
+                launcher: TLAUNCHER,
+                name,
+                minecraft,
+                loader,
+                game,
+                shared: false,
+            })
+        })
+        .collect();
+    if is_game_folder(root) {
+        found.push(Found {
+            launcher: TLAUNCHER,
+            name: TLAUNCHER.to_string(),
+            minecraft: None,
+            loader: None,
+            game: root.to_path_buf(),
+            shared: true,
+        });
+    }
+    found.sort_by_key(|f| f.name.to_lowercase());
+    found
+}
+
+/// The single version `dir/versions/` holds, when exactly one folder in it reads as a
+/// Minecraft version: the version a game folder with no launcher's mark probably plays.
+fn only_version(dir: &Path) -> Option<String> {
+    let mut ids = fs::read_dir(dir.join("versions"))
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .filter(|id| looks_like_version(id));
+    let one = ids.next()?;
+    ids.next().is_none().then_some(one)
+}
+
+/// A folder holding a game that no launcher's mark is in: one instance, named after the
+/// folder. In a TLauncher root's `versions/`, the root records what it plays; elsewhere the
+/// version comes from `versions/` when exactly one is there, else the player names it. A whole
+/// game folder (`versions/`, `libraries/`, `assets/` beside the game's own files) is shared:
+/// only what an instance holds is copied from it.
+fn game_folder_instance(dir: &Path) -> Option<Found> {
+    if !is_game_folder(dir) {
+        return None;
+    }
+    let name = dir.file_name()?.to_string_lossy().into_owned();
+    let (minecraft, loader) = dir
+        .parent()
+        .filter(|p| p.file_name().is_some_and(|n| n == "versions"))
+        .and_then(|versions| versions.parent())
+        .filter(|root| root.join("TlauncherProfiles.json").is_file())
+        .map(|root| tlauncher_target(root, &name))
+        .unwrap_or_else(|| (only_version(dir), None));
+    let shared = ["versions", "libraries", "assets"]
+        .iter()
+        .any(|d| dir.join(d).is_dir());
+    Some(Found {
+        launcher: FOLDER,
+        name,
+        minecraft,
+        loader,
+        game: dir.to_path_buf(),
+        shared,
+    })
 }
 
 /// The folders [`scan`] looks in, whether they exist or not.
@@ -499,7 +710,12 @@ pub fn scan(os: Os, folders: &Folders) -> Vec<Found> {
         }
         seen.push(dir.clone());
         match launcher {
-            OFFICIAL => found.extend(official_profiles(&dir)),
+            OFFICIAL => {
+                found.extend(official_profiles(&dir));
+                // TLauncher plays in a Minecraft folder of its own choosing, the official
+                // launcher's by default: its mark in it says whose instances these are.
+                found.extend(tlauncher_instances(&dir));
+            }
             "Prism Launcher" | "MultiMC" => found.extend(prism_instances(&dir, launcher)),
             "Modrinth App" => found.extend(modrinth_app_profiles(&dir)),
             ATLAUNCHER => found.extend(atlauncher_instances(&dir)),

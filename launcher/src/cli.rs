@@ -373,10 +373,12 @@ enum InstanceCmd {
         java: bool,
     },
     /// List the instances other launchers keep (Prism Launcher, MultiMC, the official
-    /// launcher, the CurseForge app, the Modrinth App), read without changing anything there
+    /// launcher, TLauncher, the CurseForge app, the Modrinth App), read without changing
+    /// anything there
     Others {
         /// Look in this folder instead: a launcher's folder, a folder of instances (its
-        /// instances/, the CurseForge app's Instances) or one instance
+        /// instances/, the CurseForge app's Instances), one instance, or any folder holding a
+        /// game (its saves, mods…)
         #[arg(long)]
         folder: Option<PathBuf>,
     },
@@ -386,14 +388,15 @@ enum InstanceCmd {
         /// Its name, as `instance others` lists it
         name: String,
         /// Look in this folder instead: a launcher's folder, a folder of instances (its
-        /// instances/, the CurseForge app's Instances) or one instance
+        /// instances/, the CurseForge app's Instances), one instance, or any folder holding a
+        /// game (its saves, mods…)
         #[arg(long)]
         folder: Option<PathBuf>,
         /// The new instance's name (default: the same)
         #[arg(long = "as")]
         new_name: Option<String>,
-        /// The Minecraft version it plays, when its launcher doesn't say (the CurseForge app,
-        /// the Modrinth App)
+        /// The Minecraft version it plays, when its folder records none (the CurseForge app,
+        /// the Modrinth App, a folder of its own)
         #[arg(long)]
         minecraft: Option<String>,
     },
@@ -2851,9 +2854,10 @@ fn no_other_instances(folder: Option<&Path>) -> String {
     match folder {
         Some(dir) => format!(
             "No other launcher's instance found in {}. Name a launcher's own folder (the \
-             official launcher's .minecraft, Prism Launcher, MultiMC, ATLauncher, the Modrinth \
-             App, the CurseForge app's minecraft folder), a folder of instances (instances, or \
-             the CurseForge app's Instances), or one instance's folder.",
+             official launcher's or TLauncher's .minecraft, Prism Launcher, MultiMC, \
+             ATLauncher, the Modrinth App, the CurseForge app's minecraft folder), a folder of \
+             instances (instances, or the CurseForge app's Instances), one instance's folder, \
+             or any folder holding game files (saves, mods…).",
             dir.display()
         ),
         None => {

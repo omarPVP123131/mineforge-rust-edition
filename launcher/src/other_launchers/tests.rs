@@ -185,16 +185,10 @@ fn copies_an_instance_but_only_what_a_shared_folder_holds_for_one() {
     };
     let own = root.join("own");
     copy_game(&found, &own).unwrap();
+    // The launchers' account files never come along: a copy gets no one's accounts.
     assert_eq!(
         listed(&own),
-        [
-            "kubejs",
-            "launcher_profiles.json",
-            "mods",
-            "options.txt",
-            "saves",
-            "versions"
-        ]
+        ["kubejs", "mods", "options.txt", "saves", "versions"]
     );
     assert_eq!(
         fs::read_to_string(own.join("saves/World/level.dat")).unwrap(),
@@ -252,10 +246,12 @@ fn curseforge_and_modrinth_app_instances_are_their_game_folders() {
         in_folder(&curseforge.join("Instances"), None),
         [found[1].clone()]
     );
-    // A folder of game folders with none of the app's files is not taken for it.
+    // A folder of game folders with none of the app's files is not taken for it, and is no
+    // instance itself: the game folders in it are, each picked on its own.
     let plain = root.join("plain");
     write(&plain.join("world/options.txt"), "");
     assert_eq!(in_folder(&plain, None), []);
+    assert_eq!(in_folder(&plain.join("world"), None).len(), 1);
     assert_eq!(in_folder(&modrinth, None), [found[0].clone()]);
 
     // The app's own files stay behind.
@@ -428,4 +424,158 @@ fn curseforge_instances_read_their_version_and_loader() {
     let modrinth = modrinth_app_profiles(&root);
     assert_eq!(modrinth[0].minecraft, None);
     let _ = fs::remove_dir_all(&root);
+}
+
+#[test]
+fn tlauncher_instances_are_its_version_folders_that_hold_games() {
+    let root = scratch("tlauncher");
+    write(&root.join("TlauncherProfiles.json"), "{\"accounts\": {}}");
+    // A TLmods pack: a version folder with game data of its own, whose json inherits a Forge id
+    // that inherits the game's version.
+    let pack = root.join("versions/Mejor Pack");
+    write(&pack.join("mods/a.jar"), "jar");
+    write(&pack.join("saves/World/level.dat"), "level");
+    write(
+        &pack.join("Mejor Pack.json"),
+        &json!({"id": "Mejor Pack", "inheritsFrom": "forge-1.16.5-36.2.39"}).to_string(),
+    );
+    write(
+        &root.join("versions/forge-1.16.5-36.2.39/forge-1.16.5-36.2.39.json"),
+        &json!({"id": "forge-1.16.5-36.2.39", "inheritsFrom": "1.16.5"}).to_string(),
+    );
+    // A Fabric pack, one json deep.
+    let fabric = root.join("versions/Sky Factory");
+    write(&fabric.join("options.txt"), "");
+    write(
+        &fabric.join("Sky Factory.json"),
+        &json!({"inheritsFrom": "fabric-loader-0.16.9-1.21.1"}).to_string(),
+    );
+    // A plain version folder: no game data, no instance.
+    write(&root.join("versions/1.21.1/1.21.1.jar"), "jar");
+    // The everyday game folder itself.
+    write(&root.join("options.txt"), "");
+    write(&root.join("saves/Other/level.dat"), "level");
+
+    let found = tlauncher_instances(&root);
+    let short: Vec<_> = found
+        .iter()
+        .map(|f| {
+            (
+                f.name.as_str(),
+                f.minecraft.as_deref(),
+                f.loader.as_ref().map(|l| (l.name, l.version.as_str())),
+                f.shared,
+            )
+        })
+        .collect();
+    assert_eq!(
+        short,
+        [
+            (
+                "Mejor Pack",
+                Some("1.16.5"),
+                Some(("forge", "36.2.39")),
+                false
+            ),
+            (
+                "Sky Factory",
+                Some("1.21.1"),
+                Some(("fabric", "0.16.9")),
+                false
+            ),
+            ("TLauncher", None, None, true),
+        ]
+    );
+    assert_eq!(found[0].game, pack);
+    // The game folder itself finds them; so does a pack folder picked on its own.
+    assert_eq!(in_folder(&root, None), found);
+    let one = in_folder(&pack, None);
+    assert_eq!(one.len(), 1);
+    assert_eq!(one[0].minecraft.as_deref(), Some("1.16.5"));
+    assert_eq!(one[0].loader.as_ref().unwrap().name, "forge");
+    // The scan of a computer whose .minecraft TLauncher uses finds them too.
+    let folders = Folders {
+        home: root.parent().unwrap().to_path_buf(),
+        data: root.parent().unwrap().to_path_buf(),
+        config: root.parent().unwrap().to_path_buf(),
+    };
+    fs::rename(&root, folders.home.join(".minecraft")).unwrap();
+    let scanned = scan(Os::Linux, &folders);
+    assert!(scanned.iter().any(|f| f.name == "Mejor Pack"));
+    let root = folders.home.join(".minecraft");
+    // Without TLauncher's file, the folder is any other game folder: one shared instance, its
+    // single plain version the guess.
+    fs::remove_file(root.join("TlauncherProfiles.json")).unwrap();
+    let found = in_folder(&root, None);
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].launcher, "the chosen folder");
+    assert_eq!(found[0].minecraft.as_deref(), Some("1.21.1"));
+    assert!(found[0].shared);
+    let _ = fs::remove_dir_all(&root);
+}
+
+#[test]
+fn a_plain_game_folder_imports_as_one_instance() {
+    let root = scratch("plain-game");
+    let game = root.join("game");
+    write(&game.join("saves/World/level.dat"), "level");
+    write(&game.join("mods/a.jar"), "jar");
+    let found = in_folder(&game, None);
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].launcher, "the chosen folder");
+    assert_eq!(found[0].name, "game");
+    assert_eq!(found[0].minecraft, None);
+    assert!(!found[0].shared);
+    assert_eq!(found[0].game, game);
+    // A whole game folder: only what an instance holds is copied from it, and the single
+    // version in it is the one it probably plays.
+    write(&game.join("versions/1.21.1/1.21.1.jar"), "jar");
+    write(&game.join("libraries/x"), "x");
+    let found = in_folder(&game, None);
+    assert_eq!(found[0].minecraft.as_deref(), Some("1.21.1"));
+    assert!(found[0].shared);
+    // Two versions: neither is a guess.
+    write(&game.join("versions/1.20.1/1.20.1.jar"), "jar");
+    assert_eq!(in_folder(&game, None)[0].minecraft, None);
+    // A folder with no game in it is no instance.
+    fs::create_dir_all(root.join("empty")).unwrap();
+    assert_eq!(in_folder(&root.join("empty"), None), []);
+    let _ = fs::remove_dir_all(&root);
+}
+
+#[test]
+fn version_ids_name_their_loaders() {
+    let cases = [
+        (
+            "fabric-loader-0.16.9-1.21.1",
+            Some(("fabric", "0.16.9", Some("1.21.1"))),
+        ),
+        (
+            "quilt-loader-0.27.1-1.21.1",
+            Some(("quilt", "0.27.1", Some("1.21.1"))),
+        ),
+        ("neoforge-21.1.77", Some(("neoforge", "21.1.77", None))),
+        (
+            "1.20.1-forge-47.3.0",
+            Some(("forge", "47.3.0", Some("1.20.1"))),
+        ),
+        (
+            "forge-1.16.5-36.2.39",
+            Some(("forge", "36.2.39", Some("1.16.5"))),
+        ),
+        ("1.21.1", None),
+        ("Mejor Pack", None),
+        ("OptiFine1.16.5", None),
+    ];
+    for (id, want) in cases {
+        let parsed = id_loader(id);
+        let got = parsed
+            .as_ref()
+            .map(|(l, mc)| (l.name, l.version.as_str(), mc.as_deref()));
+        assert_eq!(got, want, "{id}");
+    }
+    assert!(looks_like_version("1.21.1") && looks_like_version("1.21"));
+    assert!(looks_like_version("1.21.1-pre1"));
+    assert!(!looks_like_version("25w14a"));
+    assert!(!looks_like_version("forge-1.16.5-36.2.39"));
 }

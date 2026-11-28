@@ -4,6 +4,8 @@
 use super::*;
 use gpui::RenderImage;
 use horizon_launcher::instances::{self, Icon, Instance, Kind as InstanceKind};
+use horizon_launcher::modpacks;
+use horizon_launcher::other_launchers;
 use servers_page::Field;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -67,6 +69,15 @@ pub(super) struct InstanceDialog {
     pub(super) copying: bool,
     /// A Java instance's maximum memory as set in the sheet, kept with Save: None until changed.
     pub(super) memory: Option<u32>,
+    /// What the folder picked with "Import a folder…" holds: instances to copy into new ones.
+    pub(super) folder: Option<FolderScan>,
+}
+
+/// The folder a new instance's dialog was given to import (its "Import a folder…"): what
+/// `other_launchers::in_folder` found in it.
+pub(super) enum FolderScan {
+    Scanning,
+    Ready(Vec<other_launchers::Found>),
 }
 
 /// The instances and their icons as images, kept between frames.
@@ -344,6 +355,7 @@ impl Launcher {
             error: None,
             busy: false,
             java,
+            folder: None,
         });
         self.servers.text(Field::InstanceVersion).set(String::new());
         // A new one starts with the name it would get ("My MineForge"), until the player types one.
@@ -394,6 +406,216 @@ impl Launcher {
             }
             None => false,
         }
+    }
+
+    /// The dialog's "Import a folder…": picks a folder of another launcher (TLauncher's game
+    /// folder, a Prism instance, the CurseForge app's…) or any folder holding a game, and lists
+    /// what it holds. A folder holding exactly one instance imports it right away.
+    pub(super) fn choose_import_folder(&mut self, cx: &mut Context<Self>) {
+        let Some(d) = self.instances.dialog.as_mut().filter(|d| !d.busy) else {
+            return;
+        };
+        d.error = None;
+        d.folder = Some(FolderScan::Scanning);
+        let paths = cx.prompt_for_paths(PathPromptOptions {
+            files: false,
+            directories: true,
+            multiple: false,
+            prompt: Some(tr("Import").into()),
+        });
+        cx.spawn(async move |this, cx| {
+            let picked = paths
+                .await
+                .ok()
+                .and_then(|picked| picked.ok())
+                .flatten()
+                .and_then(|mut picked| picked.pop());
+            // Reading a launcher's folders can take a moment; the window stays free.
+            let found = picked.map(|path| other_launchers::in_folder(&path, None));
+            let _ =
+                this.update(cx, |this, cx| {
+                    let mut alone = false;
+                    if let Some(d) = this.instances.dialog.as_mut() {
+                        match found {
+                            // The picker closed with no folder: the section goes away.
+                            None => d.folder = None,
+                            Some(found) if found.is_empty() => {
+                                d.folder = None;
+                                d.error = Some(tr(
+                                "No instance found in that folder. Pick a launcher's folder, \
+                                 an instance's folder, or a folder of game files (saves, \
+                                 mods…).",
+                            ).into());
+                            }
+                            Some(found) => {
+                                alone = found.len() == 1;
+                                d.folder = Some(FolderScan::Ready(found));
+                            }
+                        }
+                    }
+                    // One instance in the folder: no list to pick from, it imports right away.
+                    if alone {
+                        this.import_found_instance(0, cx);
+                    }
+                    cx.notify();
+                });
+        })
+        .detach();
+    }
+
+    /// Copies the `index`-th instance the picked folder holds into a new instance of this
+    /// launcher: its game folder comes along (a copy can be gigabytes, so the work runs in the
+    /// background). A folder that records no Minecraft version plays the newest release.
+    pub(super) fn import_found_instance(&mut self, index: usize, cx: &mut Context<Self>) {
+        let Some(found) = self
+            .instances
+            .dialog
+            .as_ref()
+            .filter(|d| !d.busy)
+            .and_then(|d| match &d.folder {
+                Some(FolderScan::Ready(found)) => found.get(index).cloned(),
+                _ => None,
+            })
+        else {
+            return;
+        };
+        let taken: Vec<&str> = self
+            .instances
+            .list
+            .iter()
+            .map(|i| i.name.as_str())
+            .collect();
+        let name = new_instance::free_name(found.name.clone(), &taken);
+        let minecraft = found
+            .minecraft
+            .clone()
+            .unwrap_or_else(|| "latest".to_string());
+        if let Some(d) = &mut self.instances.dialog {
+            d.busy = true;
+            d.error = None;
+        }
+        let task = cx
+            .background_executor()
+            .spawn(async move { other_launchers::import(&found, &name, Some(&minecraft)) });
+        cx.spawn(async move |this, cx| {
+            let result = task.await;
+            let _ = this.update(cx, |this, cx| {
+                match result {
+                    Ok(instance) => {
+                        let name = [("name", instance.name.as_str())];
+                        crate::glass_toast::say(trf("Imported {name}", &name));
+                        this.select_instance(&instance);
+                        this.reload_instances();
+                        this.instances.dialog = None;
+                    }
+                    Err(e) => {
+                        if let Some(d) = &mut this.instances.dialog {
+                            d.busy = false;
+                            d.error = Some(e);
+                        }
+                    }
+                }
+                cx.notify();
+            });
+        })
+        .detach();
+    }
+
+    /// The dialog's folder-import section: its button, and what the picked folder holds, each
+    /// instance one click from a copy of its own. Both themes draw it (the rows and buttons
+    /// follow the theme, as the Modpacks page's do).
+    pub(super) fn folder_import_rows(&mut self, cx: &mut Context<Self>) -> Option<Div> {
+        let t = self.theme;
+        let (busy, scanning, found) = {
+            let d = self.instances.dialog.as_ref()?;
+            match &d.folder {
+                Some(FolderScan::Scanning) => (d.busy, true, Vec::new()),
+                Some(FolderScan::Ready(found)) => (d.busy, false, found.clone()),
+                None => return None,
+            }
+        };
+        let choose = button(
+            "instance-choose-folder",
+            tr("Import a folder…").to_string(),
+            Kind::Secondary,
+            &t,
+        );
+        let choose = if busy {
+            disabled(choose)
+        } else {
+            choose.on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                this.choose_import_folder(cx);
+                cx.notify();
+            }))
+        };
+        let hint = text(theme::CAPTION).text_color(t.muted).child(tr(
+            "A folder of TLauncher, the official launcher, Prism Launcher, MultiMC, \
+             ATLauncher, the Modrinth App, the CurseForge app — or any folder holding a game. \
+             Its worlds, mods and settings are copied; the folder stays as it is.",
+        ));
+        let mut rows: Vec<AnyElement> = vec![div()
+            .flex()
+            .items_center()
+            .gap(px(10.))
+            .child(choose)
+            .into_any_element()];
+        if scanning {
+            rows.push(
+                text(theme::CAPTION)
+                    .text_color(t.muted)
+                    .child(tr("Looking in the folder…").to_string())
+                    .into_any_element(),
+            );
+        }
+        for (i, f) in found.into_iter().enumerate() {
+            let detail = if f.minecraft.is_none() {
+                format!(
+                    "{}  ·  {}",
+                    modpacks::found_summary(&f),
+                    tr("no version recorded: the newest release is used")
+                )
+            } else {
+                modpacks::found_summary(&f)
+            };
+            let import = button(
+                format!("folder-import-{i}"),
+                tr("Import").to_string(),
+                Kind::Secondary,
+                &t,
+            );
+            let right = if busy {
+                disabled(import)
+            } else {
+                import.on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                    this.import_found_instance(i, cx);
+                    cx.notify();
+                }))
+            };
+            rows.push(
+                index_row(
+                    i + 1,
+                    f.name.clone(),
+                    Some(detail.into_any_element()),
+                    Some(right.into_any_element()),
+                    &t,
+                )
+                .into_any_element(),
+            );
+        }
+        Some(
+            div()
+                .flex()
+                .flex_col()
+                .gap(px(8.))
+                .child(
+                    text(theme::CAPTION)
+                        .text_color(t.muted)
+                        .font_weight(FontWeight::SEMIBOLD)
+                        .child(tr("Import from another launcher").to_string()),
+                )
+                .children(rows)
+                .child(hint),
+        )
     }
 
     /// Creates or changes the instance as the dialog says. A copy can be gigabytes of worlds, so
@@ -667,6 +889,8 @@ impl Launcher {
             );
         if !editing {
             body = body.child(self.kind_tabs(cx));
+            // A folder of another launcher becomes an instance of its own, one click each.
+            body = body.children(self.folder_import_rows(cx));
         }
         if java {
             body = body.child(self.java_choice_rows(cx));

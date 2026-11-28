@@ -2007,5 +2007,12 @@
   "No release is published yet.": "Aún no hay ningún release publicado.",
   "Stop sharing": "Dejar de compartir",
   "Their email (optional)": "Su correo (opcional)",
-  "Withdrawn: that friend can't reach this computer any more.": "Retirado: ese amigo ya no puede alcanzar esta computadora."
+  "Withdrawn: that friend can't reach this computer any more.": "Retirado: ese amigo ya no puede alcanzar esta computadora.",
+  "A folder of TLauncher, the official launcher, Prism Launcher, MultiMC, ATLauncher, the Modrinth App, the CurseForge app — or any folder holding a game. Its worlds, mods and settings are copied; the folder stays as it is.": "Una carpeta de TLauncher, el launcher oficial, Prism Launcher, MultiMC, ATLauncher, la app de Modrinth o la app de CurseForge — o cualquier carpeta con un juego. Sus mundos, mods y ajustes se copian; la carpeta queda como está.",
+  "Import a folder…": "Importar una carpeta…",
+  "Import from another launcher": "Importar desde otro launcher",
+  "Imported {name}": "{name} importada",
+  "Looking in the folder…": "Buscando en la carpeta…",
+  "No instance found in that folder. Pick a launcher's folder, an instance's folder, or a folder of game files (saves, mods…).": "No se encontró ninguna instancia en esa carpeta. Elige la carpeta de un launcher, la de una instancia o una carpeta con archivos de juego (saves, mods…).",
+  "no version recorded: the newest release is used": "sin versión registrada: se usa la release más nueva"
 }

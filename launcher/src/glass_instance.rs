@@ -880,6 +880,8 @@ impl Launcher {
             body = body.children(self.switch_notice(i));
         } else {
             body = body.child(self.new_entry(cx));
+            // A folder of another launcher becomes an instance of its own, one click each.
+            body = body.children(self.folder_import_rows(cx));
         }
         // The name first, where focus starts: the version lists below are bounded, so it and
         // the foot's Create are on screen at laptop size without scrolling.
