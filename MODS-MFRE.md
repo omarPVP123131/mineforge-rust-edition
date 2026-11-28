@@ -1,8 +1,8 @@
 # MODS-MFRE — Toolchain de mods validada (Fase 18)
 
-**Actualizado:** 2026-11-27 · **Rama:** `mfre/main` · **Estado:** validada en sandbox 🟦 (wasm,
-nativo game-tree F42, nativo SDK F36 y canal de mixins §5); lo que necesita GPU o el motor
-prebuilt queda marcado 🖥️ (máquina real, GUÍA-QA §5.10, §5.13 y §11).
+**Actualizado:** 2026-11-28 · **Rama:** `mfre/main` · **Estado:** validada en sandbox 🟦 (wasm,
+nativo game-tree F42, nativo SDK F36, canal de mixins §5 y conversora Java→proyecto §6); lo que
+necesita GPU o el motor prebuilt queda marcado 🖥️ (máquina real, GUÍA-QA §5.10, §5.13 y §11).
 
 La infraestructura de mods es la de upstream y el fork la conserva completa y sin tocar
 (`git diff` del fork sobre `crates/horizon-mod-*`, `crates/cargo-horizon-mod` y `docs/modding/`
@@ -127,3 +127,55 @@ Validado 🟦: snapshot recuperado y verificado (el parche aplica exacto), tool 
 su toolchain pinneada (1.95.0), suite verde, y el prototipo de archivo linux cumple byte a byte
 el contrato del launcher (SUMS, identity, ejecutable 0755). La compilación de un mod con mixins
 en máquina real queda en GUÍA-QA §11.
+
+## 6. Conversora Java→.hmod (F45, parche 0065)
+
+Crates propia del fork: `crates/mfre-mod-convert/` (miembro del workspace; `cargo-horizon-mod`
+sigue sin tocar — el `git diff` del encabezado sigue vacío para las crates upstream). Convierte
+un mod Java **de contenido** (Fabric, NeoForge o Forge, incluso con su código de registro) en un
+proyecto de mod de contenido de Horizon, listo para que `cargo horizon-mod build` lo valide y lo
+empaquete (D20: "no traduce código").
+
+```sh
+cargo build -p mfre-mod-convert --release
+target/release/mfre-mod-convert ruta/al-mod.jar --out mods-convertidos/mi-mod
+cd mods-convertidos/mi-mod && cargo horizon-mod build   # → target/horizon-mod/<id>.hmod
+```
+
+**Qué hace:**
+
+- Identidad con el lector de upstream (`horizon_port_pack::jar`): `fabric.mod.json`,
+  `neoforge.mods.toml`, `META-INF/mods.toml`, `mcmod.info`. Id saneado a `[a-z0-9_]`
+  (`--id` para forzarlo), versión (`--version` si el jar no la registra), nombre, licencia,
+  descripción, autores, enlaces e icono (validado con las reglas del paquete → `icon.png`).
+- Copia `assets/` y `data/` con los nombres de carpeta de 26.3 (los singulares de 1.21:
+  `recipes`→`recipe`, `loot_tables`→`loot_table`, `advancements`→`advancement`,
+  `tags/blocks`→`tags/block`…).
+- Escribe las definiciones de item de cliente que 26.3 pide (`assets/<ns>/items/*.json`),
+  apuntando al modelo del item o, para bloques sin modelo de item, al del blockstate.
+- **Genera las declaraciones** que el código Java hacía al registrarse: por cada blockstate,
+  `data/<ns>/horizon/block/<nombre>.json` con la plantilla vanilla que infiere de la cadena de
+  `parent` del modelo (`cube_all`→`minecraft:stone`, `stairs`→`minecraft:oak_stairs`,
+  `cross`→`minecraft:poppy`, `cube_column`→`minecraft:oak_log`…); por cada modelo de item sin
+  bloque, `data/<ns>/horizon/item/<nombre>.json` (`minecraft:diamond`). **Las plantillas son
+  conjeturas**: la clase de comportamiento la elegía el código Java y el JSON no la registra; el
+  reporte las lista todas para que el modder las repase. Las declaraciones que el jar ya trae
+  (`data/<ns>/horizon/…`) se respetan y no se regeneran.
+- Escribe `horizon-mod.toml` (validado con `Manifest::parse` antes de escribirlo), con
+  atribución en `credits` y los `namespaces` extra que el contenido usa.
+- Al final corre `Content::read` (los chequeos del build y del juego): lo que rechaza queda como
+  aviso del reporte, no borra nada — los archivos son el punto de la conversión.
+
+**Qué NO hace (por decisión, D20):**
+
+- No traduce clases, mixins ni jars anidados: el reporte los cuenta y lo avisa. El comportamiento
+  que el código implementaba (mecánicas, pantallas, lógica de worldgen) no viaja; esas piezas van
+  por la vía nativa (CREATE-MFRE.md, D23) o se quedan en instancias Java (D7).
+- No reescribe el contenido de los JSON viejos: recetas/loot/worldgen de juegos anteriores a 1.21
+  pueden necesitar repaso (worldgen: `docs/datapack-upgrade.md`).
+- Un jar sin `assets/` ni `data/` (solo código) se rechaza: no hay nada que convertir.
+
+**Tests 🟦:** 7 — jar fabric sintético de punta a punta (identidad, renombrados, declaraciones,
+definiciones, icono, avisos), identidad neoforge + cadena de parents, declaraciones existentes
+respetadas (`item:false` no genera definición), jar solo-código rechazado, `--version` de
+respaldo, mapa de plantillas y saneado de ids.

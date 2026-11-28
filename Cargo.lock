@@ -3480,6 +3480,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "mfre-mod-convert"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "horizon-mod-package",
+ "horizon-port-pack",
+ "serde_json",
+ "tempfile",
+ "toml",
+ "zip",
+]
+
+[[package]]
 name = "miette"
 version = "7.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

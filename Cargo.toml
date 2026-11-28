@@ -67,6 +67,7 @@ members = [
     "crates/horizon-mod-api-gen/dispatch-tests",
     "crates/horizon-mod-wasm/wire-loopback",
     "crates/cargo-horizon-mod",
+    "crates/mfre-mod-convert",
     "crates/horizon-port-pack",
     "crates/horizon-port-pack-cli",
     "crates/horizon-shaders",
